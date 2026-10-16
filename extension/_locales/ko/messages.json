@@ -1,0 +1,59 @@
+{
+  "appName": {"message": "Leeway — AI 사용량·한도 미터"},
+  "appDesc": {"message": "Claude·ChatGPT·Gemini의 남은 사용량(5시간·주간 한도)을 팝업과 툴바 배지로. 본인 로그인 계정의 사용량 페이지만 읽습니다."},
+
+  "status_ok": {"message": "정상"},
+  "status_stale": {"message": "오래됨"},
+  "status_parse_failed": {"message": "읽기 실패"},
+  "status_logged_out": {"message": "로그인 필요"},
+  "status_needs_permission": {"message": "권한 필요"},
+  "status_waiting": {"message": "대기 중"},
+  "status_off": {"message": "꺼짐"},
+
+  "limit_5h": {"message": "5시간"},
+  "limit_weekly": {"message": "주간"},
+  "limit_monthly": {"message": "월간"},
+
+  "unit_day": {"message": "일"},
+  "unit_hour": {"message": "시간"},
+  "unit_minute": {"message": "분"},
+
+  "reset_in": {"message": "{dur} 후 초기화", "description": "{dur}는 '2시간 48분' 같은 기간"},
+  "reset_at": {"message": "{date} 초기화", "description": "{date}는 현지 날짜/시각"},
+  "reset_passed": {"message": "초기화 시각 지남"},
+  "reset_date_fmt": {"message": "{mo}/{day} ({wd}) {hh}:{mi}", "description": "하루 이상 남았을 때의 날짜 표기. {mo} 월, {day} 일, {wd} 요일, {hh}:{mi} 24시간제"},
+
+  "just_now": {"message": "방금"},
+  "ago": {"message": "{age} 전", "description": "{age}는 '3분' 같은 기간"},
+  "checked": {"message": "{age} 확인", "description": "{age}는 '3분 전' 같은 상대 시각"},
+
+  "note_no_permission": {"message": "사이트 권한이 없습니다. 껐다 켜서 허용하세요."},
+  "note_last_ok": {"message": "마지막 정상 값"},
+  "note_stale": {"message": "오래된 값"},
+  "note_partial": {"message": "일부만 읽음"},
+  "note_login": {"message": "로그인하면 표시됩니다"},
+  "note_unread": {"message": "값을 읽지 못했습니다"},
+  "badge_none": {"message": "켜진 서비스가 없습니다"},
+  "badge_pct": {"message": "{pct} 남음", "description": "{pct}는 남은 비율, 예: '50%'. 툴바 툴팁에 표시"},
+  "badge_sep": {"message": " · ", "description": "툴바 툴팁에서 값과 초기화 시각을 잇는 구분자"},
+  "badge_note_fmt": {"message": " ({note})", "description": "툴바 툴팁 줄 끝의 짧은 상태 설명을 감싸는 형식"},
+
+  "wd_Sun": {"message": "일"},
+  "wd_Mon": {"message": "월"},
+  "wd_Tue": {"message": "화"},
+  "wd_Wed": {"message": "수"},
+  "wd_Thu": {"message": "목"},
+  "wd_Fri": {"message": "금"},
+  "wd_Sat": {"message": "토"},
+
+  "refresh": {"message": "새로고침"},
+  "checking": {"message": "확인 중…"},
+  "refused_note": {"message": "사이트 권한을 허용해야 켤 수 있습니다."},
+  "note_main": {"message": "숫자는 남은 비율입니다. Gemini는 사용량 페이지(gemini.google.com/usage) 탭이 열려 있을 때 읽습니다."},
+  "open_claude": {"message": "Claude 사용량"},
+  "open_chatgpt": {"message": "ChatGPT 사용량"},
+  "open_gemini": {"message": "Gemini 사용량"},
+  "open_overlay": {"message": "오버레이 열기"},
+  "overlay_hint": {"message": "일반 웹페이지 탭에서 열어주세요."},
+  "overlay_empty": {"message": "확장 팝업에서 서비스를 켜세요."}
+}

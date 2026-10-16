@@ -1,0 +1,59 @@
+{
+  "appName": {"message": "Leeway — AI 使用量・利用上限メーター"},
+  "appDesc": {"message": "Claude・ChatGPT・Gemini の利用上限（5時間・週間）の残りを、ポップアップとツールバーのバッジに表示します。読み取るのはご自身のログイン中のセッションだけです。"},
+
+  "status_ok": {"message": "正常"},
+  "status_stale": {"message": "古いデータ"},
+  "status_parse_failed": {"message": "読み取り失敗"},
+  "status_logged_out": {"message": "ログインが必要"},
+  "status_needs_permission": {"message": "許可が必要"},
+  "status_waiting": {"message": "待機中"},
+  "status_off": {"message": "オフ"},
+
+  "limit_5h": {"message": "5時間"},
+  "limit_weekly": {"message": "週間"},
+  "limit_monthly": {"message": "月間"},
+
+  "unit_day": {"message": "日"},
+  "unit_hour": {"message": "時間"},
+  "unit_minute": {"message": "分"},
+
+  "reset_in": {"message": "あと{dur}でリセット"},
+  "reset_at": {"message": "{date}にリセット"},
+  "reset_passed": {"message": "リセット時刻を過ぎました"},
+  "reset_date_fmt": {"message": "{mo}/{day}（{wd}）{hh}:{mi}", "description": "1日以上先のリセット日時。{mo} 月、{day} 日、{wd} 曜日、{hh}:{mi} 24時間表記。"},
+
+  "just_now": {"message": "たった今"},
+  "ago": {"message": "{age}前"},
+  "checked": {"message": "最終確認：{age}"},
+
+  "note_no_permission": {"message": "サイトへのアクセス権限がありません。いったんオフにしてから再度オンにし、許可してください。"},
+  "note_last_ok": {"message": "前回取得できた値"},
+  "note_stale": {"message": "しばらく更新されていない値"},
+  "note_partial": {"message": "一部のみ取得"},
+  "note_login": {"message": "ログインすると表示されます"},
+  "note_unread": {"message": "値を読み取れませんでした"},
+  "badge_none": {"message": "有効なサービスなし"},
+  "badge_pct": {"message": "残り{pct}", "description": "{pct} は残りの割合（例: '50%'）。ツールバーのツールチップに表示。"},
+  "badge_sep": {"message": "、", "description": "ツールバーのツールチップで値とリセット時刻をつなぐ区切り。"},
+  "badge_note_fmt": {"message": "（{note}）", "description": "ツールチップ行末の短い状態メモを囲む書式。"},
+
+  "wd_Sun": {"message": "日"},
+  "wd_Mon": {"message": "月"},
+  "wd_Tue": {"message": "火"},
+  "wd_Wed": {"message": "水"},
+  "wd_Thu": {"message": "木"},
+  "wd_Fri": {"message": "金"},
+  "wd_Sat": {"message": "土"},
+
+  "refresh": {"message": "更新"},
+  "checking": {"message": "確認中…"},
+  "refused_note": {"message": "オンにするには、サイトへのアクセスを許可してください。"},
+  "note_main": {"message": "数値は残りの割合です。Gemini は使用量ページ（gemini.google.com/usage）のタブが開いているときに読み取ります。"},
+  "open_claude": {"message": "Claude の使用量"},
+  "open_chatgpt": {"message": "ChatGPT の使用量"},
+  "open_gemini": {"message": "Gemini の使用量"},
+  "open_overlay": {"message": "オーバーレイを開く"},
+  "overlay_hint": {"message": "通常のウェブページのタブで開いてください。"},
+  "overlay_empty": {"message": "ポップアップでサービスをオンにしてください。"}
+}

@@ -1,0 +1,59 @@
+{
+  "appName": {"message": "Leeway — AI usage & limits meter"},
+  "appDesc": {"message": "Remaining Claude, ChatGPT & Gemini usage — 5-hour & weekly limits — in a popup and toolbar badge. Reads only your own usage pages."},
+
+  "status_ok": {"message": "OK"},
+  "status_stale": {"message": "Outdated"},
+  "status_parse_failed": {"message": "Read failed"},
+  "status_logged_out": {"message": "Signed out"},
+  "status_needs_permission": {"message": "Needs permission"},
+  "status_waiting": {"message": "Waiting"},
+  "status_off": {"message": "Off"},
+
+  "limit_5h": {"message": "5-hour"},
+  "limit_weekly": {"message": "Weekly"},
+  "limit_monthly": {"message": "Monthly"},
+
+  "unit_day": {"message": "d"},
+  "unit_hour": {"message": "h"},
+  "unit_minute": {"message": "m"},
+
+  "reset_in": {"message": "resets in {dur}", "description": "{dur} is a duration like '2h 48m'"},
+  "reset_at": {"message": "resets {date}", "description": "{date} is a local date/time"},
+  "reset_passed": {"message": "reset time passed"},
+  "reset_date_fmt": {"message": "{mo}/{day} ({wd}) {hh}:{mi}", "description": "Reset date shown when it is more than a day away. {mo} month, {day} day, {wd} weekday, {hh}:{mi} 24h time."},
+
+  "just_now": {"message": "just now"},
+  "ago": {"message": "{age} ago", "description": "{age} is a duration like '3m'"},
+  "checked": {"message": "checked {age}", "description": "{age} is a relative time like '3m ago'"},
+
+  "note_no_permission": {"message": "No site permission. Turn the service off and on to allow."},
+  "note_last_ok": {"message": "last good value"},
+  "note_stale": {"message": "stale value"},
+  "note_partial": {"message": "partial read"},
+  "note_login": {"message": "shows after you sign in"},
+  "note_unread": {"message": "couldn't read the value"},
+  "badge_none": {"message": "No services on"},
+  "badge_pct": {"message": "{pct} left", "description": "{pct} is the remaining percent, e.g. '50%'. Shown in the toolbar tooltip."},
+  "badge_sep": {"message": " · ", "description": "Joins the value and the reset time in the toolbar tooltip."},
+  "badge_note_fmt": {"message": " ({note})", "description": "Wraps a short status note at the end of a toolbar tooltip line."},
+
+  "wd_Sun": {"message": "Sun"},
+  "wd_Mon": {"message": "Mon"},
+  "wd_Tue": {"message": "Tue"},
+  "wd_Wed": {"message": "Wed"},
+  "wd_Thu": {"message": "Thu"},
+  "wd_Fri": {"message": "Fri"},
+  "wd_Sat": {"message": "Sat"},
+
+  "refresh": {"message": "Refresh"},
+  "checking": {"message": "Checking…"},
+  "refused_note": {"message": "You must allow the site permission to turn this on."},
+  "note_main": {"message": "Numbers are the remaining percent. Gemini is read while its usage page (gemini.google.com/usage) tab is open."},
+  "open_claude": {"message": "Claude usage"},
+  "open_chatgpt": {"message": "ChatGPT usage"},
+  "open_gemini": {"message": "Gemini usage"},
+  "open_overlay": {"message": "Open overlay"},
+  "overlay_hint": {"message": "Open it from a normal web page tab."},
+  "overlay_empty": {"message": "Turn on a service in the popup."}
+}

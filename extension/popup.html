@@ -1,0 +1,85 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>
+:root{
+  --bg:#ffffff; --card:#f7f8fa; --ink:#1a1d23; --dim:#6b7280; --line:#e8eaed;
+  --track:rgba(0,0,0,.09); --good:#16a34a; --warn:#d97706; --bad:#dc2626; --accent:#4f46e5;
+  --ok-bg:#e6f4ea; --ok-ink:#147a35; --bad-bg:#fce8e6; --bad-ink:#b3261e; --chip:#eceef1; --switch-off:#cdd2d9;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1319; --card:#161d26; --ink:#e7ecf3; --dim:#94a1b2; --line:#283241;
+  --track:rgba(255,255,255,.11); --good:#3fca82; --warn:#ecb23f; --bad:#ff6168; --accent:#8b91ff;
+  --ok-bg:rgba(63,202,130,.16); --ok-ink:#3fca82; --bad-bg:rgba(255,97,104,.16); --bad-ink:#ff6168; --chip:#222b37; --switch-off:rgba(255,255,255,.22);
+}}
+*{box-sizing:border-box}
+body{font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Noto Sans JP","Noto Sans SC","Noto Sans TC",sans-serif;
+  width:340px;margin:0;padding:14px 14px 12px;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+header{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+h1{font-size:16px;font-weight:700;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:7px}
+h1 svg{width:18px;height:18px;display:block}
+.muted{color:var(--dim);font-size:12px}
+#version{font-weight:400}
+
+.provider{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--card)}
+.provider-row{display:flex;align-items:center;gap:9px}
+.provider-row label{flex:1;cursor:pointer;font-weight:600;font-size:13.5px}
+.provider-row input{appearance:none;-webkit-appearance:none;position:relative;flex:none;width:34px;height:20px;margin:0;border-radius:999px;background:var(--switch-off);cursor:pointer;transition:background .18s ease}
+.provider-row input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .18s ease}
+.provider-row input:checked{background:var(--accent)}
+.provider-row input:checked::after{transform:translateX(14px)}
+.provider-row input:disabled{opacity:.45;cursor:default}
+.provider-row input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.badge{font-size:10.5px;color:var(--dim);background:var(--chip);padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap}
+.badge.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.badge.parse_failed,.badge.logged_out,.badge.needs_permission{background:var(--bad-bg);color:var(--bad-ink)}
+
+.limits:not(:empty){margin-top:9px}
+.limits.dim{opacity:.5}
+.limit{position:relative;display:grid;grid-template-columns:1fr auto;gap:1px 10px;margin:11px 0;padding-bottom:11px}
+.limit .label{grid-column:1;grid-row:1;font-size:12px;color:var(--dim);font-weight:600;align-self:center}
+.limit .pct{grid-column:2;grid-row:1;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.limit.primary .pct{font-size:21px;line-height:1}
+.limit.good .pct{color:var(--good)}
+.limit.warn .pct{color:var(--warn)}
+.limit.bad .pct{color:var(--bad)}
+.limit .reset{grid-column:1 / -1;grid-row:2;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.limit .reset:empty{display:none}
+.limit::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;border-radius:3px;background:var(--track)}
+.limit::before{content:"";position:absolute;left:0;bottom:0;height:4px;border-radius:3px;width:calc(var(--pct, 0) * 1%);background:var(--tone,var(--good));transition:width .25s ease;z-index:1}
+.limit.good{--tone:var(--good)}
+.limit.warn{--tone:var(--warn)}
+.limit.bad{--tone:var(--bad)}
+.note{margin:7px 0 0;color:var(--dim);font-size:11.5px}
+.note:empty{display:none}
+
+.hint{margin:12px 2px 10px;color:var(--dim);font-size:11.5px}
+button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px}
+#refresh{width:100%;font-weight:600;border-color:var(--accent);background:var(--accent);color:#fff;margin-top:2px}
+#openOverlay{width:100%;margin-top:6px;font-weight:600;border-color:var(--line);background:var(--card);color:var(--ink)}
+.ovmsg{margin:6px 2px 0;color:var(--bad);font-size:11px}
+.ovmsg:empty{display:none}
+.row{display:flex;gap:6px;margin-top:8px}
+.row button{flex:1;font-size:12px;padding:7px 4px}
+</style></head><body>
+<header>
+  <h1><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M 20.29 79.71 A 42 42 0 1 1 79.71 79.71" fill="none" stroke="var(--track)" stroke-width="13" stroke-linecap="round"/><path d="M 20.29 79.71 A 42 42 0 0 1 72.97 15.03" fill="none" stroke="var(--accent)" stroke-width="13" stroke-linecap="round"/></svg>Leeway</h1>
+  <span class="muted" id="version"></span>
+</header>
+
+<section class="provider">
+<div class="provider-row"><label for="toggle_claude">Claude</label><span class="badge" id="status_claude" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_claude"></div>
+<div class="limits" id="limits_claude"></div><p class="note" id="note_claude"></p>
+</section>
+<section class="provider">
+<div class="provider-row"><label for="toggle_chatgpt">ChatGPT</label><span class="badge" id="status_chatgpt" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_chatgpt"></div>
+<div class="limits" id="limits_chatgpt"></div><p class="note" id="note_chatgpt"></p>
+</section>
+<section class="provider">
+<div class="provider-row"><label for="toggle_gemini">Gemini</label><span class="badge" id="status_gemini" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_gemini"></div>
+<div class="limits" id="limits_gemini"></div><p class="note" id="note_gemini"></p>
+</section>
+
+<p class="hint" data-i18n="note_main">숫자는 남은 비율입니다. Gemini는 사용량 페이지(gemini.google.com/usage) 탭이 열려 있을 때 읽습니다.</p>
+<button id="refresh" data-i18n="refresh">새로고침</button>
+<button id="openOverlay" data-i18n="open_overlay">오버레이 열기</button>
+<p class="ovmsg" id="ovmsg"></p>
+<div class="row"><button id="openClaude" data-i18n="open_claude">Claude 사용량</button><button id="openChatGPT" data-i18n="open_chatgpt">ChatGPT 사용량</button><button id="openGemini" data-i18n="open_gemini">Gemini 사용량</button></div>
+<script type="module" src="popup.js"></script></body></html>

@@ -1,0 +1,59 @@
+{
+  "appName": {"message": "Leeway — AI 剩余用量与限额监控"},
+  "appDesc": {"message": "在弹出窗口和工具栏徽章中显示 Claude、ChatGPT 和 Gemini 的剩余用量（5小时和每周限额）。仅读取你本人已登录账号的用量页面。"},
+
+  "status_ok": {"message": "正常"},
+  "status_stale": {"message": "已过时"},
+  "status_parse_failed": {"message": "读取失败"},
+  "status_logged_out": {"message": "未登录"},
+  "status_needs_permission": {"message": "需要权限"},
+  "status_waiting": {"message": "等待中"},
+  "status_off": {"message": "已关闭"},
+
+  "limit_5h": {"message": "5小时"},
+  "limit_weekly": {"message": "每周"},
+  "limit_monthly": {"message": "每月"},
+
+  "unit_day": {"message": "天"},
+  "unit_hour": {"message": "小时"},
+  "unit_minute": {"message": "分钟"},
+
+  "reset_in": {"message": "{dur}后重置"},
+  "reset_at": {"message": "{date} 重置"},
+  "reset_passed": {"message": "重置时间已过"},
+  "reset_date_fmt": {"message": "{mo}月{day}日（{wd}）{hh}:{mi}", "description": "剩余超过一天时显示的重置日期。{mo} 月、{day} 日、{wd} 星期、{hh}:{mi} 24 小时制。"},
+
+  "just_now": {"message": "刚刚"},
+  "ago": {"message": "{age}前"},
+  "checked": {"message": "{age}检查"},
+
+  "note_no_permission": {"message": "没有网站权限。请关闭后重新开启以授予权限。"},
+  "note_last_ok": {"message": "上次正常值"},
+  "note_stale": {"message": "过时数值"},
+  "note_partial": {"message": "部分读取"},
+  "note_login": {"message": "登录后显示"},
+  "note_unread": {"message": "无法读取数值"},
+  "badge_none": {"message": "未开启任何服务"},
+  "badge_pct": {"message": "剩余{pct}", "description": "{pct} 为剩余百分比，例如 '50%'。显示在工具栏提示中。"},
+  "badge_sep": {"message": " · ", "description": "在工具栏提示中连接数值与重置时间的分隔符。"},
+  "badge_note_fmt": {"message": "（{note}）", "description": "包裹工具栏提示行末尾的简短状态说明。"},
+
+  "wd_Sun": {"message": "周日"},
+  "wd_Mon": {"message": "周一"},
+  "wd_Tue": {"message": "周二"},
+  "wd_Wed": {"message": "周三"},
+  "wd_Thu": {"message": "周四"},
+  "wd_Fri": {"message": "周五"},
+  "wd_Sat": {"message": "周六"},
+
+  "refresh": {"message": "刷新"},
+  "checking": {"message": "检查中…"},
+  "refused_note": {"message": "需要授予网站权限才能开启。"},
+  "note_main": {"message": "数字表示剩余百分比。Gemini 需在其用量页面（gemini.google.com/usage）标签页打开时才能读取。"},
+  "open_claude": {"message": "Claude 用量"},
+  "open_chatgpt": {"message": "ChatGPT 用量"},
+  "open_gemini": {"message": "Gemini 用量"},
+  "open_overlay": {"message": "打开悬浮窗"},
+  "overlay_hint": {"message": "请在普通网页标签页中打开。"},
+  "overlay_empty": {"message": "请在弹出窗口中开启服务。"}
+}

@@ -1,0 +1,59 @@
+{
+  "appName": {"message": "Leeway — medidor de uso y límites de IA"},
+  "appDesc": {"message": "Uso restante de Claude, ChatGPT y Gemini (límites de 5 horas y semanales) en ventana emergente e insignia. Solo lee tus sesiones."},
+
+  "status_ok": {"message": "OK"},
+  "status_stale": {"message": "Desactualizado"},
+  "status_parse_failed": {"message": "Error al leer"},
+  "status_logged_out": {"message": "Sin sesión"},
+  "status_needs_permission": {"message": "Sin permiso"},
+  "status_waiting": {"message": "Esperando"},
+  "status_off": {"message": "Inactivo"},
+
+  "limit_5h": {"message": "5 horas"},
+  "limit_weekly": {"message": "Semanal"},
+  "limit_monthly": {"message": "Mensual"},
+
+  "unit_day": {"message": "d"},
+  "unit_hour": {"message": "h"},
+  "unit_minute": {"message": "min"},
+
+  "reset_in": {"message": "se restablece en {dur}"},
+  "reset_at": {"message": "se restablece el {date}"},
+  "reset_passed": {"message": "ya ha pasado la hora de restablecimiento"},
+  "reset_date_fmt": {"message": "{wd} {day}/{mo} a las {hh}:{mi}", "description": "Fecha de restablecimiento cuando falta más de un día. {wd} día de la semana, {day}/{mo} día/mes, {hh}:{mi} hora de 24 h."},
+
+  "just_now": {"message": "hace un momento"},
+  "ago": {"message": "hace {age}"},
+  "checked": {"message": "comprobado {age}"},
+
+  "note_no_permission": {"message": "Falta el permiso del sitio. Desactívalo y vuelve a activarlo para concederlo."},
+  "note_last_ok": {"message": "último valor válido"},
+  "note_stale": {"message": "valor desactualizado"},
+  "note_partial": {"message": "lectura parcial"},
+  "note_login": {"message": "se muestra tras iniciar sesión"},
+  "note_unread": {"message": "no se ha podido leer el valor"},
+  "badge_none": {"message": "Sin servicios activos"},
+  "badge_pct": {"message": "{pct} restante", "description": "{pct} es el porcentaje restante, p. ej. '50%'. Se muestra en el tooltip de la barra."},
+  "badge_sep": {"message": " · ", "description": "Une el valor y la hora de restablecimiento en el tooltip de la barra."},
+  "badge_note_fmt": {"message": " ({note})", "description": "Envuelve una nota de estado breve al final de una línea del tooltip."},
+
+  "wd_Sun": {"message": "dom"},
+  "wd_Mon": {"message": "lun"},
+  "wd_Tue": {"message": "mar"},
+  "wd_Wed": {"message": "mié"},
+  "wd_Thu": {"message": "jue"},
+  "wd_Fri": {"message": "vie"},
+  "wd_Sat": {"message": "sáb"},
+
+  "refresh": {"message": "Actualizar"},
+  "checking": {"message": "Comprobando…"},
+  "refused_note": {"message": "Debes conceder el permiso del sitio para activarlo."},
+  "note_main": {"message": "Los números indican el porcentaje restante. El uso de Gemini se lee mientras su página de uso (gemini.google.com/usage) esté abierta en una pestaña."},
+  "open_claude": {"message": "Uso de Claude"},
+  "open_chatgpt": {"message": "Uso de ChatGPT"},
+  "open_gemini": {"message": "Uso de Gemini"},
+  "open_overlay": {"message": "Abrir superposición"},
+  "overlay_hint": {"message": "Ábrela desde una pestaña de una página web normal."},
+  "overlay_empty": {"message": "Activa un servicio en la ventana emergente."}
+}

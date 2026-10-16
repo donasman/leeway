@@ -1,0 +1,59 @@
+{
+  "appName": {"message": "Leeway — AI 剩餘用量與使用上限監測"},
+  "appDesc": {"message": "在彈出式視窗與工具列圖示上顯示 Claude、ChatGPT 和 Gemini 的剩餘用量（5小時與每週上限）。只讀取你本人登入後的用量頁面。"},
+
+  "status_ok": {"message": "正常"},
+  "status_stale": {"message": "非最新"},
+  "status_parse_failed": {"message": "讀取失敗"},
+  "status_logged_out": {"message": "未登入"},
+  "status_needs_permission": {"message": "需要權限"},
+  "status_waiting": {"message": "等待中"},
+  "status_off": {"message": "已關閉"},
+
+  "limit_5h": {"message": "5小時"},
+  "limit_weekly": {"message": "每週"},
+  "limit_monthly": {"message": "每月"},
+
+  "unit_day": {"message": "天"},
+  "unit_hour": {"message": "小時"},
+  "unit_minute": {"message": "分鐘"},
+
+  "reset_in": {"message": "{dur}後重設"},
+  "reset_at": {"message": "{date} 重設"},
+  "reset_passed": {"message": "重設時間已過"},
+  "reset_date_fmt": {"message": "{mo}/{day}（{wd}）{hh}:{mi}", "description": "剩餘超過一天時顯示的重設日期。{mo} 月、{day} 日、{wd} 星期、{hh}:{mi} 24 小時制。"},
+
+  "just_now": {"message": "剛剛"},
+  "ago": {"message": "{age}前"},
+  "checked": {"message": "上次檢查：{age}"},
+
+  "note_no_permission": {"message": "尚未取得網站權限。請先關閉再重新開啟，以授予權限。"},
+  "note_last_ok": {"message": "上次成功讀取的數值"},
+  "note_stale": {"message": "非最新數值"},
+  "note_partial": {"message": "只讀到部分數值"},
+  "note_login": {"message": "登入後顯示"},
+  "note_unread": {"message": "無法讀取數值"},
+  "badge_none": {"message": "未開啟任何服務"},
+  "badge_pct": {"message": "剩餘{pct}", "description": "{pct} 為剩餘百分比，例如 '50%'。顯示於工具列提示中。"},
+  "badge_sep": {"message": " · ", "description": "在工具列提示中連接數值與重設時間的分隔符號。"},
+  "badge_note_fmt": {"message": "（{note}）", "description": "包住工具列提示列尾端的簡短狀態說明。"},
+
+  "wd_Sun": {"message": "週日"},
+  "wd_Mon": {"message": "週一"},
+  "wd_Tue": {"message": "週二"},
+  "wd_Wed": {"message": "週三"},
+  "wd_Thu": {"message": "週四"},
+  "wd_Fri": {"message": "週五"},
+  "wd_Sat": {"message": "週六"},
+
+  "refresh": {"message": "重新整理"},
+  "checking": {"message": "檢查中…"},
+  "refused_note": {"message": "必須授予網站權限，才能開啟此功能。"},
+  "note_main": {"message": "數字代表剩餘百分比。必須開著 Gemini 用量頁面（gemini.google.com/usage）的分頁，才能讀取 Gemini 用量。"},
+  "open_claude": {"message": "Claude 用量"},
+  "open_chatgpt": {"message": "ChatGPT 用量"},
+  "open_gemini": {"message": "Gemini 用量"},
+  "open_overlay": {"message": "開啟浮動視窗"},
+  "overlay_hint": {"message": "請在一般網頁分頁中開啟。"},
+  "overlay_empty": {"message": "請在彈出式視窗中開啟服務。"}
+}

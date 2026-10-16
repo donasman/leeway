@@ -1,0 +1,73 @@
+<!--
+  Minimal, hand-reduced reconstruction of https://gemini.google.com/usage,
+  captured 2026-09-04 via live DOM inspection (Chrome, signed-in account,
+  Korean locale). NOT a raw page save — Angular's internal attributes
+  (_ngcontent-*, tracking hrefs, sidebar chat history) were stripped by
+  hand rather than scrubbed from a copy, specifically so nothing from the
+  real page (chat titles, account links) could leak into this repo.
+  Structure, class names, and text content are verbatim from the real
+  page at the time of capture.
+
+  EXPECTED PARSE (this fixture):
+    current usage: remaining_percent = 100  (page showed "0% 사용됨" = 0% USED —
+      Gemini's page shows usage-consumed, not remaining, opposite of the
+      claude/chatgpt convention. remaining = 100 - used.)
+      reset_text: "오후 9:19에 초기화"
+    weekly limit:  remaining_percent = 100  (same 0%-used inversion)
+      reset_text: "9월 11일 오후 4:19에 초기화"
+
+  Only the "current usage" card has a progress bar
+  (.progress-indicator-luminous, inline style="width: N%") — that N is
+  also USED percent, same inversion applies. The weekly card has no
+  progress bar at all; text is the only source there.
+
+  This fixture only captures the "typical, low usage" case. It does NOT
+  cover: >0% used, "no fresh data"/unavailable, or logged-out states —
+  those need separate synthetic fixtures built by hand from this same
+  structure (do not fabricate a "real capture" claim for those; they
+  weren't observed on the live page).
+-->
+<div class="usage-metrics-container">
+  <div class="usage-metrics-header">
+    <div class="header-title">
+      <h2 class="gds-emphasized-headline-l">사용량 한도</h2>
+    </div>
+    <div class="gds-body-m usage-metrics-description usage-metrics-description-luminous ng-star-inserted">
+      <p>
+        요금제의 한도에 따라 Gemini를 사용할 수 있는 시간이 결정됩니다. 고급 모델 및 기능에는 더 많은 사용량이 들 수 있습니다.
+        <a class="learn-more-link learn-more-link-luminous" href="https://support.google.com/gemini?p=plan_updates">자세히 알아보기</a>
+      </p>
+      <p class="gds-body-m ng-star-inserted">방금 업데이트됨</p>
+    </div>
+  </div>
+  <usage-metrics-window class="ng-star-inserted">
+    <div class="gxu-items-container ng-star-inserted">
+      <div class="gxu-currently gxu-currently-luminous">
+        <div class="gxu-item-header">
+          <div class="current-usage">
+            <p class="gds-emphasized-body-l">현재 사용량</p>
+            <usage-info>
+              <div>
+                <button class="xap-inline-dialog-click" aria-label="사용량 한도에 관한 정보">
+                  <gem-icon class="info-icon"></gem-icon>
+                </button>
+              </div>
+            </usage-info>
+          </div>
+          <p class="gds-emphasized-body-l">0% 사용됨</p>
+        </div>
+        <div class="progress-track progress-track-luminous">
+          <div class="progress-indicator progress-indicator-luminous" style="width: 0%;"></div>
+        </div>
+        <p class="gds-emphasized-body-m reset-time-luminous">오후 9:19에 초기화</p>
+      </div>
+      <div class="gxu-weekly gxu-weekly-luminous">
+        <div>
+          <p class="gds-emphasized-body-m">주간 한도</p>
+          <p class="gds-emphasized-body-s reset-time-luminous">9월 11일 오후 4:19에 초기화</p>
+        </div>
+        <p class="gds-emphasized-body-m">0% 사용됨</p>
+      </div>
+    </div>
+  </usage-metrics-window>
+</div>

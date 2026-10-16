@@ -1,0 +1,43 @@
+# Python virtual environments and embedded interpreter
+.python312/
+.venv/
+.venv_*/
+.uv-cache/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Extension signing keys and packed builds (never commit — .pem pins the extension ID)
+_ext_key.pem
+*.pem
+*.crx
+
+# Windows app artifacts
+*.exe
+*.msi
+dist/
+build/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Rust / Tauri
+target/
+**/target/
+Cargo.lock.bak
+
+# Node (if a frontend build tool is ever added)
+node_modules/
+
+.claude/*
+!.claude/agents/
+!.claude/skills/
+
+# oh-my-claude-code per-session tool/state (local only)
+.omc/
