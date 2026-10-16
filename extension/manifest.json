@@ -3,7 +3,6 @@
   "name": "__MSG_appName__",
   "version": "0.5.0",
   "default_locale": "en",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArs5+HryiM6JuCYMN/OEvdZZLq2sGf0ndJbc5sDSC3NvzAroZpbteEXByN7lFrYrNjD6Njdkf0kvJWpf6MPMWCbCLASq8sIx0KmuPLSFZGKIIvT/rlFfpkVKdjJXqJzvOUdv0NM8QJJEzjVPKsy4rh/zmEwzBMvMuWX2YSGODPI7XuGvc4F/V76n+9KZAv43KTHEjJfrfLEppvOLvuZj4eZLSenDN5xmPzvQJ3aFGtDL3en+QDXasgdu/PjQp8kitCQ979OUSNtQyjxnJROs4X8N52eaSdxQ9a9tca8Aroem8gHHBiGwHCKHAs9qg1V+aSnpsX0IptP9qr2PrHH8GyQIDAQAB",
   "description": "__MSG_appDesc__",
   "icons": {"16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png"},
   "permissions": ["storage", "alarms", "tabs", "scripting", "activeTab"],
