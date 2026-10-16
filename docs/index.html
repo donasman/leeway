@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leeway — Privacy Policy</title>
+<meta name="description" content="Privacy policy for Leeway, the Chrome extension that shows your remaining Claude, ChatGPT and Gemini usage.">
+<!-- Mirrors PRIVACY.md at the repository root; keep both in sync. -->
+<style>
+:root{--bg:#ffffff;--ink:#1a1f29;--dim:#5a6675;--line:#e5e9f0;--accent:#4f46e5;--card:#f7f8fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1117;--ink:#e7ecf3;--dim:#9aa6b4;--line:#232c39;--accent:#8b91ff;--card:#141b25}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);line-height:1.6;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;padding:0 16px}
+.wrap{max-width:760px;margin:0 auto;padding:48px 0 72px}
+header{border-bottom:1px solid var(--line);padding-bottom:20px}
+h1{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--dim);font-size:14px;margin:0}
+.badge{display:inline-block;margin-top:12px;font-size:12px;color:var(--dim);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+h2{font-size:18px;margin:34px 0 10px}
+p{margin:12px 0}
+ul{margin:12px 0;padding-left:22px}
+li{margin:7px 0}
+code{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.9em}
+a{color:var(--accent)}
+strong{color:var(--ink)}
+footer{border-top:1px solid var(--line);margin-top:44px;padding-top:18px;color:var(--dim);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Privacy Policy — Leeway</h1>
+  <p class="sub">Last updated: 2026-10-16</p>
+  <span class="badge">Unofficial project — not affiliated with Anthropic, OpenAI or Google</span>
+</header>
+
+<p>Leeway is a Chrome extension that shows how much of your <strong>remaining</strong> usage is left on Claude, ChatGPT and Gemini, in its popup, toolbar badge, and an optional floating overlay. This policy explains exactly what it reads, where that stays, and what it never does.</p>
+
+<h2>Short version</h2>
+<ul>
+  <li>Leeway reads your usage from the services you are <strong>already signed in to</strong> in your normal Chrome profile. It does not sign you in or ask for your password.</li>
+  <li>Everything it reads stays <strong>on your computer</strong> (<code>chrome.storage.local</code>).</li>
+  <li>Leeway has <strong>no server of its own</strong> and sends your data to no one. The floating overlay runs inside Chrome — there is no separate app to install.</li>
+  <li>No analytics, no tracking, no advertising identifiers.</li>
+</ul>
+
+<h2>What Leeway reads</h2>
+<p>For each service you turn on:</p>
+<ul>
+  <li><strong>Claude / ChatGPT</strong> — Leeway calls the same authenticated usage endpoint the service's own usage page uses, with your browser's existing session, and reads only the usage limits (remaining percentage and reset time). For ChatGPT it also needs a short-lived access token from your signed-in session to make that one request; the token is used for that request only and is <strong>never stored, logged, or sent anywhere</strong>. Email and account identifiers in the response are ignored.</li>
+  <li><strong>Gemini</strong> — Gemini has no usage API, so Leeway reads the numbers already shown on an open <code>gemini.google.com/usage</code> tab (the current-usage and weekly cards). It reads only those usage strings and the "updated N ago" text — not the rest of the page, your prompts, or your conversations — and it never opens a tab on its own.</li>
+</ul>
+<p>Leeway injects a content script <strong>only on a service's usage screen</strong>, never on a conversation page.</p>
+
+<h2>What Leeway stores</h2>
+<ul>
+  <li>The latest parsed usage snapshot per service (status, remaining percentages, reset times), so the popup and badge can show it.</li>
+  <li>Which services you turned on.</li>
+</ul>
+<p>All of this lives only in your browser profile, on your device. It is not sent anywhere. Removing the extension removes it.</p>
+
+<h2>What Leeway never does</h2>
+<ul>
+  <li>No sign-in automation; no Playwright or separate browser.</li>
+  <li>Never collects or stores full page text, prompts, or conversations.</li>
+  <li>Never stores or transmits cookies, passwords, or session tokens.</li>
+  <li>No external servers, analytics, telemetry, or ads.</li>
+  <li>Never weakens site security (it does not strip <code>X-Frame-Options</code> or CSP).</li>
+</ul>
+
+<h2>Permissions, and why</h2>
+<ul>
+  <li><strong>storage</strong> — keep the latest usage on your device for the popup and badge.</li>
+  <li><strong>alarms</strong> — refresh usage on a 2-minute schedule.</li>
+  <li><strong>tabs</strong> and <strong>scripting</strong> — find a provider's already-open usage tab and read the rendered numbers from it (ChatGPT's page fallback, and Gemini), and open the floating overlay.</li>
+  <li><strong>activeTab</strong> — when you click "Open overlay", Leeway runs on the tab you are viewing just long enough to open the floating overlay window. It reads nothing from that page.</li>
+  <li><strong>Site access</strong> to <code>claude.ai</code>, <code>chatgpt.com</code>, <code>gemini.google.com</code> — these are <strong>optional</strong> and requested only when you turn that service on.</li>
+</ul>
+
+<h2>Floating overlay</h2>
+<p>The floating overlay is a small always-on-top window drawn by Chrome itself (Document Picture-in-Picture) — there is no separate app to install. It shows the same on-device usage summary the popup shows, and reads nothing from the web page it is opened over.</p>
+
+<h2>Data deletion</h2>
+<p>Uninstalling Leeway deletes everything it stored. You can also remove its data from the extension's entry in <code>chrome://extensions</code>.</p>
+
+<h2>Contact</h2>
+<p>Questions or issues: please open an issue on the <a href="https://github.com/donasman/leeway">project's repository</a>.</p>
+
+<h2>Changes</h2>
+<p>Material changes to this policy will update the date at the top.</p>
+
+<footer>
+  Leeway — <a href="https://github.com/donasman/leeway">github.com/donasman/leeway</a>. This page mirrors <code>PRIVACY.md</code> in the repository.
+</footer>
+</div>
+</body>
+</html>
