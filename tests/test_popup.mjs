@@ -213,6 +213,8 @@ const timers = await openPopup('first');
 console.log('\nopened — values from storage, no desktop app running');
 {
   check('version from manifest', $('version').textContent, `v${manifest.version}`);
+  check('static lang matches the manifest default_locale', new JSDOM(html).window.document.documentElement.lang, manifest.default_locale);
+  check('lang set from the UI language on load', document.documentElement.lang, 'ko');
   check('claude', card('claude'), {
     status: '정상',
     rows: [['5시간', '60%', '4시간 20분 후 초기화'], ['주간', '0%', '20시간 5분 후 초기화']],
