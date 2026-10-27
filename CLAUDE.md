@@ -43,7 +43,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 
 | 경로 | 역할 |
 |---|---|
-| `extension/manifest.json` | MV3. 필수 권한 `storage alarms tabs scripting activeTab`, 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
+| `extension/manifest.json` | MV3. 필수 권한 `storage alarms scripting activeTab`(`tests/test_manifest.mjs`가 고정), 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
 | `extension/background.js` | 서비스 워커. 2분 주기 수집(`POLL_MINUTES`), 저장(`publish`), 배지, 오버레이 데이터, helper 동기화, 메시지 처리 |
 | `extension/snapshot.js` | 수집 결과 → 저장할 `UsageSnapshot` 정규화(`toSnapshot`), 다른 프로필 값 재검증(`fromShared`) |
 | `extension/view.js` | 저장값 → 팝업·오버레이·배지가 보여줄 값(`providerView`, `badgeView`, `peerViews`) |
@@ -120,6 +120,8 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 ## 3. 보안·개인정보
 
 - 호스트 권한은 서비스별 **선택 권한**이다. 서비스를 켤 때 요청하고, 끄면 반납한다. `<all_urls>` 금지.
+- `tabs` 권한은 쓰지 않는다(설치 시 "방문 기록 읽기" 경고). 사용량 탭의 `url`은 승인된 호스트 권한으로, 팝업의 활성 탭 `url`은 `activeTab`으로 보인다.
+  권한이 없는 탭은 `url` 없이 오므로 `url`로 거르는 코드는 그 탭을 건너뛴다.
 - 콘텐츠 스크립트는 각 서비스의 **사용량 화면에만** 주입한다. 대화 탭에는 주입하지 않는다.
 - 토큰·쿠키는 함수 변수 안에서만 쓰고 저장·로그·진단·helper 어디에도 넣지 않는다. 오류 메시지도 헤더를 인용할 수 있으니 오류 이름만 남긴다.
 - `detail`이나 진단에 들어가는 URL은 origin만 남긴다(대화 ID 노출 방지).
@@ -171,7 +173,7 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 ## 7. 알려진 과제
 
 - `background.js`에 쓰이지 않는 bridge 코드(`127.0.0.1:8765`, `pairIfNeeded`, `sendToBridge`, `checkHealth`)가 남아 있다. 권한이 없어 실행되지 않지만 정리 대상.
-- `tabs` 권한 제거 가능성 검토(설치 시 "방문 기록 읽기" 경고). `tabs.query({url})`가 호스트 권한만으로 되는지 확인 필요.
+- `tabs` 권한을 뺐다(브랜치 `chore/drop-tabs`). 근거는 Chrome 문서이고 Node 테스트로만 확인했다. 실제 Chrome에서 설치 경고·Gemini 탭 읽기·ChatGPT 대체 경로·오버레이 열기, 0.6.2 → 새 버전 업데이트 때 재승인 여부는 미확인.
 - README의 한국어 UI 라벨, `popup.html`의 `lang="ko"`, `package.json`의 `name`(`llm-usage-overlay`) 정리.
 - 실계정으로 확인 못 한 것: ChatGPT 5시간·주간 한도 계정, Claude Pro·Team·Enterprise의 요금제 표기.
 - helper: 코드 서명 없음(SmartScreen 경고, Windows 11 Smart App Control은 차단). Microsoft Store(MSIX) 패키지에서 Native Messaging 등록이 Chrome에 보이는지 미확인.

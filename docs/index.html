@@ -75,7 +75,7 @@ footer{border-top:1px solid var(--line);margin-top:44px;padding-top:18px;color:v
 <ul>
   <li><strong>storage</strong> — keep the latest usage on your device for the popup and badge.</li>
   <li><strong>alarms</strong> — refresh usage on a 2-minute schedule.</li>
-  <li><strong>tabs</strong> and <strong>scripting</strong> — find a provider's already-open usage tab and read the rendered numbers from it (ChatGPT's page fallback, and Gemini), and open the floating overlay.</li>
+  <li><strong>scripting</strong> — read the rendered numbers from a provider's already-open usage tab (ChatGPT's page fallback, and Gemini), and open the floating overlay. Leeway finds that tab through the site access below; it does not ask for the "tabs" permission, so it sees the address of a tab only on the sites you turned on, and of the tab you are viewing while the popup is open (to check that the overlay can open there).</li>
   <li><strong>activeTab</strong> — when you click "Open overlay", Leeway runs on the tab you are viewing just long enough to open the floating overlay window. It reads nothing from that page.</li>
   <li><strong>Site access</strong> to <code>claude.ai</code>, <code>chatgpt.com</code>, <code>gemini.google.com</code> — these are <strong>optional</strong> and requested only when you turn that service on.</li>
   <li><strong>nativeMessaging</strong> — <strong>optional</strong>, requested only when you turn on "Other Chrome profiles". It lets Leeway talk to the Leeway helper on your computer.</li>

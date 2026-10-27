@@ -71,9 +71,12 @@ anywhere. Removing the extension removes it.
 
 - **storage** — keep the latest usage on your device for the popup and badge.
 - **alarms** — refresh usage on a 2-minute schedule.
-- **tabs** and **scripting** — find a provider's already-open usage tab and read
-  the rendered numbers from it (ChatGPT's page fallback, and Gemini), and open
-  the floating overlay.
+- **scripting** — read the rendered numbers from a provider's already-open usage
+  tab (ChatGPT's page fallback, and Gemini), and open the floating overlay.
+  Leeway finds that tab through the site access below; it does not ask for the
+  "tabs" permission, so it sees the address of a tab only on the sites you turned
+  on, and of the tab you are viewing while the popup is open (to check that the
+  overlay can open there).
 - **activeTab** — when you click "Open overlay", Leeway runs on the tab you are
   viewing just long enough to open the floating overlay window. It reads nothing
   from that page.
