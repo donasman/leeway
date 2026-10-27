@@ -268,6 +268,24 @@ document.getElementById('openClaude').addEventListener('click',()=>chrome.runtim
 document.getElementById('openChatGPT').addEventListener('click',()=>chrome.runtime.sendMessage({type:'OPEN_CHATGPT_USAGE'}));
 document.getElementById('openGemini').addEventListener('click',()=>chrome.runtime.sendMessage({type:'OPEN_GEMINI_USAGE'}));
 
+// The hint names the Gemini usage page; that address becomes a link doing what
+// the "Gemini usage" button does (an open usage tab first, read once loaded).
+// Built from text nodes: the message stays text, no HTML in the catalog.
+const GEMINI_USAGE_TEXT = 'gemini.google.com/usage';
+function linkGeminiUsage(el) {
+  const text = el?.textContent || '';
+  const at = text.indexOf(GEMINI_USAGE_TEXT);
+  if (at < 0) return;
+  const link = document.createElement('a');
+  link.href = 'https://gemini.google.com/usage';
+  link.textContent = GEMINI_USAGE_TEXT;
+  link.addEventListener('click', event => {
+    event.preventDefault();
+    chrome.runtime.sendMessage({type:'OPEN_GEMINI_USAGE'});
+  });
+  el.replaceChildren(text.slice(0, at), link, text.slice(at + GEMINI_USAGE_TEXT.length));
+}
+
 // Open the floating overlay: inject overlay_inject.js into the active tab (it
 // opens a Picture-in-Picture window). Needs a normal web page as the opener.
 document.getElementById('openOverlay').addEventListener('click', async () => {
@@ -291,6 +309,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
 document.documentElement.lang = chrome.i18n.getUILanguage();
 for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = chrome.i18n.getMessage(el.dataset.i18n);
+linkGeminiUsage(document.querySelector('[data-i18n="note_main"]'));
 // "3분 전", staleness and the reset countdowns move with the clock, not only with storage.
 setInterval(render, 30 * 1000);
 render();

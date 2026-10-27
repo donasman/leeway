@@ -484,6 +484,17 @@ console.log('\nGemini — a real provider: on, values shown, open-usage button')
   check('gemini toggle checked', $('toggle_gemini').checked, true);
   await clickAndSettle('openGemini');
   check('Gemini 사용량 button asks background to open the usage page', calls, [['runtime.sendMessage', 'OPEN_GEMINI_USAGE']]);
+
+  // The hint's "gemini.google.com/usage" is a link doing what the button does.
+  const hint = globalThis.document.querySelector('[data-i18n="note_main"]');
+  const link = hint.querySelector('a');
+  check('hint: same words, the usage address as a link', [hint.textContent, link?.textContent, link?.getAttribute('href')],
+    [KO.note_main, 'gemini.google.com/usage', 'https://gemini.google.com/usage']);
+  calls.length = 0;
+  const click = new globalThis.document.defaultView.MouseEvent('click', {bubbles: true, cancelable: true});
+  link.dispatchEvent(click);
+  await settle();
+  check('clicking it asks background, like the button (no plain navigation)', [calls, click.defaultPrevented], [[['runtime.sendMessage', 'OPEN_GEMINI_USAGE']], true]);
 }
 
 console.log('\nGemini — turning on asks for the gemini.google.com permission');
