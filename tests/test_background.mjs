@@ -4,7 +4,8 @@
 // an in-memory chrome.* stub and a fetch stub, then drives it with the same
 // runtime messages the popup and chatgpt.js send. Only the paths that need no
 // browser tab are covered (Claude collection, content-script results,
-// enable/disable) — ChatGPT tab scanning stays with test_chatgpt_parser.mjs.
+// enable/disable, and the Gemini usage tab the popup opens, timed with a fake
+// clock) — ChatGPT tab scanning stays with test_chatgpt_parser.mjs.
 //
 // The claude.ai responses below are synthetic, shaped after what
 // pickClaudeBuckets() reads. They are not captures of the real endpoint.
@@ -63,6 +64,12 @@ globalThis.chrome = {
       },
     },
     onChanged: {addListener(fn) { changeListeners.push(fn); }},
+    // Kept until the browser closes, across service worker restarts.
+    session: {
+      async get(key) { return sessionStore.has(key) ? {[key]: structuredClone(sessionStore.get(key))} : {}; },
+      async set(items) { for (const [key, value] of Object.entries(items)) sessionStore.set(key, structuredClone(value)); },
+      async remove(key) { sessionStore.delete(key); },
+    },
   },
   action: {
     async setBadgeText({text}) { badge.text = text; },
@@ -117,11 +124,26 @@ globalThis.chrome = {
       tabCalls.push(['query', query]);
       const patterns = [].concat(query?.url ?? []);
       return openTabs.flatMap(tab => {
-        if (!hostGranted(tab.url)) { const {url, title, ...rest} = tab; return [structuredClone(rest)]; }
-        return !patterns.length || patterns.some(p => matchesPattern(p, tab.url)) ? [structuredClone(tab)] : [];
+        if (!hostGranted(tab.url)) return [asSeen(tab)];
+        return !patterns.length || patterns.some(p => matchesPattern(p, tab.url)) ? [asSeen(tab)] : [];
       });
     },
-    async create(props) { tabCalls.push(['create', props.url]); throw new Error('no new tabs in this test'); },
+    // Throws unless a test sets newTab (the tab Chrome would make).
+    async create(props) {
+      tabCalls.push(['create', props.url]);
+      if (!newTab) throw new Error('no new tabs in this test');
+      openTabs.push(structuredClone(newTab));
+      return asSeen(newTab);
+    },
+    async get(tabId) {
+      const tab = openTabs.find(t => t.id === tabId);
+      if (!tab) throw new Error(`No tab with id: ${tabId}.`);
+      return asSeen(tab);
+    },
+    async update(tabId, props) { tabCalls.push(['update', tabId, props]); return {id: tabId}; },
+    async reload(tabId) { tabCalls.push(['reload', tabId]); },
+    onUpdated: {addListener(fn) { handlers.tabUpdated = fn; }},
+    onRemoved: {addListener(fn) { handlers.tabRemoved = fn; }},
     async sendMessage(tabId, message) {
       tabCalls.push(['sendMessage', tabId, message?.type]);
       if (tabGate) await tabGate; // a test can hold a scan mid-read (turn-off races)
@@ -129,17 +151,29 @@ globalThis.chrome = {
       throw new Error('Could not establish connection. Receiving end does not exist.');
     },
   },
+  windows: {async update(windowId, props) { tabCalls.push(['windows.update', windowId, props]); return {id: windowId}; }},
   scripting: {async executeScript({target}) {
     tabCalls.push(['executeScript', target.tabId]);
     throw new Error('Cannot access contents of the page.');
   }},
 };
 let nativeCalls = [];
+const sessionStore = new Map();
+let newTab = null;
 const nativeHelper = {installed: true, profiles: new Map()};
 let openTabs = [];
 // Only the 'https://host/*' patterns this extension uses.
 const matchesPattern = (pattern, url) => pattern.endsWith('/*') && String(url).startsWith(pattern.slice(0, -1));
 const hostGranted = url => [...granted].some(pattern => matchesPattern(pattern, url));
+// A tab as Chrome reports it without the "tabs" permission: url, title and
+// favIconUrl only for a site with a granted host permission, pendingUrl only
+// when its own site has one.
+function asSeen(tab) {
+  const out = structuredClone(tab);
+  if (!hostGranted(tab.url)) { delete out.url; delete out.title; delete out.favIconUrl; }
+  if (!hostGranted(tab.pendingUrl)) delete out.pendingUrl;
+  return out;
+}
 let tabAnswers = {};
 let tabGate = null;
 
@@ -198,6 +232,8 @@ function reset({enabled = [], permissions = []} = {}) {
   openTabs = [];
   tabAnswers = {};
   tabGate = null;
+  newTab = null;
+  sessionStore.clear();
   nativeCalls = [];
   nativeHelper.installed = true;
   nativeHelper.profiles = new Map();
@@ -818,7 +854,12 @@ for (const reason of ['update', 'install']) {
   store.set('bridge_token', 'tok-123'); // the removed 127.0.0.1 desktop bridge's pairing token
   // What the old chatgpt.js wrote from any ChatGPT tab, conversations included.
   store.set('chatgpt_debug', {at: 1, url: 'https://chatgpt.com/c/abc', snippets: ['my private chat line that resets things']});
-  handlers.installed({reason});
+  // Its setTimeout(refreshAll, 1000) runs now, while nothing is enabled — not a
+  // second later, in the middle of a test that has Gemini on.
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...rest) => realSetTimeout(fn, ms >= 1000 ? 0 : ms, ...rest);
+  try { handlers.installed({reason}); }
+  finally { globalThis.setTimeout = realSetTimeout; }
   for (let i = 0; i < 5; i += 1) await new Promise(resolve => setTimeout(resolve, 0));
   check('last_claude removed', get('last_claude'), undefined);
   check('last_chatgpt removed', get('last_chatgpt'), undefined);
@@ -963,8 +1004,13 @@ console.log('\nas shipped — no 127.0.0.1 permission: nothing goes to localhost
   chatgptAccount();
   openTabs = geminiTab();
   tabAnswers = {5: geminiAnswer()};
-  handlers.installed({reason: 'update'});
-  handlers.startup();
+  // Their setTimeout(refreshAll, 1000) runs now, inside this block — not a
+  // second later, in the middle of the Gemini button tests below.
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...rest) => realSetTimeout(fn, ms >= 1000 ? 0 : ms, ...rest);
+  try { handlers.installed({reason: 'update'}); handlers.startup(); }
+  finally { globalThis.setTimeout = realSetTimeout; }
+  await settle();
   check('REFRESH_ALL', await send({type: 'REFRESH_ALL'}), {ok: true});
   await settle();
   check('claude', [get('usage_claude')?.status, pct(get('usage_claude'), 'claude_5h'), pct(get('usage_claude'), 'claude_weekly')], ['ok', 60, 0]);
@@ -1014,6 +1060,299 @@ console.log('\nno "tabs" permission — usage tabs are found through the site pe
   await send({type: 'REFRESH_ALL'});
   check('needs_permission, no tab asked', [get('usage_gemini')?.status, tabCalls.filter(c => c[0] === 'sendMessage')], ['needs_permission', []]);
 }
+
+// ---- Gemini: the usage tab opened from the popup (OPEN_GEMINI_USAGE) -------
+// The waits go through a fake clock (background.js's test seam): time moves
+// only when a test says so, and every wait due by then runs in time order.
+const clock = {
+  t: 0, waits: [],
+  now: () => clock.t,
+  wait: ms => new Promise(resolve => clock.waits.push({at: clock.t + ms, resolve})),
+  async to(target) {
+    for (;;) {
+      await settle();
+      clock.waits.sort((x, y) => x.at - y.at);
+      const next = clock.waits[0];
+      if (!next || next.at > target) break;
+      clock.waits.shift();
+      clock.t = next.at;
+      next.resolve();
+    }
+    clock.t = target;
+    await settle();
+  },
+};
+globalThis.__leewayGeminiOpenClock = clock;
+
+const USAGE = 'https://gemini.google.com/usage';
+const scans = () => tabCalls.filter(c => c[0] === 'sendMessage' && c[2] === 'SCAN_GEMINI').length;
+const openWait = () => sessionStore.get('gemini_open_wait') ?? null;
+const calls = name => tabCalls.filter(c => c[0] === name);
+const noCard = () => geminiAnswer(geminiCards(null)); // weekly only: parse_failed
+async function tabEvent(tabId, changeInfo, tab) { handlers.tabUpdated(tabId, changeInfo, tab); await settle(); }
+// The tab as Chrome now reports it, so refreshGemini() finds it.
+function tabIs(id, props) {
+  const i = openTabs.findIndex(t => t.id === id);
+  openTabs[i] = {...openTabs[i], ...props};
+  for (const key of Object.keys(props)) if (props[key] === undefined) delete openTabs[i][key];
+}
+function openReset(opts = {}) {
+  reset({enabled: ['gemini'], permissions: [GEMINI_HOST], ...opts});
+  clock.t = 0;
+  clock.waits = [];
+}
+async function press() { await send({type: 'OPEN_GEMINI_USAGE'}); await settle(); }
+// A new tab as tabs.create returns it: still loading, the URL only pending.
+const loadingTab = (id = 11) => ({id, windowId: 3, url: '', pendingUrl: USAGE, status: 'loading'});
+async function newTabLoaded(id = 11, answer = geminiAnswer()) {
+  tabIs(id, {url: USAGE, pendingUrl: undefined, status: 'complete'});
+  tabAnswers[id] = answer;
+  await tabEvent(id, {status: 'complete'}, {id, url: USAGE, status: 'complete'});
+}
+
+console.log('\nGemini button — a usage tab already open and loaded: brought forward, read at once, no new tab');
+{
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete'}];
+  tabAnswers = {5: geminiAnswer()};
+  await press();
+  check('no new tab', calls('create'), []);
+  check('the tab made active, its window focused', [...calls('update'), ...calls('windows.update')], [['update', 5, {active: true}], ['windows.update', 2, {focused: true}]]);
+  check('read without waiting (the clock has not moved)', [clock.t, scans()], [0, 1]);
+  check('value saved', [get('usage_gemini')?.status, pct(get('usage_gemini'), 'gemini_5h')], ['ok', 100]);
+  check('read ok → no wait left', openWait(), null);
+  check('the Gemini page is never reloaded', calls('reload'), []);
+}
+
+console.log('\nGemini button — several usage tabs: the most recently used one (lastAccessed), chat tabs never');
+{
+  openReset();
+  openTabs = [
+    {id: 4, windowId: 1, url: USAGE, status: 'complete', lastAccessed: 100},
+    {id: 5, windowId: 2, url: USAGE, status: 'complete', lastAccessed: 300},
+    {id: 6, windowId: 1, url: 'https://gemini.google.com/app/some-chat', status: 'complete', lastAccessed: 900},
+    {id: 7, windowId: 1, url: USAGE, status: 'complete', lastAccessed: 200},
+  ];
+  tabAnswers = {4: geminiAnswer(), 5: geminiAnswer(), 7: geminiAnswer()};
+  await press();
+  check('tab 5 (lastAccessed 300) brought forward', [...calls('update'), ...calls('windows.update')], [['update', 5, {active: true}], ['windows.update', 2, {focused: true}]]);
+
+  openReset();
+  openTabs = [{id: 4, windowId: 1, url: USAGE, status: 'complete'}, {id: 5, windowId: 2, url: USAGE, status: 'complete', active: true}];
+  tabAnswers = {4: geminiAnswer(), 5: geminiAnswer()};
+  await press();
+  check('no lastAccessed (before Chrome 121): the active one', calls('update'), [['update', 5, {active: true}]]);
+}
+
+console.log('\nGemini button — the open usage tab is discarded or loading: it waits for complete like a new tab');
+{
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'unloaded', discarded: true}];
+  tabAnswers = {5: geminiAnswer()};
+  await press();
+  check('brought forward, no new tab', [calls('create'), calls('update')], [[], [['update', 5, {active: true}]]]);
+  check('not read yet; a wait for tab 5', [scans(), openWait()?.tabId, openWait()?.phase], [0, 5, 'waiting']);
+  // Activating a discarded tab makes Chrome load it again.
+  tabIs(5, {discarded: false, status: 'complete'});
+  await tabEvent(5, {status: 'loading'}, {id: 5, url: USAGE, status: 'loading'});
+  await tabEvent(5, {status: 'complete'}, {id: 5, url: USAGE, status: 'complete'});
+  await clock.to(1999);
+  check('nothing read before the 2s pause', scans(), 0);
+  await clock.to(2000);
+  check('read once after it', [scans(), get('usage_gemini')?.status, openWait()], [1, 'ok', null]);
+
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'loading'}];
+  await press();
+  check('loading: a wait, nothing read', [scans(), openWait()?.phase], [0, 'waiting']);
+
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete', frozen: true}];
+  tabAnswers = {5: geminiAnswer()};
+  await press();
+  check('frozen: thawed by activation, not read at once', [calls('update').length, scans()], [1, 0]);
+  tabIs(5, {frozen: undefined});
+  await clock.to(2000);
+  check('frozen: read after the 2s pause (no complete comes for it)', [scans(), get('usage_gemini')?.status], [1, 'ok']);
+}
+
+console.log('\nGemini button — only a chat tab open: it is not reused, a usage tab is opened and waited for');
+{
+  openReset();
+  openTabs = [{id: 6, windowId: 1, url: 'https://gemini.google.com/app', status: 'complete'}];
+  newTab = loadingTab();
+  await press();
+  check('a new usage tab, the chat tab not activated', [calls('create'), calls('update')], [[['create', USAGE]], []]);
+  check('wait saved in storage.session', [openWait()?.tabId, openWait()?.openedAt, openWait()?.phase], [11, 0, 'waiting']);
+  check('nothing injected yet (the chat tab never)', [scans(), calls('executeScript')], [0, []]);
+}
+
+console.log("\nGemini button — read 2s after the tab's complete, once; other tabs' events ignored");
+{
+  openReset();
+  newTab = loadingTab();
+  await press();
+  await tabEvent(11, {status: 'loading'}, {id: 11, url: '', pendingUrl: USAGE, status: 'loading'});
+  check('still loading (URL only pending): the wait stays', openWait()?.tabId, 11);
+  openTabs.push({id: 12, url: USAGE, status: 'complete'});
+  tabAnswers[12] = geminiAnswer();
+  await tabEvent(12, {status: 'complete'}, {id: 12, url: USAGE, status: 'complete'});
+  await clock.to(5000);
+  check("another tab's complete: no read", [scans(), openWait()?.phase], [0, 'waiting']);
+  openTabs.pop();
+  delete tabAnswers[12];
+  await newTabLoaded(11);
+  await tabEvent(11, {status: 'complete'}, {id: 11, url: USAGE, status: 'complete'}); // a second complete
+  await clock.to(6999);
+  check('not before the pause', scans(), 0);
+  await clock.to(7000);
+  check('one read, value saved, wait gone', [scans(), get('usage_gemini')?.status, openWait()], [1, 'ok', null]);
+  await clock.to(60000);
+  check('the second complete and the 30s timer read nothing more', scans(), 1);
+}
+
+console.log('\nGemini button — no current card: again after 5s and 10s, no new read after 30s');
+{
+  openReset();
+  newTab = loadingTab();
+  await press();
+  await clock.to(1000);
+  await newTabLoaded(11, noCard());
+  await clock.to(3000);
+  check('first read at complete + 2s: parse_failed', [scans(), get('usage_gemini')?.status], [1, 'parse_failed']);
+  await clock.to(8000);
+  check('again 5s later', scans(), 2);
+  await clock.to(18000);
+  check('again 10s after that', scans(), 3);
+  await clock.to(60000);
+  check('then it stops, the wait gone', [scans(), openWait()], [3, null]);
+
+  openReset();
+  newTab = loadingTab();
+  await press();
+  await clock.to(20000);
+  await newTabLoaded(11, noCard());
+  await clock.to(60000);
+  check('complete at 20s: reads at 22s and 27s, none at 37s', [scans(), openWait()], [2, null]);
+
+  openReset();
+  newTab = loadingTab();
+  await press();
+  await newTabLoaded(11, noCard());
+  await clock.to(2000);
+  tabAnswers[11] = geminiAnswer(); // the card has drawn
+  await clock.to(60000);
+  check('a retry that reads the card ends it', [scans(), get('usage_gemini')?.status, openWait()], [2, 'ok', null]);
+}
+
+console.log('\nGemini button — complete never comes within 30s: one read, then done');
+{
+  openReset();
+  newTab = loadingTab();
+  await press();
+  tabIs(11, {url: USAGE, pendingUrl: undefined}); // committed, still loading
+  tabAnswers[11] = noCard();
+  await clock.to(29999);
+  check('nothing before 30s', scans(), 0);
+  await clock.to(30000);
+  check('one read at 30s', scans(), 1);
+  await clock.to(90000);
+  check('no retries, the wait gone', [scans(), openWait()], [1, null]);
+}
+
+console.log('\nGemini button — the tab closes or leaves the usage screen: the wait goes');
+{
+  openReset();
+  newTab = loadingTab();
+  await press();
+  handlers.tabRemoved(11);
+  await settle();
+  check('closed → no wait', openWait(), null);
+  await clock.to(60000);
+  check('and nothing read later', scans(), 0);
+
+  openReset();
+  newTab = loadingTab();
+  await press();
+  await tabEvent(11, {url: 'https://gemini.google.com/app'}, {id: 11, url: 'https://gemini.google.com/app', status: 'loading'});
+  check('to a Gemini chat → no wait', openWait(), null);
+
+  openReset();
+  newTab = loadingTab();
+  await press();
+  // Another site: without the "tabs" permission Chrome leaves url out.
+  await tabEvent(11, {status: 'loading'}, {id: 11, status: 'loading'});
+  check('to another site (no url visible) → no wait', openWait(), null);
+  await clock.to(60000);
+  check('nothing read', scans(), 0);
+
+  openReset();
+  newTab = loadingTab();
+  await press();
+  await newTabLoaded(11, noCard());
+  await clock.to(2000);
+  handlers.tabRemoved(11);
+  await settle();
+  await clock.to(60000);
+  check('closed between retries → the retries stop', [scans(), openWait()], [1, null]);
+}
+
+console.log('\nGemini button — Gemini off or without its permission: only the tab, no wait');
+{
+  openReset({enabled: []});
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete'}];
+  newTab = loadingTab();
+  await press();
+  check("off: a new tab (the open one isn't looked for), no wait, no read", [calls('create'), calls('update'), openWait(), scans()], [[['create', USAGE]], [], null, 0]);
+
+  openReset({permissions: []});
+  newTab = loadingTab();
+  await press();
+  check('no permission: a new tab, no wait, no tab looked up', [calls('create'), calls('query'), openWait()], [[['create', USAGE]], [], null]);
+}
+
+console.log('\nGemini button — a second press replaces the wait');
+{
+  openReset();
+  newTab = loadingTab(11);
+  await press();
+  newTab = loadingTab(12);
+  await press();
+  check('the wait is for the new tab', openWait()?.tabId, 12);
+  await newTabLoaded(11);
+  await clock.to(5000);
+  check("the first tab's complete is ignored", scans(), 0);
+}
+
+console.log('\nGemini button — the tab finished loading before the wait was saved');
+{
+  openReset();
+  newTab = {id: 11, windowId: 3, url: USAGE, status: 'complete'};
+  tabAnswers = {11: geminiAnswer()};
+  await press();
+  await clock.to(2000);
+  check('read after the pause anyway', [scans(), get('usage_gemini')?.status, openWait()], [1, 'ok', null]);
+}
+
+console.log('\nGemini button — the service worker restarted: the wait in storage.session carries on');
+{
+  openReset();
+  // Saved by the worker before this one; no timer of it survives.
+  sessionStore.set('gemini_open_wait', {id: 'from-before', tabId: 11, openedAt: 0, phase: 'waiting'});
+  openTabs = [{id: 11, url: USAGE, status: 'loading'}];
+  await newTabLoaded(11);
+  await clock.to(2000);
+  check('its complete is read 2s later', [scans(), get('usage_gemini')?.status, openWait()], [1, 'ok', null]);
+
+  openReset();
+  sessionStore.set('gemini_open_wait', {id: 'from-before-2', tabId: 11, openedAt: 0, phase: 'waiting'});
+  openTabs = [{id: 11, url: USAGE, status: 'loading'}];
+  tabAnswers = {11: noCard()};
+  clock.t = 31000; // its 30s timer went down with the old worker
+  await tabEvent(11, {title: 'Gemini'}, {id: 11, url: USAGE, status: 'loading'});
+  check('past 30s: the next event for the tab reads once and ends it', [scans(), openWait()], [1, null]);
+}
+delete globalThis.__leewayGeminiOpenClock;
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);

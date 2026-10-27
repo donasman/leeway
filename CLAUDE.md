@@ -110,6 +110,11 @@ UI 문자열은 `_locales/<lang>/messages.json`. 6개 언어가 **같은 키**�
 
 Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마지막 값이 오래됨으로 흐려지거나 `?`가 된다. 이건 버그가 아니라 설계다.
 
+사용자가 팝업에서 사용량 탭을 열면 로드 후 자동으로 읽는다(`openGeminiUsage`). 이미 열린 사용량 탭이 있으면 새 탭 대신 그 탭을 앞으로 가져온다.
+- 대기 `{id, tabId, openedAt, phase}`는 `chrome.storage.session`의 `gemini_open_wait`에 하나만 둔다. `tabs.onUpdated`·`onRemoved`는 최상위에서 등록한다.
+- `complete` 뒤 2초에 `refreshGemini()`, 현재 카드가 없으면 5초·10초 뒤 다시. 연 지 30초가 지나면 새 읽기를 시작하지 않는다. `complete`가 30초 안에 안 오면 한 번만 읽는다.
+- 탭이 닫히거나 사용량 화면을 떠나면 대기를 지운다. Gemini 페이지를 reload하지 않는다. 버튼 없이 탭을 열지 않는다.
+
 ### Leeway helper
 
 - Chrome이 메시지마다 실행하는 Native Messaging 호스트(`com.leeway.helper`). 받은 값을 `%LOCALAPPDATA%\Leeway\profiles.json` 한 파일에 모은다.
