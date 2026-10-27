@@ -43,9 +43,11 @@ For each service that is turned on, the popup shows the remaining percentage of 
 
 To see several Claude (or ChatGPT, Gemini) accounts at once, sign in to each in its own Chrome profile and install Leeway in each. With the **Leeway helper** installed, every profile's popup and overlay also show the other profiles' remaining usage.
 
-1. Download `leeway-helper.exe` and run it once. It registers itself for your Windows user (no administrator rights) and copies itself to `%LOCALAPPDATA%\Leeway\helper`.
-2. In each profile's popup, turn on **Other Chrome profiles** (Chrome asks for the "communicate with cooperating native applications" permission) and give the profile a name, e.g. `Work`.
+1. Download `leeway-helper.exe` from the [latest release](https://github.com/donasman/leeway/releases/latest) (the popup's **Get the helper (Windows)** link goes straight to it) and run it once. It registers itself for your Windows user (no administrator rights) and copies itself to `%LOCALAPPDATA%\Leeway\helper`. Each release also has `leeway-helper.exe.sha256` to check the download against.
+2. In each profile's popup, open **Experimental** and turn on **Other Chrome profiles** (Chrome asks for the "communicate with cooperating native applications" permission), then give the profile a name, e.g. `Work`.
 3. Each profile then sends its own values on every refresh and shows the others' under its own. The toolbar badge still shows only this profile.
+
+This is an experimental, Windows-only feature. The helper is not code-signed yet, so Windows SmartScreen may warn the first time it runs, and Windows 11 Smart App Control or a work PC's policy can block it.
 
 Only the values the popup shows travel, through a file on your computer: no cookies, tokens or email addresses, and nothing leaves the computer. Remove it with `leeway-helper.exe uninstall`. Building the helper: see [helper/README.md](helper/README.md).
 

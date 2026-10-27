@@ -56,6 +56,12 @@ h1 svg{width:18px;height:18px;display:block}
 .account-name .badge{font-size:10px}
 .account .limit{margin:7px 0;padding-bottom:9px}
 #status_peers:empty{display:none}
+.labs{margin:8px 0 0}
+.labs>summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--dim);padding:4px 2px}
+.labs>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.peer-links{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px}
+.peer-links[hidden]{display:none}
+.peer-links a{color:var(--accent);font-weight:600}
 .peer-setup{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;color:var(--dim)}
 .peer-setup label{flex:none}
 .peer-setup input{flex:1;min-width:0;font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
@@ -95,11 +101,15 @@ button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line
 <div class="limits" id="limits_gemini"></div><p class="note" id="note_gemini"></p>
 </section>
 
+<details class="labs" id="labs">
+<summary data-i18n="labs_title">실험 기능</summary>
 <section class="provider" id="peers">
 <div class="provider-row"><label for="toggle_peers" data-i18n="peers_title">다른 Chrome 프로필</label><span class="badge" id="status_peers"></span><input type="checkbox" id="toggle_peers"></div>
 <div class="peer-setup" id="peer_setup" hidden><label for="peer_label" data-i18n="peers_label">이 프로필 이름</label><input id="peer_label" maxlength="24" autocomplete="off"></div>
 <div id="peers_list"></div><p class="note" id="note_peers"></p>
+<div class="peer-links" id="peer_links"><a id="peer_get_helper" href="https://github.com/donasman/leeway/releases/latest/download/leeway-helper.exe" target="_blank" rel="noopener" data-i18n="peers_get_helper">helper 받기 (Windows)</a><a id="peer_about_helper" href="https://github.com/donasman/leeway/blob/main/helper/README.md" target="_blank" rel="noopener" data-i18n="peers_about_helper">helper가 하는 일</a></div>
 </section>
+</details>
 
 <p class="hint" data-i18n="note_main">숫자는 남은 비율입니다. Gemini는 사용량 페이지(gemini.google.com/usage) 탭이 열려 있을 때 읽습니다.</p>
 <button id="refresh" data-i18n="refresh">새로고침</button>

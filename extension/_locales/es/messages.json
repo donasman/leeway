@@ -61,9 +61,12 @@
   "peers_title": {"message": "Otros perfiles de Chrome"},
   "peers_label": {"message": "Nombre de este perfil"},
   "peers_label_placeholder": {"message": "p. ej., Trabajo"},
-  "peers_hint": {"message": "Actívalo en cada perfil de Chrome donde esté instalado Leeway para ver aquí también su uso. Necesita el asistente de Leeway."},
+  "peers_hint": {"message": "Actívalo en cada perfil de Chrome donde esté instalado Leeway para ver aquí también su uso. Necesita el asistente de Leeway (Windows)."},
   "peers_none": {"message": "Ningún otro perfil ha compartido su uso todavía."},
-  "peers_helper_missing": {"message": "El asistente de Leeway no está instalado. Ejecuta leeway-helper.exe una vez y vuelve a activarlo."},
-  "peers_helper_failed": {"message": "No se pudo conectar con el asistente de Leeway. Ejecuta de nuevo leeway-helper.exe para repararlo."},
-  "peers_updated": {"message": "actualizado {age}"}
+  "peers_helper_missing": {"message": "El asistente de Leeway no está instalado. Descárgalo abajo, ejecútalo una vez y vuelve a activarlo."},
+  "peers_helper_failed": {"message": "No se pudo conectar con el asistente de Leeway. Descárgalo abajo y ejecútalo de nuevo para repararlo."},
+  "peers_updated": {"message": "actualizado {age}"},
+  "labs_title": {"message": "Funciones experimentales"},
+  "peers_get_helper": {"message": "Descargar el asistente (Windows)"},
+  "peers_about_helper": {"message": "Qué hace el asistente"}
 }

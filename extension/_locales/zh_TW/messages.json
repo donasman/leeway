@@ -61,9 +61,12 @@
   "peers_title": {"message": "其他 Chrome 設定檔"},
   "peers_label": {"message": "此設定檔的名稱"},
   "peers_label_placeholder": {"message": "例如：工作"},
-  "peers_hint": {"message": "在每個安裝了 Leeway 的 Chrome 設定檔中開啟，即可在這裡一併查看其用量。需要 Leeway 輔助程式。"},
+  "peers_hint": {"message": "在每個安裝了 Leeway 的 Chrome 設定檔中開啟，即可在這裡一併查看其用量。需要 Leeway 輔助程式 (Windows)。"},
   "peers_none": {"message": "還沒有其他設定檔分享用量。"},
-  "peers_helper_missing": {"message": "尚未安裝 Leeway 輔助程式。請執行一次 leeway-helper.exe，然後重新開啟。"},
-  "peers_helper_failed": {"message": "無法連線到 Leeway 輔助程式。請再次執行 leeway-helper.exe 進行修復。"},
-  "peers_updated": {"message": "{age}更新"}
+  "peers_helper_missing": {"message": "尚未安裝 Leeway 輔助程式。請在下方下載並執行一次，然後重新開啟。"},
+  "peers_helper_failed": {"message": "無法連線到 Leeway 輔助程式。請在下方重新下載並執行以修復。"},
+  "peers_updated": {"message": "{age}更新"},
+  "labs_title": {"message": "實驗功能"},
+  "peers_get_helper": {"message": "下載輔助程式 (Windows)"},
+  "peers_about_helper": {"message": "輔助程式的作用"}
 }

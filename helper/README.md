@@ -43,4 +43,17 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o d
 ```
 
 The program is not code-signed, so Windows SmartScreen may warn the first time
-it runs.
+it runs, and Windows 11 Smart App Control blocks unsigned programs outright.
+
+## Releases
+
+Pushing a `v*` tag runs `.github/workflows/helper-release.yml`: it tests the
+helper, builds `leeway-helper.exe` from this folder and attaches it to that
+tag's GitHub Release with `leeway-helper.exe.sha256`. Every release carries the
+helper, so the extension's link to
+`releases/latest/download/leeway-helper.exe` always resolves.
+
+The extension IDs allowed to talk to the helper are compiled in
+(`defaultExtensionIDs` in `main.go`); add the Chrome Web Store ID there before
+the first public release; otherwise the store build gets "access forbidden"
+from a double-click install.

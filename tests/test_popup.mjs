@@ -253,6 +253,8 @@ console.log('\nstorage changes → the popup re-renders');
 console.log('\nother Chrome profiles');
 {
   check('off by default: switch off, how-to note', [$('toggle_peers').checked, $('status_peers').textContent, $('peer_setup').hidden, $('note_peers').textContent], [false, '꺼짐', true, KO.peers_hint]);
+  check('experimental: folded away, download and about links ready', [$('labs').open, $('peer_links').hidden, $('peer_get_helper').getAttribute('href'), $('peer_get_helper').getAttribute('rel')],
+    [false, false, 'https://github.com/donasman/leeway/releases/latest/download/leeway-helper.exe', 'noopener']);
   $('peer_label').value = '업무용';
   $('toggle_peers').checked = true;
   calls.length = 0;
@@ -269,9 +271,11 @@ console.log('\nother Chrome profiles');
   check('another profile: its name as text, when it sent', [peer?.querySelector('.peer-head span')?.textContent, peer?.querySelector('.peer-head .muted')?.textContent, peer?.querySelector('b')], ['<b>개인</b>', '3분 전 갱신', null]);
   check('its service, plan and 0% as 0%', [peer?.querySelector('.peer-name')?.textContent, [...peer.querySelectorAll('.limit .pct')].map(c => c.textContent)], ['Claude · Pro', ['0%', '41%']]);
   check('count of other profiles', [$('status_peers').textContent, $('note_peers').textContent], ['1', '']);
+  check('on and connected: section open, links out of the way', [$('labs').open, $('peer_links').hidden], [true, true]);
 
   await storeAndRender({peer_profiles: {at, ok: false, error: 'helper_missing', profiles: []}});
   check('helper not installed: says how to fix it', [$('status_peers').textContent, $('note_peers').textContent, $('peers_list').children.length], ['읽기 실패', KO.peers_helper_missing, 0]);
+  check('helper not installed: the download link is back', $('peer_links').hidden, false);
 
   $('peer_label').value = '회사';
   calls.length = 0;

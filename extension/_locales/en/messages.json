@@ -61,9 +61,12 @@
   "peers_title": {"message": "Other Chrome profiles"},
   "peers_label": {"message": "This profile's name"},
   "peers_label_placeholder": {"message": "e.g. Work", "description": "Placeholder for the profile name field"},
-  "peers_hint": {"message": "Turn this on in each Chrome profile where Leeway is installed to see their usage here too. Needs the Leeway helper."},
+  "peers_hint": {"message": "Turn this on in each Chrome profile where Leeway is installed to see their usage here too. Needs the Leeway helper (Windows)."},
   "peers_none": {"message": "No other profile has shared its usage yet."},
-  "peers_helper_missing": {"message": "The Leeway helper isn't installed. Run leeway-helper.exe once, then turn this on again."},
-  "peers_helper_failed": {"message": "Couldn't reach the Leeway helper. Run leeway-helper.exe again to repair it."},
-  "peers_updated": {"message": "updated {age}", "description": "{age} is a relative time like '3m ago'"}
+  "peers_helper_missing": {"message": "The Leeway helper isn't installed. Get it below, run it once, then turn this on again."},
+  "peers_helper_failed": {"message": "Couldn't reach the Leeway helper. Get it below and run it again to repair it."},
+  "peers_updated": {"message": "updated {age}", "description": "{age} is a relative time like '3m ago'"},
+  "labs_title": {"message": "Experimental"},
+  "peers_get_helper": {"message": "Get the helper (Windows)"},
+  "peers_about_helper": {"message": "What the helper does"}
 }

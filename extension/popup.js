@@ -140,6 +140,10 @@ function showPeers(settings, record, now) {
     if (!peers.length) note = msg('peers_none');
   }
   document.getElementById('note_peers').textContent = note;
+  // Experimental: folded away until it is on (then it stays open). The
+  // download and "what it does" links show while it is off or failing.
+  if (on) document.getElementById('labs').open = true;
+  document.getElementById('peer_links').hidden = on && Boolean(record?.ok);
 }
 
 // Storage changes, the clock tick and toggles can overlap; only the newest

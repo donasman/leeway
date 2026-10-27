@@ -61,9 +61,12 @@
   "peers_title": {"message": "다른 Chrome 프로필"},
   "peers_label": {"message": "이 프로필 이름"},
   "peers_label_placeholder": {"message": "예: 업무용"},
-  "peers_hint": {"message": "Leeway를 설치한 각 Chrome 프로필에서 켜면 그 프로필의 사용량도 여기에 함께 보입니다. Leeway helper가 필요합니다."},
+  "peers_hint": {"message": "Leeway를 설치한 각 Chrome 프로필에서 켜면 그 프로필의 사용량도 여기에 함께 보입니다. Leeway helper(Windows)가 필요합니다."},
   "peers_none": {"message": "아직 사용량을 보낸 다른 프로필이 없습니다."},
-  "peers_helper_missing": {"message": "Leeway helper가 설치되어 있지 않습니다. leeway-helper.exe를 한 번 실행한 뒤 다시 켜세요."},
-  "peers_helper_failed": {"message": "Leeway helper에 연결하지 못했습니다. leeway-helper.exe를 다시 실행해 복구하세요."},
-  "peers_updated": {"message": "{age} 갱신"}
+  "peers_helper_missing": {"message": "Leeway helper가 설치되어 있지 않습니다. 아래에서 받아 한 번 실행한 뒤 다시 켜세요."},
+  "peers_helper_failed": {"message": "Leeway helper에 연결하지 못했습니다. 아래에서 다시 받아 실행하면 복구됩니다."},
+  "peers_updated": {"message": "{age} 갱신"},
+  "labs_title": {"message": "실험 기능"},
+  "peers_get_helper": {"message": "helper 받기 (Windows)"},
+  "peers_about_helper": {"message": "helper가 하는 일"}
 }

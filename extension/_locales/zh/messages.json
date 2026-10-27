@@ -61,9 +61,12 @@
   "peers_title": {"message": "其他 Chrome 个人资料"},
   "peers_label": {"message": "此个人资料的名称"},
   "peers_label_placeholder": {"message": "例如：工作"},
-  "peers_hint": {"message": "在每个安装了 Leeway 的 Chrome 个人资料中开启，即可在这里一并查看其用量。需要 Leeway 助手程序。"},
+  "peers_hint": {"message": "在每个安装了 Leeway 的 Chrome 个人资料中开启，即可在这里一并查看其用量。需要 Leeway 助手程序 (Windows)。"},
   "peers_none": {"message": "还没有其他个人资料共享用量。"},
-  "peers_helper_missing": {"message": "尚未安装 Leeway 助手程序。请运行一次 leeway-helper.exe，然后重新开启。"},
-  "peers_helper_failed": {"message": "无法连接 Leeway 助手程序。请再次运行 leeway-helper.exe 进行修复。"},
-  "peers_updated": {"message": "{age}更新"}
+  "peers_helper_missing": {"message": "尚未安装 Leeway 助手程序。请在下方获取并运行一次，然后重新开启。"},
+  "peers_helper_failed": {"message": "无法连接 Leeway 助手程序。请在下方重新获取并运行以修复。"},
+  "peers_updated": {"message": "{age}更新"},
+  "labs_title": {"message": "实验功能"},
+  "peers_get_helper": {"message": "获取助手程序 (Windows)"},
+  "peers_about_helper": {"message": "助手程序的作用"}
 }

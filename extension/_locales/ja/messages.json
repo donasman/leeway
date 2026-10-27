@@ -61,9 +61,12 @@
   "peers_title": {"message": "他の Chrome プロフィール"},
   "peers_label": {"message": "このプロフィールの名前"},
   "peers_label_placeholder": {"message": "例: 仕事用"},
-  "peers_hint": {"message": "Leeway を入れた各 Chrome プロフィールでオンにすると、その使用量もここに表示されます。Leeway ヘルパーが必要です。"},
+  "peers_hint": {"message": "Leeway を入れた各 Chrome プロフィールでオンにすると、その使用量もここに表示されます。Leeway ヘルパー (Windows) が必要です。"},
   "peers_none": {"message": "まだ使用量を共有した他のプロフィールはありません。"},
-  "peers_helper_missing": {"message": "Leeway ヘルパーがインストールされていません。leeway-helper.exe を一度実行してから、もう一度オンにしてください。"},
-  "peers_helper_failed": {"message": "Leeway ヘルパーに接続できませんでした。leeway-helper.exe をもう一度実行して修復してください。"},
-  "peers_updated": {"message": "{age}に更新"}
+  "peers_helper_missing": {"message": "Leeway ヘルパーがインストールされていません。下から入手して一度実行し、もう一度オンにしてください。"},
+  "peers_helper_failed": {"message": "Leeway ヘルパーに接続できませんでした。下から入手してもう一度実行すると修復されます。"},
+  "peers_updated": {"message": "{age}に更新"},
+  "labs_title": {"message": "試験運用機能"},
+  "peers_get_helper": {"message": "ヘルパーを入手 (Windows)"},
+  "peers_about_helper": {"message": "ヘルパーの役割"}
 }
