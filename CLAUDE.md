@@ -180,7 +180,7 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 
 ## 7. 알려진 과제
 
-- `tabs` 권한을 뺐다(브랜치 `chore/drop-tabs`). 근거는 Chrome 문서이고 Node 테스트로만 확인했다. 실제 Chrome에서 설치 경고·Gemini 탭 읽기·ChatGPT 대체 경로·오버레이 열기, 0.6.2 → 새 버전 업데이트 때 재승인 여부는 미확인.
+- `tabs` 권한을 뺐다(2026-10-27, 아직 스토어 미제출). 근거는 Chrome 문서이고 Node 테스트로만 확인했다. 실제 Chrome에서 설치 경고·Gemini 탭 읽기·ChatGPT 대체 경로·오버레이 열기, 0.6.2 → 새 버전 업데이트 때 재승인 여부는 미확인.
 - 실계정으로 확인 못 한 것: ChatGPT 5시간·주간 한도 계정, Claude Pro·Team·Enterprise의 요금제 표기.
 - helper: 코드 서명 없음(SmartScreen 경고, Windows 11 Smart App Control은 차단). Microsoft Store(MSIX) 패키지에서 Native Messaging 등록이 Chrome에 보이는지 미확인.
 - v0.6.0 태그 때 `helper-release` 워크플로가 실행되지 않았다(원인 미확인). v0.6.1부터는 정상.

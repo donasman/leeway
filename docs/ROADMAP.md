@@ -20,12 +20,12 @@
 
 - [ ] 0.6.2 승인 확인 → 오버레이 수정분을 0.6.3으로 제출
 - [x] bridge 잔재 제거 (`background.js`의 `127.0.0.1:8765` 관련 코드와 테스트)
-- [ ] `tabs` 권한 제거 가능성 검토 — 빼면 설치 시 "방문 기록 읽기" 경고가 사라진다. 빼고 Gemini 탭 찾기·ChatGPT 대체 경로·오버레이 열기를 실제 Chrome에서 확인 (코드·테스트는 `chore/drop-tabs`, 실제 Chrome 확인 남음)
+- [ ] `tabs` 권한 제거 가능성 검토 — 빼면 설치 시 "방문 기록 읽기" 경고가 사라진다. 빼고 Gemini 탭 찾기·ChatGPT 대체 경로·오버레이 열기를 실제 Chrome에서 확인 (코드·테스트는 main에 반영, 실제 Chrome 확인 남음)
 - [x] README 한국어 라벨, `popup.html` `lang`, `package.json` `name` 정리
 - [ ] 스토어 등록정보 다국어: 한국어·일본어·중국어(간체·번체)·스페인어 설명 (UI는 이미 6개 언어)
 - [ ] 스토어 스크린샷 갱신: 팝업, 펼친 오버레이, 접힌 오버레이
 - [ ] 실계정 확인: ChatGPT 5시간·주간 계정, Claude Pro·Team 요금제 표기 (받은 화면을 fixture로 추가)
-- [ ] helper 연결 진단 (코드·테스트는 `feat/helper-diagnostics`. 실제 Chrome과 설치된 helper로 각 상태 확인은 남음): 팝업에서 "설치 안 됨 / 이 확장 ID가 허용 목록에 없음 / 실행 실패"를 구분해 보여 주고, `leeway-helper.exe`를 실행하면 레지스트리·manifest·허용 ID를 스스로 점검해 출력. 비슷한 구조의 제품들에서 가장 많은 문의가 "설치했는데 연결 안 됨"이다
+- [ ] helper 연결 진단 (코드·테스트는 main에 반영. 실제 Chrome과 설치된 helper로 각 상태 확인은 남음): 팝업에서 "설치 안 됨 / 이 확장 ID가 허용 목록에 없음 / 실행 실패"를 구분해 보여 주고, `leeway-helper.exe`를 실행하면 레지스트리·manifest·허용 ID를 스스로 점검해 출력. 비슷한 구조의 제품들에서 가장 많은 문의가 "설치했는데 연결 안 됨"이다
 - [ ] helper 배포 보강: GitHub Releases(sha256 포함)는 유지하고 winget에 등록, SignPath Foundation 무료 서명 신청 (Azure Artifact Signing은 개인이면 미국·캐나다만 가능)
 - [ ] 알릴 곳: r/ClaudeAI(도구 소개 글은 메가스레드로 안내될 수 있음), Product Hunt. 차별점은 "Windows에서 쓰는 확장, 쿠키·토큰을 붙여넣거나 저장하지 않음"
 
