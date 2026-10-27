@@ -15,6 +15,11 @@ const VIEW_LABEL_KEYS = [
   'note_login', 'note_unread', 'badge_none',
   'wd_Sun', 'wd_Mon', 'wd_Tue', 'wd_Wed', 'wd_Thu', 'wd_Fri', 'wd_Sat',
   'reset_date_fmt', 'badge_pct', 'badge_sep', 'badge_note_fmt', 'account_n', 'peers_updated',
+  'peers_helper_missing_cause', 'peers_helper_missing_action',
+  'peers_helper_forbidden_cause', 'peers_helper_forbidden_action',
+  'peers_helper_blocked_cause', 'peers_helper_blocked_action',
+  'peers_helper_failed_cause', 'peers_helper_failed_action',
+  'peers_helper_outdated_cause', 'peers_helper_outdated_action', 'peers_helper_ok',
 ];
 
 // One chrome.i18n message (used for the popup's own chrome, outside view.js).

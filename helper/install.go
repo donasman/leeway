@@ -20,7 +20,10 @@ import (
 
 var extensionIDPattern = regexp.MustCompile(`^[a-p]{32}$`)
 
-const registryKey = `HKCU\Software\Google\Chrome\NativeMessagingHosts\` + hostName
+const (
+	registrySubkey = `Software\Google\Chrome\NativeMessagingHosts\` + hostName
+	registryKey    = `HKCU\` + registrySubkey
+)
 
 type hostManifest struct {
 	Name           string   `json:"name"`

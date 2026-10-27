@@ -31,7 +31,7 @@ const pad = value => String(value).padStart(2, '0');
 
 // Replace {token} in a label template with vars[token] (missing -> ''). A label
 // that is missing from the map is '', never a crash.
-const fill = (tpl, vars = {}) => String(tpl ?? '').replace(/\{(\w+)\}/g, (_, key) => (key in vars ? String(vars[key]) : ''));
+export const fill = (tpl, vars = {}) => String(tpl ?? '').replace(/\{(\w+)\}/g, (_, key) => (key in vars ? String(vars[key]) : ''));
 // parts: [[count, unitKey], ...] -> "2시간 48분" / "2h 48m" from the label words.
 // durNumSep sits between the count and its unit, durPartSep between the parts,
 // both set per UI locale by i18n.js (es: "2 h 48 min", ja/zh: "2時間48分").

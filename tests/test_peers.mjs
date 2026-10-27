@@ -5,7 +5,7 @@
 // profiles' values are shown (view.js peerViews, snapshot.js fromShared).
 // Another profile's entry crossed a process and a file, so it is checked again
 // like any untrusted input.
-import { cleanLabel, newProfileId, sharedSnapshots, helperError, peerRecord } from '../extension/peers.js';
+import { cleanLabel, newProfileId, sharedSnapshots, helperError, peerRecord, helperOutdated, helperNote, MIN_HELPER_VERSION } from '../extension/peers.js';
 import { peerViews } from '../extension/view.js';
 import { fromShared, toSnapshot } from '../extension/snapshot.js';
 import { readFileSync } from 'node:fs';
@@ -55,10 +55,24 @@ console.log('\nwhat this profile sends');
 
 console.log('\nwhat this profile keeps from the reply');
 {
-  check('Chrome errors become codes', ['Specified native messaging host not found.', 'Access to the specified native messaging host is forbidden.', 'Native host has exited.', undefined].map(helperError),
-    ['helper_missing', 'helper_forbidden', 'helper_failed', 'helper_failed']);
+  // Chromium's wording (extensions/browser/api/messaging/native_message_host.cc
+  // and message_service.cc), as chrome.runtime.lastError gives it.
+  check('Chrome errors become codes', [
+    'Specified native messaging host not found.',
+    'Access to the specified native messaging host is forbidden.',
+    'Access to the native messaging host was disabled by the system administrator.',
+    'Failed to start native messaging host.',
+    'Native host has exited.',
+    'Error when communicating with the native messaging host.',
+    'shared file is busy', // the helper's own error
+    'no answer',
+    undefined,
+  ].map(helperError), ['helper_missing', 'helper_forbidden', 'helper_blocked', 'helper_failed', 'helper_failed', 'helper_failed', 'helper_failed', 'helper_failed', 'helper_failed']);
   const failedRecord = peerRecord({ok: false, error: 'Specified native messaging host not found.'}, ID_SELF, NOW);
-  check('a failed round trip: error code, no profiles', [failedRecord.ok, failedRecord.error, failedRecord.profiles], [false, 'helper_missing', []]);
+  check('a failed round trip: error code, no version, no profiles', [failedRecord.ok, failedRecord.error, failedRecord.version, failedRecord.profiles], [false, 'helper_missing', null, []]);
+  check('the helper answered with an error: its version is kept', peerRecord({ok: false, version: '0.6.3', error: 'shared file is busy'}, ID_SELF, NOW).version, '0.6.3');
+  check('version kept only as x.y.z or dev', ['0.6.3', 'dev', '0.1.0', '1.2', 'v0.6.3', '<b>', 7, undefined].map(v => peerRecord({ok: true, version: v, profiles: []}, ID_SELF, NOW).version),
+    ['0.6.3', 'dev', '0.1.0', null, null, null, null, null]);
   const record = peerRecord({ok: true, profiles: [
     {id: ID_SELF, label: 'me', updated_at: iso(NOW), snapshots: []},
     {id: ID_OTHER, label: '개인', updated_at: iso(NOW - 3 * MIN), snapshots: [claudeOk(3 * MIN)]},
@@ -67,6 +81,33 @@ console.log('\nwhat this profile keeps from the reply');
     null,
   ]}, ID_SELF, NOW);
   check('only other, well-formed profiles are kept', record.profiles.map(p => p.id), [ID_OTHER]);
+}
+
+console.log('\nhelper version — compared with MIN_HELPER_VERSION, "dev" passes');
+{
+  check('minimum', MIN_HELPER_VERSION, '0.6.3');
+  check('older, same, newer, dev, none', ['0.1.0', '0.6.2', '0.6.3', '0.6.10', '0.7.0', '1.0.0', 'dev', null, undefined].map(v => helperOutdated(v)),
+    [true, true, false, false, false, false, false, true, true]);
+  check('numbers compare as numbers, not text', [helperOutdated('0.10.0', '0.9.0'), helperOutdated('0.9.0', '0.10.0')], [false, true]);
+}
+
+console.log('\nhelper state — one line on the cause, one on what to do');
+{
+  const at = iso(NOW - 3 * MIN);
+  const note = record => helperNote(record, NOW, KO, 'abcdefghijklmnopabcdefghijklmnop');
+  check('nothing yet: waiting, no lines', note(undefined), {state: 'waiting', lines: []});
+  for (const code of ['helper_missing', 'helper_forbidden', 'helper_blocked', 'helper_failed']) {
+    const got = note({at, ok: false, error: code, version: null, profiles: []});
+    check(`${code}: cause, then action`, got, {state: code, lines: [KO[`peers_${code}_cause`], KO[`peers_${code}_action`].replace('{id}', 'abcdefghijklmnopabcdefghijklmnop')]});
+  }
+  check('forbidden: the unpacked copy gets its own extension id', note({at, ok: false, error: 'helper_forbidden', version: null, profiles: []}).lines[1].endsWith('--extension-id abcdefghijklmnopabcdefghijklmnop'), true);
+  check('an unknown stored code reads as failed', note({at, ok: false, error: 'something', profiles: []}).state, 'helper_failed');
+  check('outdated: both versions named', note({at, ok: true, error: null, version: '0.1.0', profiles: []}),
+    {state: 'helper_outdated', lines: [KO.peers_helper_outdated_cause.replace('{version}', '0.1.0').replace('{min}', '0.6.3'), KO.peers_helper_outdated_action]});
+  check('answered without a version: outdated, shown as "?"', note({at, ok: true, error: null, version: null, profiles: []}).lines[0], KO.peers_helper_outdated_cause.replace('{version}', '?').replace('{min}', '0.6.3'));
+  check('ok: version and when it synced', note({at, ok: true, error: null, version: '0.6.3', profiles: []}), {state: 'ok', lines: [KO.peers_helper_ok.replace('{version}', '0.6.3').replace('{age}', '3분 전')]});
+  check('ok, dev build', note({at, ok: true, error: null, version: 'dev', profiles: []}).state, 'ok');
+  check('a record saved before versions were kept: ok, not judged', note({at, ok: true, error: null, profiles: []}), {state: 'ok', lines: []});
 }
 
 console.log('\nhow the other profiles show');

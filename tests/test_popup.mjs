@@ -117,6 +117,7 @@ globalThis.chrome = {
     onChanged: {addListener: fn => changeListeners.push(fn)},
   },
   runtime: {
+    id: 'abcdefghijklmnopabcdefghijklmnop',
     getManifest: () => structuredClone(manifest),
     async sendMessage(message) {
       calls.push(['runtime.sendMessage', message.type, ...(message.label !== undefined ? [message.label] : [])]);
@@ -277,12 +278,28 @@ console.log('\nother Chrome profiles');
   const peer = $('peers_list').querySelector('.peer');
   check('another profile: its name as text, when it sent', [peer?.querySelector('.peer-head span')?.textContent, peer?.querySelector('.peer-head .muted')?.textContent, peer?.querySelector('b')], ['<b>개인</b>', '3분 전 갱신', null]);
   check('its service, plan and 0% as 0%', [peer?.querySelector('.peer-name')?.textContent, [...peer.querySelectorAll('.limit .pct')].map(c => c.textContent)], ['Claude · Pro', ['0%', '41%']]);
-  check('count of other profiles', [$('status_peers').textContent, $('note_peers').textContent], ['1', '']);
+  check('count of other profiles (saved before versions were kept: no helper line)', [$('status_peers').textContent, $('note_peers').textContent], ['1', '']);
   check('on and connected: section open, links out of the way', [$('labs').open, $('peer_links').hidden], [true, true]);
 
+  const others = [{id: 'fedcba9876543210', label: '개인', updated_at: at, snapshots: [{provider: 'claude', status: 'ok', collected_at: at, limits: [limit('claude_5h', 50)]}]}];
+  await storeAndRender({peer_profiles: {at, ok: true, error: null, version: '0.6.3', profiles: others}});
+  check('ok: helper version and when it synced, links hidden', [$('status_peers').textContent, $('note_peers').textContent, $('peer_links').hidden],
+    ['1', KO.peers_helper_ok.replace('{version}', '0.6.3').replace('{age}', '3분 전'), true]);
+  await storeAndRender({peer_profiles: {at, ok: true, error: null, version: '0.6.3', profiles: []}});
+  check('ok, nobody else yet: both lines', $('note_peers').textContent, `${KO.peers_none}\n${KO.peers_helper_ok.replace('{version}', '0.6.3').replace('{age}', '3분 전')}`);
+  await storeAndRender({peer_profiles: {at, ok: true, error: null, version: '0.1.0', profiles: others}});
+  check('outdated: the others still show, the update lines, download link back',
+    [$('status_peers').textContent, $('peers_list').children.length, $('note_peers').textContent, $('peer_links').hidden],
+    ['1', 1, `${KO.peers_helper_outdated_cause.replace('{version}', '0.1.0').replace('{min}', '0.6.3')}\n${KO.peers_helper_outdated_action}`, false]);
+
+  const lines = code => `${KO[`peers_${code}_cause`]}\n${KO[`peers_${code}_action`].replace('{id}', 'abcdefghijklmnopabcdefghijklmnop')}`;
+  for (const code of ['helper_missing', 'helper_forbidden', 'helper_blocked', 'helper_failed']) {
+    await storeAndRender({peer_profiles: {at, ok: false, error: code, version: null, profiles: []}});
+    check(`${code}: read failed, cause and action, download link back`, [$('status_peers').textContent, $('note_peers').textContent, $('peers_list').children.length, $('peer_links').hidden],
+      ['읽기 실패', lines(code), 0, false]);
+  }
+  check('forbidden names this extension\'s id', (await storeAndRender({peer_profiles: {at, ok: false, error: 'helper_forbidden', version: null, profiles: []}}), $('note_peers').textContent.includes('--extension-id abcdefghijklmnopabcdefghijklmnop')), true);
   await storeAndRender({peer_profiles: {at, ok: false, error: 'helper_missing', profiles: []}});
-  check('helper not installed: says how to fix it', [$('status_peers').textContent, $('note_peers').textContent, $('peers_list').children.length], ['읽기 실패', KO.peers_helper_missing, 0]);
-  check('helper not installed: the download link is back', $('peer_links').hidden, false);
 
   $('peer_label').value = '회사';
   calls.length = 0;
