@@ -30,8 +30,9 @@ async function openOverlay(data) {
   const page = new JSDOM('<!doctype html><html><head></head><body></body></html>', {runScripts: 'outside-only', url: 'https://example.com/'});
   const pip = new JSDOM('<!doctype html><html><head></head><body></body></html>');
   const resizes = [];
+  const requests = [];
   Object.assign(pip.window, {outerHeight: 270, innerHeight: 240, resizeTo: (w, h) => resizes.push([w, h])});
-  page.window.documentPictureInPicture = {window: null, requestWindow: async () => pip.window};
+  page.window.documentPictureInPicture = {window: null, requestWindow: async options => { requests.push(options); return pip.window; }};
   page.window.chrome = {
     runtime: {sendMessage: async message => (message.type === 'OVERLAY_DATA' ? structuredClone(data) : undefined)},
     storage: {onChanged: {addListener() {}, removeListener() {}}},
@@ -40,7 +41,7 @@ async function openOverlay(data) {
   page.window.eval(SOURCE);
   await settle();
   const root = pip.window.document.getElementById('ov');
-  return {page, pip, root, resizes, click: async () => { root.dispatchEvent(new pip.window.MouseEvent('click', {bubbles: true})); await settle(); }};
+  return {page, pip, root, resizes, requests, click: async () => { root.dispatchEvent(new pip.window.MouseEvent('click', {bubbles: true})); await settle(); }};
 }
 
 const row = (label, percent, reset = '', primary = false) => ({label, percent, reset, primary});
@@ -59,7 +60,11 @@ const DATA = {
 
 console.log('\nexpanded — one block per service');
 {
-  const {root, resizes} = await openOverlay(DATA);
+  const {root, resizes, requests} = await openOverlay(DATA);
+  // Without preferInitialWindowPlacement Chrome reopens a PiP window at the
+  // size and place it last had (e.g. one the user dragged bigger), and the
+  // width/height asked for are not used (MDN, requestWindow()).
+  check('opened at its own size, not the last one Chrome remembers', requests, [{width: 280, height: 270, preferInitialWindowPlacement: true}]);
   check('on open, the window is fitted once the first values are drawn', resizes.length >= 1 && resizes[0][0] === 280, true);
   const blocks = [...root.querySelectorAll('.prov')];
   check('header: brand and when it was read', [text(root.querySelector('.brand')), text(root.querySelector('.hd .muted'))], ['Leeway', '2분 전 확인']);
