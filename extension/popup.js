@@ -40,13 +40,37 @@ function limitRow(row) {
   return line;
 }
 
+// One Claude organization: its name (the plan, e.g. "Max 5x"), its status when
+// it is not ok, and its rows.
+function accountBlock(account) {
+  const block = document.createElement('div');
+  block.className = 'account';
+  const head = document.createElement('div');
+  head.className = 'account-name';
+  const name = document.createElement('span');
+  name.textContent = account.label;
+  head.append(name);
+  if (account.state !== 'ok') {
+    const status = document.createElement('span');
+    status.className = `badge ${account.state}`;
+    status.textContent = account.status;
+    head.append(status);
+  }
+  block.append(head, ...account.rows.map(limitRow));
+  return block;
+}
+
 function showProvider(provider, view) {
   const status = document.getElementById(`status_${provider}`);
   status.textContent = view.status;
   status.className = `badge ${view.state}`;
   status.title = view.detail;
+  const accounts = Array.isArray(view.accounts) ? view.accounts : [];
+  // With several organizations each names its own plan; the header shows none.
+  const plan = document.getElementById(`plan_${provider}`);
+  if (plan) plan.textContent = accounts.length ? '' : (view.plan || '');
   const limits = document.getElementById(`limits_${provider}`);
-  limits.replaceChildren(...view.rows.map(limitRow));
+  limits.replaceChildren(...(accounts.length ? accounts.map(accountBlock) : view.rows.map(limitRow)));
   limits.classList.toggle('dim', view.dim);
   document.getElementById(`note_${provider}`).textContent = view.note;
 }

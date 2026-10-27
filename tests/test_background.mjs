@@ -813,6 +813,57 @@ console.log('\ninstall / update — keys nothing reads any more are removed');
   check('usage_last_ok_chatgpt kept', pct(get('usage_last_ok_chatgpt'), 'chatgpt_5h'), 61);
 }
 
+console.log('\nClaude plan and organizations — one sign-in, several organizations');
+{
+  // Shaped after a live claude.ai response read on 2026-10-27 (field names
+  // only): a Max 5x chat organization and an API-only one whose usage is 403.
+  // Names carry the email on a personal organization: they must go nowhere.
+  const usageOf = (session, weekly) => ({five_hour: {utilization: session, resets_at: '2026-10-15T09:00:00Z'}, seven_day: {utilization: weekly, resets_at: '2026-10-20T00:00:00+00:00'}});
+  const org = (uuid, capabilities, extra = {}) => ({uuid, name: `someone@example.com's Organization`, capabilities, ...extra});
+
+  reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
+  routes['https://claude.ai/api/organizations'] = {status: 200, body: [
+    org('org-max', ['chat', 'claude_max'], {rate_limit_tier: 'default_claude_max_5x'}),
+    org('org-api', ['api', 'api_individual']),
+  ]};
+  routes['https://claude.ai/api/organizations/org-max/usage'] = {status: 200, body: usageOf(4, 35)};
+  await send({type: 'REFRESH_ALL'});
+  let s = get('usage_claude');
+  check('one chat organization: the API-only one is not read', claudeRequests, ['https://claude.ai/api/organizations', 'https://claude.ai/api/organizations/org-max/usage']);
+  check('one chat organization: plan "Max 5x", no account list', [s?.status, s?.plan, s?.accounts], ['ok', 'Max 5x', undefined]);
+  check('organization name (with the email) is not stored', JSON.stringify(s).includes('example.com'), false);
+
+  reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
+  routes['https://claude.ai/api/organizations'] = {status: 200, body: [
+    org('org-max', ['chat', 'claude_max'], {rate_limit_tier: 'default_claude_max_20x'}),
+    org('org-team', ['chat'], {raven_type: 'team'}),
+    org('org-api', ['api']),
+    org('org-pro', ['chat', 'claude_pro']),
+  ]};
+  routes['https://claude.ai/api/organizations/org-max/usage'] = {status: 200, body: usageOf(40, 100)};
+  routes['https://claude.ai/api/organizations/org-team/usage'] = {status: 200, body: usageOf(90, 20)};
+  routes['https://claude.ai/api/organizations/org-pro/usage'] = {status: 403, body: {error: 'forbidden'}};
+  await send({type: 'REFRESH_ALL'});
+  s = get('usage_claude');
+  check('three chat organizations read, API-only skipped', claudeRequests.slice(1), [
+    'https://claude.ai/api/organizations/org-max/usage',
+    'https://claude.ai/api/organizations/org-team/usage',
+    'https://claude.ai/api/organizations/org-pro/usage',
+  ]);
+  check('the first chat organization stays the main value', [s?.status, s?.plan, pct(s, 'claude_5h')], ['ok', 'Max 20x', 60]);
+  check('accounts: plan, status and 5-hour value each',
+    (s?.accounts || []).map(a => [a.plan, a.status, a.limits.find(l => l.id === 'claude_5h')?.remaining_percent ?? null]),
+    [['Max 20x', 'ok', 60], ['Team', 'ok', 10], ['Pro', 'logged_out', null]]);
+  check('weekly 0 in another account stays 0', s?.accounts?.[1]?.limits.find(l => l.id === 'claude_weekly')?.remaining_percent, 80);
+  await settle();
+  check('badge follows the main organization', badge.text, '60');
+
+  const data = await send({type: 'OVERLAY_DATA'}, {id: 'test-extension-id', tab: {id: 9}, url: 'https://example.com/'});
+  const claude = data.providers.find(p => p.provider === 'claude');
+  check('overlay data carries the accounts', (claude?.accounts || []).map(a => [a.label, a.rows.find(r => r.primary)?.percent ?? '?']),
+    [['Max 20x', '60%'], ['Team', '10%'], ['Pro', '?']]);
+}
+
 console.log('\noverlay data — one providerView per provider, same as the popup');
 {
   reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});

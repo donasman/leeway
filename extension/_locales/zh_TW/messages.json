@@ -55,5 +55,6 @@
   "open_gemini": {"message": "Gemini 用量"},
   "open_overlay": {"message": "開啟浮動視窗"},
   "overlay_hint": {"message": "請在一般網頁分頁中開啟。"},
-  "overlay_empty": {"message": "請在彈出式視窗中開啟服務。"}
+  "overlay_empty": {"message": "請在彈出式視窗中開啟服務。"},
+  "account_n": {"message": "帳戶 {n}"}
 }

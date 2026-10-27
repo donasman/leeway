@@ -1,5 +1,5 @@
 // Run with: node tests/test_parsers.mjs
-import { clampPct, fmtReset, pickClaudeBuckets } from '../extension/parsers.js';
+import { chatgptPlanLabel, clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from '../extension/parsers.js';
 
 const PASS = '\x1b[32mPASS\x1b[0m';
 const FAIL = '\x1b[31mFAIL\x1b[0m';
@@ -75,5 +75,20 @@ console.log('\npickClaudeBuckets');
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
+console.log('\nplan labels — fixed names only');
+// Max 5x: capabilities and rate_limit_tier as seen on claude.ai, 2026-10-27.
+check('Max 5x', claudePlanLabel({capabilities: ['chat', 'claude_max'], rate_limit_tier: 'default_claude_max_5x'}), 'Max 5x');
+check('Max 20x', claudePlanLabel({capabilities: ['chat', 'claude_max'], rate_limit_tier: 'default_claude_max_20x'}), 'Max 20x');
+check('Max, tier unreadable', claudePlanLabel({capabilities: ['chat', 'claude_max'], rate_limit_tier: 7}), 'Max');
+check('Pro', claudePlanLabel({capabilities: ['chat', 'claude_pro']}), 'Pro');
+check('Team (raven_type)', claudePlanLabel({capabilities: ['chat'], raven_type: 'team'}), 'Team');
+check('chat only → no label, not a guess', claudePlanLabel({capabilities: ['chat']}), null);
+check('API-only organization → no label', claudePlanLabel({capabilities: ['api', 'api_individual']}), null);
+check('no organization → no label', claudePlanLabel(null), null);
+check('ChatGPT free', chatgptPlanLabel('free'), 'Free');
+check('ChatGPT PLUS (case)', chatgptPlanLabel('PLUS'), 'Plus');
+check('ChatGPT unknown → null', chatgptPlanLabel('chatgptplusplus'), null);
+check('ChatGPT not a string → null', chatgptPlanLabel(3), null);
+
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

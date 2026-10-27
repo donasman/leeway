@@ -1,6 +1,6 @@
 # Privacy Policy — Leeway
 
-_Last updated: 2026-10-16_
+_Last updated: 2026-10-27_
 
 Leeway is a Chrome extension that shows how much of your **remaining** usage is
 left on Claude, ChatGPT and Gemini, in its popup, toolbar badge, and an optional
@@ -25,11 +25,18 @@ For each service you turn on:
 
 - **Claude / ChatGPT** — Leeway calls the same authenticated usage endpoint the
   service's own usage page uses, with your browser's existing session, and reads
-  only the usage limits (remaining percentage and reset time). For ChatGPT it
-  also needs a short-lived access token from your signed-in session to make that
-  one request; the token is used for that request only and is **never stored,
-  logged, or sent anywhere**. Email and account
-  identifiers in the response are ignored.
+  only the usage limits (remaining percentage and reset time) and which plan the
+  account is on, shown as a fixed product name such as "Max 5x" or "Plus". For
+  ChatGPT it also needs a short-lived access token from your signed-in session to
+  make that one request; the token is used for that request only and is **never
+  stored, logged, or sent anywhere**. Email and account identifiers in the
+  response are ignored.
+- **Claude organizations** — one claude.ai sign-in can belong to several
+  organizations (for example a personal plan and a Team workspace). Leeway reads
+  the usage of each organization that has chat limits, so you can see how much is
+  left in each. An organization's id is used only to request its usage and is
+  not stored; organization names (which can contain your email address) are not
+  read.
 - **Gemini** — Gemini has no usage API, so Leeway reads the numbers already
   shown on an open `gemini.google.com/usage` tab (the current-usage and weekly
   cards). It reads only those usage strings and the "updated N ago" text — not
@@ -42,7 +49,8 @@ conversation page.
 ## What Leeway stores
 
 - The latest parsed usage snapshot per service (status, remaining percentages,
-  reset times), so the popup and badge can show it.
+  reset times, the plan name, and for Claude one entry per organization), so the
+  popup and badge can show it.
 - Which services you turned on.
 
 All of this lives only in your browser profile, on your device. It is not sent

@@ -217,7 +217,7 @@ console.log('\nformatReset — the page\'s relative wording is recounted from wh
 // ---------------------------------------------------------------------------
 console.log('\nproviderView — off and permission are live, and win over storage');
 {
-  const empty = {rows: [], dim: false, note: '', detail: ''};
+  const empty = {rows: [], dim: false, note: '', detail: '', plan: null, accounts: []};
   check('off: nothing shown even with stored values',
     view({enabled: false, permitted: true, latest: claudeOk(), lastOk: claudeOk()}), {state: 'off', status: '꺼짐', ...empty});
   check('enabled without permission',
@@ -381,5 +381,33 @@ console.log('\nbadgeView — the lowest primary value among the enabled provider
 }
 
 // ---------------------------------------------------------------------------
+console.log('\nplan and Claude organizations');
+{
+  const on = {enabled: true, permitted: true};
+  const claudeLimits = (fiveH, weekly) => [
+    {id: 'claude_5h', label: '5-hour limit', remaining_percent: fiveH, resets_at: null, reset_text: null},
+    {id: 'claude_weekly', label: 'Weekly limit', remaining_percent: weekly, resets_at: null, reset_text: null},
+  ];
+  const single = toSnapshot({provider: 'claude', status: 'ok', plan: 'Max 5x', limits: claudeLimits(96, 65)}, NOW);
+  const v1 = providerView({...on, latest: single}, NOW, 'Asia/Seoul');
+  check('plan shown, one organization lists no accounts', [v1.plan, v1.accounts], ['Max 5x', []]);
+  check('a plan that is not a short name is dropped', toSnapshot({provider: 'chatgpt', status: 'ok', plan: '<img src=x>', limits: [{id: 'chatgpt_5h', remaining_percent: 50}]}, NOW).plan, undefined);
+
+  const multi = toSnapshot({provider: 'claude', status: 'ok', plan: 'Max 20x', limits: claudeLimits(60, 0), accounts: [
+    {plan: 'Max 20x', status: 'ok', limits: claudeLimits(60, 0)},
+    {plan: 'Team', status: 'ok', limits: claudeLimits(0, 80)},
+    {plan: 'Team', status: 'ok', limits: claudeLimits(30, 50)},
+    {plan: null, status: 'logged_out', limits: []},
+  ]}, NOW);
+  const v2 = providerView({...on, latest: multi}, NOW, 'Asia/Seoul');
+  check('accounts: names, state and main value (0 stays 0%)',
+    v2.accounts.map(a => [a.label, a.state, a.rows.find(r => r.primary)?.percent]),
+    [['Max 20x', 'ok', '60%'], ['Team', 'ok', '0%'], ['Team 2', 'ok', '30%'], ['계정 4', 'logged_out', '?']]);
+  check('top level is still the main organization', v2.rows.find(r => r.primary)?.percent, '60%');
+  check('an account that reads ok without its 5-hour value is not ok', toSnapshot({provider: 'claude', status: 'ok', limits: claudeLimits(50, 50), accounts: [
+    {status: 'ok', limits: claudeLimits(50, 50)}, {status: 'ok', limits: claudeLimits(null, 40)},
+  ]}, NOW).accounts[1].status, 'parse_failed');
+}
+
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

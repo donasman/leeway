@@ -4,7 +4,7 @@
 // Only rate_limit's windows are read: the response also carries the email and
 // user/account ids, which go nowhere. Imported by background.js and
 // tests/test_chatgpt_api.mjs.
-import { fmtReset } from './parsers.js';
+import { chatgptPlanLabel, fmtReset } from './parsers.js';
 import { primaryLimitId } from './snapshot.js';
 
 const HOUR_S = 60 * 60;
@@ -96,7 +96,9 @@ export function whamLimits(body, nowMs) {
 // readable limits stay in a failed payload for display.
 export function whamPayload(body, nowMs) {
   const limits = whamLimits(body, nowMs);
-  const failed = detail => ({provider: 'chatgpt', value: '?', detail, status: 'parse_failed', limits});
+  // The plan, as a fixed label ("Plus"), or null. Shown next to the name.
+  const plan = chatgptPlanLabel(whamPlan(body));
+  const failed = detail => ({provider: 'chatgpt', value: '?', detail, status: 'parse_failed', limits, plan});
   // A window that can't be placed might be the 5-hour one: then no other
   // window may become the primary (CLAUDE.md §2 수집기 계약).
   if (unplacedWindows(body)) return failed('wham/usage: a window has no usable limit_window_seconds');
@@ -109,5 +111,5 @@ export function whamPayload(body, nowMs) {
     const reset = limit.resets_at ? `, resets ${fmtReset(limit.resets_at)}` : '';
     return `${limit.label}: ${remaining}${reset}`;
   }).join(' · ');
-  return {provider: 'chatgpt', value, detail, status: 'ok', limits};
+  return {provider: 'chatgpt', value, detail, status: 'ok', limits, plan};
 }

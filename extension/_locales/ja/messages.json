@@ -55,5 +55,6 @@
   "open_gemini": {"message": "Gemini の使用量"},
   "open_overlay": {"message": "オーバーレイを開く"},
   "overlay_hint": {"message": "通常のウェブページのタブで開いてください。"},
-  "overlay_empty": {"message": "ポップアップでサービスをオンにしてください。"}
+  "overlay_empty": {"message": "ポップアップでサービスをオンにしてください。"},
+  "account_n": {"message": "アカウント {n}"}
 }

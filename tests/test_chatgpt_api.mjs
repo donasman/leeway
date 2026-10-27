@@ -94,8 +94,14 @@ console.log('\nwhamPayload — the collector payload');
   check('length as a string → parse_failed', whamPayload(body(w('18000', 39), w(7 * DAY, 60)), NOW).status, 'parse_failed');
   check('length null → parse_failed', whamPayload(body(w(null, 39), w(7 * DAY, 60)), NOW).status, 'parse_failed');
   check('a window that is not an object → parse_failed', whamPayload(body('5h', w(7 * DAY, 60)), NOW).status, 'parse_failed');
-  check('no window → parse_failed', whamPayload(body(null, null), NOW), {provider: 'chatgpt', value: '?', detail: 'wham/usage: no rate_limit window', status: 'parse_failed', limits: []});
+  check('no window → parse_failed', whamPayload(body(null, null), NOW), {provider: 'chatgpt', value: '?', detail: 'wham/usage: no rate_limit window', status: 'parse_failed', limits: [], plan: 'Plus'});
   check('not an object → parse_failed', whamPayload('<html>', NOW).status, 'parse_failed');
+  // The plan: a fixed label from plan_type, never the raw text.
+  check('plan_type plus → "Plus"', whamPayload(body(w(5 * HOUR, 39)), NOW).plan, 'Plus');
+  check('plan_type free (seen live 2026-10-27) → "Free"', whamPayload({...body(w(30 * DAY, 100)), plan_type: 'free'}, NOW).plan, 'Free');
+  check('unknown plan_type → no label', whamPayload({...body(w(5 * HOUR, 39)), plan_type: 'mystery_tier'}, NOW).plan, null);
+  check('plan_type with markup → no label', whamPayload({...body(w(5 * HOUR, 39)), plan_type: '<b>pro</b>'}, NOW).plan, null);
+  check('no plan_type → no label', whamPayload({rate_limit: body(w(5 * HOUR, 39)).rate_limit}, NOW).plan, null);
   const json = JSON.stringify(whamPayload(body(w(5 * HOUR, 39)), NOW));
   check('email, user id and account id go nowhere', ['user-secret-1', 'account-secret-2', 'someone@example.com'].filter(s => json.includes(s)), []);
 }

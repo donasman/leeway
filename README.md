@@ -30,6 +30,9 @@ The floating overlay is built into the extension (click **Open overlay** in the 
 
 For each service that is turned on, the popup shows the remaining percentage of each limit and when it resets. The 5-hour limit is the large number; an account without a 5-hour limit (e.g. ChatGPT Pro) shows its weekly limit there instead. 0% is shown as 0%; a value that could not be read is `?`.
 
+- The plan (e.g. `Max 5x`, `Plus`) is shown next to the service name when the service reports it. Gemini does not, so it has none.
+- One claude.ai sign-in can belong to several organizations (a personal plan and a Team workspace, say). Each one with chat limits gets its own block, named by its plan, so you can see which has how much left. The first one is the main value (the toolbar badge and the overlay's collapsed line).
+
 - When a read fails, the last good values stay visible, dimmed, with how old they are. Hover the status label for the failure reason.
 - Values older than 6 minutes (three missed refreshes) are dimmed; a good read that old is marked 오래됨 (stale).
 - Reset times come from the services as exact times. Only ChatGPT's page fallback gives relative "4시간 20분 후 초기화"-style text; the popup counts that down (in the current UI language) from when it was read.

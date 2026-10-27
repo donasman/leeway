@@ -1,4 +1,4 @@
-import { clampPct, fmtReset, pickClaudeBuckets } from './parsers.js';
+import { clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from './parsers.js';
 import { snapshotWrites, usageKey, lastOkKey } from './snapshot.js';
 import { whamPayload, whamPlan, whamWindows } from './chatgpt_api.js';
 import { geminiPayload } from './gemini.js';
@@ -153,7 +153,7 @@ async function overlayData() {
     const permitted = on && await hasHostPermission(provider);
     const stored = await chrome.storage.local.get([usageKey(provider), lastOkKey(provider)]);
     const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels);
-    providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note});
+    providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note, plan: view.plan, accounts: view.accounts});
   }
   return {providers, now};
 }
@@ -164,20 +164,67 @@ async function fetchClaudeJson(url) {
   if (!r.ok) throw new Error(`http-${r.status}`);
   return r.json();
 }
-async function getClaudeOrgId() {
+// One claude.ai sign-in can belong to several organizations: a personal plan,
+// a Team workspace, an API-only one. Chat organizations are the ones with
+// usage limits; the first is the main one (the toolbar badge and the big
+// number), the others are listed under it. Of each organization only its id
+// (for the usage URL), capabilities and rate_limit_tier (for the plan label)
+// are read; its name is not, as a personal one carries the email address.
+const MAX_CLAUDE_ORGS = 4;
+async function getClaudeOrgs() {
   const payload = await fetchClaudeJson('https://claude.ai/api/organizations');
   const orgs = Array.isArray(payload) ? payload : (Array.isArray(payload?.organizations) ? payload.organizations : []);
-  const org = orgs.find(o => Array.isArray(o?.capabilities) && o.capabilities.includes('chat')) || orgs[0];
-  return org && (org.uuid || org.organization_uuid || org.id);
+  const chat = orgs.filter(o => Array.isArray(o?.capabilities) && o.capabilities.includes('chat'));
+  return (chat.length ? chat : orgs.slice(0, 1))
+    .map(org => ({id: org && (org.uuid || org.organization_uuid || org.id), plan: claudePlanLabel(org)}))
+    .filter(org => org.id)
+    .slice(0, MAX_CLAUDE_ORGS);
 }
+
+// The 5-hour entry is always listed, null when unreadable (CLAUDE.md §1, §2):
+// leaving it out would read as "this account has no 5-hour limit" and promote
+// the weekly value. No Claude plan is known to lack one.
+function claudeLimits(usage) {
+  const {session, weekly} = pickClaudeBuckets(usage);
+  const sessionUsed = clampPct(session?.utilization);
+  const weeklyUsed = clampPct(weekly?.utilization);
+  const limits = [{
+    id: 'claude_5h', label: '5-hour limit',
+    remaining_percent: sessionUsed === null ? null : Math.round(100 - sessionUsed),
+    resets_at: session?.resets_at || null,
+    reset_text: session?.resets_at ? `resets ${fmtReset(session.resets_at)}` : null,
+  }];
+  if (weeklyUsed !== null) limits.push({
+    id: 'claude_weekly', label: 'Weekly limit',
+    remaining_percent: Math.round(100 - weeklyUsed),
+    resets_at: weekly?.resets_at || null,
+    reset_text: weekly?.resets_at ? `resets ${fmtReset(weekly.resets_at)}` : null,
+  });
+  return {limits, session, sessionUsed, weeklyUsed};
+}
+
+const claudeFailureStatus = msg => ((msg === 'auth-401' || msg === 'auth-403') ? 'logged_out' : 'parse_failed');
+
+// Another organization's read. Its failure stays its own: the main one and
+// the others still show.
+async function readClaudeAccount(org) {
+  try {
+    const usage = await fetchClaudeJson(`https://claude.ai/api/organizations/${org.id}/usage`);
+    const {limits, sessionUsed, weeklyUsed} = claudeLimits(usage);
+    const status = sessionUsed === null && weeklyUsed === null ? 'parse_failed' : 'ok';
+    return {plan: org.plan, status, limits};
+  } catch (error) {
+    return {plan: org.plan, status: claudeFailureStatus(String(error.message || error)), limits: []};
+  }
+}
+
 async function refreshClaude() {
   try {
-    const orgId = await getClaudeOrgId();
-    if (!orgId) throw new Error('org-not-found');
-    const usage = await fetchClaudeJson(`https://claude.ai/api/organizations/${orgId}/usage`);
-    const {session, weekly} = pickClaudeBuckets(usage);
-    const sessionUsed = clampPct(session?.utilization);
-    const weeklyUsed = clampPct(weekly?.utilization);
+    const orgs = await getClaudeOrgs();
+    if (!orgs.length) throw new Error('org-not-found');
+    const [main, ...others] = orgs;
+    const usage = await fetchClaudeJson(`https://claude.ai/api/organizations/${main.id}/usage`);
+    const {limits, session, sessionUsed, weeklyUsed} = claudeLimits(usage);
     if (sessionUsed === null && weeklyUsed === null) throw new Error('usage-data-not-found');
     const remaining = sessionUsed === null ? null : Math.round(100 - sessionUsed);
     const value = remaining === null ? '?' : `${remaining}%`;
@@ -185,29 +232,16 @@ async function refreshClaude() {
     if (sessionUsed !== null) details.push(`5-hour limit: ${Math.round(100 - sessionUsed)}% remaining`);
     if (session?.resets_at) details.push(`resets ${fmtReset(session.resets_at)}`);
     if (weeklyUsed !== null) details.push(`weekly limit: ${Math.round(100 - weeklyUsed)}% remaining`);
-    // Normalized fields — additive. `value`/`detail` above are unchanged so
-    // the Python overlay on the main branch keeps rendering the same string.
-    // The 5-hour entry is always listed, null when unreadable (CLAUDE.md §1, §2):
-    // leaving it out would read as "this account has no 5-hour limit" and
-    // promote the weekly value. No Claude plan is known to lack one.
-    const limits = [{
-      id: 'claude_5h', label: '5-hour limit',
-      remaining_percent: sessionUsed === null ? null : Math.round(100 - sessionUsed),
-      resets_at: session?.resets_at || null,
-      reset_text: session?.resets_at ? `resets ${fmtReset(session.resets_at)}` : null,
-    }];
-    if (weeklyUsed !== null) limits.push({
-      id: 'claude_weekly', label: 'Weekly limit',
-      remaining_percent: Math.round(100 - weeklyUsed),
-      resets_at: weekly?.resets_at || null,
-      reset_text: weekly?.resets_at ? `resets ${fmtReset(weekly.resets_at)}` : null,
-    });
-    const payload = {provider:'claude', value, detail:details.join(' · ') || 'Claude usage available', status:'ok', limits};
+    const payload = {provider:'claude', value, detail:details.join(' · ') || 'Claude usage available', status:'ok', limits, plan: main.plan};
+    if (others.length) {
+      const rest = [];
+      for (const org of others) rest.push(await readClaudeAccount(org));
+      payload.accounts = [{plan: main.plan, status: 'ok', limits}, ...rest];
+    }
     return await publish(payload);
   } catch (error) {
     const msg = String(error.message || error);
-    const status = (msg === 'auth-401' || msg === 'auth-403') ? 'logged_out' : 'parse_failed';
-    return await publish({provider:'claude', value:'?', detail:`Claude usage unavailable: ${msg}`, status, limits:[]});
+    return await publish({provider:'claude', value:'?', detail:`Claude usage unavailable: ${msg}`, status: claudeFailureStatus(msg), limits:[]});
   }
 }
 

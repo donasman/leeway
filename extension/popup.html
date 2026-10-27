@@ -48,6 +48,13 @@ h1 svg{width:18px;height:18px;display:block}
 .limit.warn{--tone:var(--warn)}
 .limit.bad{--tone:var(--bad)}
 .note{margin:7px 0 0;color:var(--dim);font-size:11.5px}
+.plan{margin-left:6px;font-size:10.5px;font-weight:600;color:var(--dim)}
+.plan:empty{display:none}
+.account{margin-top:10px}
+.account:first-child{margin-top:4px}
+.account-name{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;font-weight:700;color:var(--ink)}
+.account-name .badge{font-size:10px}
+.account .limit{margin:7px 0;padding-bottom:9px}
 .note:empty{display:none}
 
 .hint{margin:12px 2px 10px;color:var(--dim);font-size:11.5px}
@@ -65,15 +72,15 @@ button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line
 </header>
 
 <section class="provider">
-<div class="provider-row"><label for="toggle_claude">Claude</label><span class="badge" id="status_claude" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_claude"></div>
+<div class="provider-row"><label for="toggle_claude">Claude<span class="plan" id="plan_claude"></span></label><span class="badge" id="status_claude" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_claude"></div>
 <div class="limits" id="limits_claude"></div><p class="note" id="note_claude"></p>
 </section>
 <section class="provider">
-<div class="provider-row"><label for="toggle_chatgpt">ChatGPT</label><span class="badge" id="status_chatgpt" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_chatgpt"></div>
+<div class="provider-row"><label for="toggle_chatgpt">ChatGPT<span class="plan" id="plan_chatgpt"></span></label><span class="badge" id="status_chatgpt" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_chatgpt"></div>
 <div class="limits" id="limits_chatgpt"></div><p class="note" id="note_chatgpt"></p>
 </section>
 <section class="provider">
-<div class="provider-row"><label for="toggle_gemini">Gemini</label><span class="badge" id="status_gemini" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_gemini"></div>
+<div class="provider-row"><label for="toggle_gemini">Gemini<span class="plan" id="plan_gemini"></span></label><span class="badge" id="status_gemini" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_gemini"></div>
 <div class="limits" id="limits_gemini"></div><p class="note" id="note_gemini"></p>
 </section>
 

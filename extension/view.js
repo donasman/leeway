@@ -171,6 +171,27 @@ function stateOf(snapshot, nowMs) {
   return 'waiting';
 }
 
+// Every Claude organization of the sign-in, when there is more than one: its
+// plan as the name ("Max 5x", "Team"), "Account 2" when the plan is unknown,
+// and its own rows. Two of the same plan read "Team", "Team 2".
+function accountsOf(snapshot, nowMs, timeZone, labels) {
+  const accounts = Array.isArray(snapshot?.accounts) ? snapshot.accounts.filter(a => a && typeof a === 'object') : [];
+  if (accounts.length < 2) return [];
+  const seen = {};
+  return accounts.map((account, i) => {
+    const base = typeof account.plan === 'string' && account.plan ? account.plan : fill(labels.account_n, {n: i + 1});
+    seen[base] = (seen[base] || 0) + 1;
+    const state = account.status === 'ok' ? 'ok' : (account.status === 'logged_out' ? 'logged_out' : 'parse_failed');
+    const rows = rowsOf({status: account.status, primary_limit_id: account.primary_limit_id, limits: account.limits, collected_at: snapshot.collected_at}, nowMs, timeZone, labels);
+    return {
+      label: seen[base] > 1 ? `${base} ${seen[base]}` : base,
+      state,
+      status: labels['status_' + state] ?? '',
+      rows: rows.length ? rows : [{id: 'claude_5h', label: labels.limit_5h ?? '5h', percent: '?', reset: '', primary: true}],
+    };
+  });
+}
+
 const checkedAt = (age, labels) => (age ? fill(labels.checked, {age}) : '');
 const joinNote = (...parts) => parts.filter(Boolean).join(' · ');
 
@@ -178,7 +199,7 @@ const joinNote = (...parts) => parts.filter(Boolean).join(' · ');
 // permitted (chrome.permissions) are live and win over what the last refresh
 // stored, so a provider that is off shows no values (CLAUDE.md §2).
 export function providerView({enabled, permitted, latest, lastOk}, nowMs, timeZone, labels = {}) {
-  const view = (state, rest = {}) => ({state, status: labels['status_' + state] ?? '', rows: [], dim: false, note: '', detail: '', ...rest});
+  const view = (state, rest = {}) => ({state, status: labels['status_' + state] ?? '', rows: [], dim: false, note: '', detail: '', plan: null, accounts: [], ...rest});
   if (!enabled) return view('off');
   if (!permitted) return view('needs_permission', {note: labels.note_no_permission ?? ''});
   latest = asSnapshot(latest);
@@ -192,7 +213,11 @@ export function providerView({enabled, permitted, latest, lastOk}, nowMs, timeZo
     let note = checkedAt(age, labels);
     if (shown.fromLastOk) note = joinNote(labels.note_last_ok, age);
     else if (stale) note = joinNote(labels.note_stale, checkedAt(age, labels));
-    return view(state, {rows: rowsOf(shown.snapshot, nowMs, timeZone, labels), dim: shown.fromLastOk || stale, note, detail});
+    return view(state, {
+      rows: rowsOf(shown.snapshot, nowMs, timeZone, labels), dim: shown.fromLastOk || stale, note, detail,
+      plan: typeof shown.snapshot.plan === 'string' ? shown.snapshot.plan : null,
+      accounts: accountsOf(shown.snapshot, nowMs, timeZone, labels),
+    });
   }
   if (!failed) return view(state);
   const checked = checkedAt(formatAge(ageOf(latest, nowMs), labels), labels);

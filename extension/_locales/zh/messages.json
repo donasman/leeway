@@ -55,5 +55,6 @@
   "open_gemini": {"message": "Gemini 用量"},
   "open_overlay": {"message": "打开悬浮窗"},
   "overlay_hint": {"message": "请在普通网页标签页中打开。"},
-  "overlay_empty": {"message": "请在弹出窗口中开启服务。"}
+  "overlay_empty": {"message": "请在弹出窗口中开启服务。"},
+  "account_n": {"message": "账户 {n}"}
 }

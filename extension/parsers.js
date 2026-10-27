@@ -25,3 +25,34 @@ export function pickClaudeBuckets(usage) {
     weekly: mapped.weekly || usage?.seven_day || null
   };
 }
+
+// ---- plan labels -------------------------------------------------------------
+// The plan is shown as a short product name, never as server text: each label
+// comes from this fixed list, so nothing the service sends ends up on screen.
+// Checked against a logged-in claude.ai on 2026-10-27: a Max 5x organization
+// has capabilities ["chat", "claude_max"] and rate_limit_tier
+// "default_claude_max_5x". The Pro, Team and Enterprise markers below follow
+// the same naming but were not seen in a live response.
+export function claudePlanLabel(org) {
+  const caps = Array.isArray(org?.capabilities) ? org.capabilities : [];
+  const tier = typeof org?.rate_limit_tier === 'string' ? org.rate_limit_tier : '';
+  if (caps.includes('claude_max')) {
+    const times = /max_(5|20)x/.exec(tier);
+    return times ? `Max ${times[1]}x` : 'Max';
+  }
+  if (caps.includes('claude_pro')) return 'Pro';
+  if (org?.raven_type === 'team') return 'Team';
+  if (org?.raven_type === 'enterprise') return 'Enterprise';
+  return null;
+}
+
+// ChatGPT's wham/usage plan_type. "free" was seen in a live response on
+// 2026-10-27; the others are the plan names ChatGPT sells. An unknown value
+// shows no label rather than a guess.
+const CHATGPT_PLANS = {
+  free: 'Free', go: 'Go', plus: 'Plus', pro: 'Pro', team: 'Team',
+  business: 'Business', enterprise: 'Enterprise', edu: 'Edu',
+};
+export function chatgptPlanLabel(planType) {
+  return typeof planType === 'string' ? CHATGPT_PLANS[planType.toLowerCase()] ?? null : null;
+}

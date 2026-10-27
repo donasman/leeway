@@ -5,9 +5,20 @@
 export const PROVIDERS = ['claude', 'chatgpt', 'gemini'];
 const STATUSES = new Set(['ok', 'logged_out', 'parse_failed', 'needs_permission', 'disabled']);
 const MAX_LIMITS = 8;
+// Claude organizations kept per snapshot (one claude.ai sign-in can belong to
+// several: a personal plan and a Team workspace, say).
+const MAX_ACCOUNTS = 4;
+const ACCOUNT_STATUSES = new Set(['ok', 'logged_out', 'parse_failed']);
+// A plan is a short product name from parsers.js ("Max 5x", "Plus"), never
+// free text from a page.
+const PLAN = /^[A-Za-z0-9][A-Za-z0-9 ]{0,15}$/;
 // ISO 8601 with an explicit zone. Zone-less strings are rejected: Date.parse
 // would read them as local time, which is a guess.
 const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i;
+
+function planOrNull(value) {
+  return typeof value === 'string' && PLAN.test(value) ? value : null;
+}
 
 export const usageKey = provider => `usage_${provider}`;
 export const lastOkKey = provider => `usage_last_ok_${provider}`;
@@ -60,15 +71,39 @@ export function primaryLimitId(provider, limits) {
   return limits[0]?.id ?? null;
 }
 
-export function toSnapshot(payload, nowMs) {
-  const provider = typeof payload?.provider === 'string' ? payload.provider.toLowerCase() : '';
-  if (!PROVIDERS.includes(provider)) return null;
+function toLimits(rawLimits, provider) {
   const limits = [];
-  for (const raw of Array.isArray(payload.limits) ? payload.limits : []) {
+  for (const raw of Array.isArray(rawLimits) ? rawLimits : []) {
     const limit = toLimit(raw, provider);
     if (limit && !limits.some(existing => existing.id === limit.id)) limits.push(limit);
     if (limits.length === MAX_LIMITS) break;
   }
+  return limits;
+}
+
+// One organization's own read. Same rule as the snapshot: ok only when its
+// primary value was read.
+function toAccount(raw, provider) {
+  if (!raw || typeof raw !== 'object') return null;
+  const limits = toLimits(raw.limits, provider);
+  let status = ACCOUNT_STATUSES.has(raw.status) ? raw.status : 'parse_failed';
+  let primary = null;
+  if (status === 'ok') {
+    primary = primaryLimitId(provider, limits);
+    if ((limits.find(limit => limit.id === primary)?.remaining_percent ?? null) === null) {
+      status = 'parse_failed';
+      primary = null;
+    }
+  }
+  return {plan: planOrNull(raw.plan), status, primary_limit_id: primary, limits};
+}
+
+export function toSnapshot(payload, nowMs) {
+  const provider = typeof payload?.provider === 'string' ? payload.provider.toLowerCase() : '';
+  if (!PROVIDERS.includes(provider)) return null;
+  const limits = toLimits(payload.limits, provider);
+  const accounts = (Array.isArray(payload.accounts) ? payload.accounts : [])
+    .map(raw => toAccount(raw, provider)).filter(Boolean).slice(0, MAX_ACCOUNTS);
   let status = STATUSES.has(payload.status) ? payload.status : 'parse_failed';
   let detail = withoutUrlPaths(shortText(payload.detail, 200));
   let primary = null;
@@ -83,7 +118,7 @@ export function toSnapshot(payload, nowMs) {
       primary = null;
     }
   }
-  return {
+  const snapshot = {
     provider,
     status,
     collected_at: new Date(nowMs).toISOString(),
@@ -91,6 +126,12 @@ export function toSnapshot(payload, nowMs) {
     limits,
     detail,
   };
+  // Optional keys, added only when there is something to show.
+  const plan = planOrNull(payload.plan);
+  if (plan) snapshot.plan = plan;
+  // Only when there is more than the one account the top level already shows.
+  if (accounts.length > 1) snapshot.accounts = accounts;
+  return snapshot;
 }
 
 // Everything one payload writes, as a single chrome.storage.local.set() object.

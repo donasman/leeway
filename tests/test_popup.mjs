@@ -238,6 +238,25 @@ console.log('\nstorage changes → the popup re-renders');
   check('fresh again', card('claude').status, '정상');
 }
 
+console.log('\nplan and Claude organizations');
+{
+  await storeAndRender({usage_claude: {...claudeOk(), plan: 'Max 5x'}});
+  check('plan next to the name', $('plan_claude').textContent, 'Max 5x');
+  check('rows unchanged with a plan', rows('claude')[0], ['5시간', '60%', '4시간 20분 후 초기화']);
+  const main = claudeOk();
+  await storeAndRender({usage_claude: {...main, plan: 'Max 5x', accounts: [
+    {plan: 'Max 5x', status: 'ok', primary_limit_id: 'claude_5h', limits: main.limits},
+    {plan: 'Team', status: 'logged_out', primary_limit_id: null, limits: []},
+  ]}});
+  const blocks = [...$('limits_claude').children];
+  check('one block per organization', blocks.map(b => b.className), ['account', 'account']);
+  check('each block named by its plan, status when not ok', blocks.map(b => b.querySelector('.account-name').textContent), ['Max 5x', 'Team로그인 필요']);
+  check('the other organization: "?" for no value', [...blocks[1].querySelectorAll('.limit .pct')].map(c => c.textContent), ['?']);
+  check('header plan hidden when each block names its own', $('plan_claude').textContent, '');
+  await storeAndRender({usage_claude: claudeOk()});
+  check('back to one organization: plain rows, no plan', [rows('claude').length, $('plan_claude').textContent], [2, '']);
+}
+
 console.log('\nthe clock alone → re-render on the 30-second tick');
 {
   store.set('usage_claude', claudeOk({agoMs: 7 * MIN})); // no onChanged

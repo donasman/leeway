@@ -41,6 +41,9 @@
     #ov .cline .b{font-weight:800}
     #ov .cline .p{font-weight:700;font-variant-numeric:tabular-nums}
     #ov .cline .sep{color:#8a97a8}
+    #ov .plan{margin-left:5px;font-size:10px;font-weight:600;color:#8a97a8}
+    #ov .acct{margin-top:6px}
+    #ov .aname{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;color:#c3ccd8}
     body{cursor:pointer}`;
 
   const NAMES = { claude: 'Claude', chatgpt: 'ChatGPT', gemini: 'Gemini' };
@@ -50,10 +53,8 @@
   let collapsed = false;
   let lastData = { providers: [] };
 
-  function renderProvider(p) {
-    const name = NAMES[p.provider] || p.provider;
-    const badge = p.state === 'ok' ? '' : `<span class="pstatus">${esc(p.status)}</span>`;
-    const rows = (p.rows || []).map((r) => {
+  function renderRows(list) {
+    return (list || []).map((r) => {
       const n = parseInt(r.percent, 10);
       const t = tone(r.percent);
       const pctStyle = Number.isFinite(n) ? ` style="--pct:${Math.max(0, Math.min(100, n))}"` : '';
@@ -61,8 +62,21 @@
         + `<span class="lb">${esc(r.label)}</span><span class="pc">${esc(r.percent)}</span>`
         + (r.reset ? `<span class="rs">${esc(r.reset)}</span>` : '') + '</div>';
     }).join('');
+  }
+
+  // Several Claude organizations: one block each, named by its plan; the
+  // provider line then carries no plan of its own.
+  function renderProvider(p) {
+    const name = NAMES[p.provider] || p.provider;
+    const accounts = Array.isArray(p.accounts) ? p.accounts : [];
+    const plan = p.plan && !accounts.length ? `<span class="plan">${esc(p.plan)}</span>` : '';
+    const badge = p.state === 'ok' ? '' : `<span class="pstatus">${esc(p.status)}</span>`;
+    const rows = accounts.length
+      ? accounts.map((a) => `<div class="acct"><div class="aname"><span>${esc(a.label)}</span>`
+        + (a.state === 'ok' ? '' : `<span class="pstatus">${esc(a.status)}</span>`) + `</div>${renderRows(a.rows)}</div>`).join('')
+      : renderRows(p.rows);
     const note = p.note ? `<div class="note">${esc(p.note)}</div>` : '';
-    return `<div class="prov${p.dim ? ' dim' : ''}"><div class="pname"><span>${esc(name)}</span>${badge}</div>${rows}${note}</div>`;
+    return `<div class="prov${p.dim ? ' dim' : ''}"><div class="pname"><span>${esc(name)}${plan}</span>${badge}</div>${rows}${note}</div>`;
   }
 
   function render(root, data) {

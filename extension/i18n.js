@@ -14,7 +14,7 @@ const VIEW_LABEL_KEYS = [
   'note_no_permission', 'note_last_ok', 'note_stale', 'note_partial',
   'note_login', 'note_unread', 'badge_none',
   'wd_Sun', 'wd_Mon', 'wd_Tue', 'wd_Wed', 'wd_Thu', 'wd_Fri', 'wd_Sat',
-  'reset_date_fmt', 'badge_pct', 'badge_sep', 'badge_note_fmt',
+  'reset_date_fmt', 'badge_pct', 'badge_sep', 'badge_note_fmt', 'account_n',
 ];
 
 // One chrome.i18n message (used for the popup's own chrome, outside view.js).
