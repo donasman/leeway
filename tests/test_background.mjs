@@ -794,7 +794,8 @@ console.log('\npermission revoked in chrome://extensions → needs_permission');
 }
 
 console.log('\ninstall / update — keys nothing reads any more are removed');
-{
+for (const reason of ['update', 'install']) {
+  console.log(`  reason: ${reason}`);
   reset({enabled: ['chatgpt']});
   await send({type: 'usage', payload: chatgptOk()});
   store.set('enabledProviders', []); // makes the refreshAll() onInstalled schedules a no-op
@@ -804,7 +805,7 @@ console.log('\ninstall / update — keys nothing reads any more are removed');
   store.set('bridge_token', 'tok-123'); // the removed 127.0.0.1 desktop bridge's pairing token
   // What the old chatgpt.js wrote from any ChatGPT tab, conversations included.
   store.set('chatgpt_debug', {at: 1, url: 'https://chatgpt.com/c/abc', snippets: ['my private chat line that resets things']});
-  handlers.installed({reason: 'update'});
+  handlers.installed({reason});
   for (let i = 0; i < 5; i += 1) await new Promise(resolve => setTimeout(resolve, 0));
   check('last_claude removed', get('last_claude'), undefined);
   check('last_chatgpt removed', get('last_chatgpt'), undefined);

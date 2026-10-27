@@ -97,7 +97,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `peer_settings` | `{on, id, label}` — 다른 프로필 기능. `id`는 무작위 16자리 hex |
 | `peer_profiles` | 마지막 helper 응답 중 **다른** 프로필들 `{at, ok, error, profiles[]}` |
 
-더 이상 쓰지 않는 키는 `background.js`의 `onInstalled`에서 지운다: `LEGACY_KEYS`(설치·업데이트), `BRIDGE_KEYS`(업데이트, 없앤 127.0.0.1 bridge의 `bridge_token`).
+더 이상 쓰지 않는 키(`background.js`의 `LEGACY_KEYS`, 없앤 127.0.0.1 bridge의 `bridge_token` 포함)는 설치·업데이트 때 `onInstalled`에서 지운다.
 
 ### 다국어
 

@@ -588,14 +588,11 @@ function setupAlarm() {
 // bridge send results the popup used to show before it read usage_*, and the
 // ChatGPT tab id the extension used to open for reading. And chatgpt_debug:
 // before the API switch it could hold conversation text; the next read
-// writes it again.
-const LEGACY_KEYS = ['last_claude', 'last_chatgpt', 'chatgptUsageTabId', 'chatgpt_debug'];
-// Removed on update (2026-10-27): the pairing token of the 127.0.0.1 desktop
-// bridge, which is gone. A new install never had it.
-const BRIDGE_KEYS = ['bridge_token'];
-chrome.runtime.onInstalled.addListener(details => {
+// writes it again. bridge_token (2026-10-27): the pairing token of the
+// 127.0.0.1 desktop bridge, which is gone.
+const LEGACY_KEYS = ['last_claude', 'last_chatgpt', 'chatgptUsageTabId', 'chatgpt_debug', 'bridge_token'];
+chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.remove(LEGACY_KEYS).catch(() => {});
-  if (details?.reason === 'update') chrome.storage.local.remove(BRIDGE_KEYS).catch(() => {});
   setupAlarm(); setTimeout(refreshAll, 1000);
 });
 chrome.runtime.onStartup.addListener(() => { setupAlarm(); setTimeout(refreshAll, 1000); });
