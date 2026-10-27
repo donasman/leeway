@@ -408,7 +408,9 @@ async function scanGeminiTab(tab, attempts = 2) {
 }
 
 // The scanned card text from an open usage tab, or null when none answered. No
-// tab is opened, and chat tabs are never injected into (CLAUDE.md §3). A tab
+// tab is opened here: it reads only usage tabs the user opened (by hand or with
+// the popup's button, openGeminiUsage()), and chat tabs are never injected
+// into (CLAUDE.md §3). A tab
 // with a readable current card wins; otherwise the first tab that answered (so
 // a genuinely empty/signed-out page still becomes a parse_failed, not "no tab").
 async function scanGeminiUsageTab() {
@@ -441,6 +443,147 @@ async function refreshGemini() {
     payload = {provider:'gemini', value:'?', detail:`Gemini usage unavailable: ${originsOnly(error.message || error)}`, status:'parse_failed', limits:[]};
   }
   return publish(payload);
+}
+
+// ---- Gemini: the usage tab opened from the popup ---------------------------
+// The popup's button opens gemini.google.com/usage (or brings an open one
+// forward), and the popup closes with it. Background then reads the tab once
+// it has loaded, so the value shows without waiting for the next 2-minute
+// round (CLAUDE.md §2 Gemini). It only waits and calls refreshGemini(): the
+// Gemini page itself is never reloaded.
+// The wait {id, tabId, openedAt, phase} lives in storage.session so a service
+// worker that went down in between picks it up from the next tab event. One
+// at a time: a new press replaces it, and a timer left from the old one sees a
+// different id and stops.
+const GEMINI_OPEN_KEY = 'gemini_open_wait';
+const GEMINI_OPEN_SETTLE_MS = 2000;         // after 'complete', before the first read
+const GEMINI_OPEN_RETRY_MS = [5000, 10000]; // after a read without the current card
+const GEMINI_OPEN_DEADLINE_MS = 30000;      // from opening: no new read starts after this
+// A seam for tests only (tests/test_background.mjs); never set in the extension.
+const openClock = () => globalThis.__leewayGeminiOpenClock || {now: () => Date.now(), wait: delay};
+
+const geminiOn = async () => (await getEnabledProviders()).has('gemini') && hasHostPermission('gemini');
+
+async function getOpenWait() {
+  try { return (await chrome.storage.session.get(GEMINI_OPEN_KEY))[GEMINI_OPEN_KEY] || null; }
+  catch (_) { return null; }
+}
+// Only this wait's own entry: a newer one is left alone.
+async function clearOpenWait(id) {
+  const wait = await getOpenWait();
+  if (wait && wait.id === id) await chrome.storage.session.remove(GEMINI_OPEN_KEY).catch(() => {});
+}
+const isCurrentWait = async wait => (await getOpenWait())?.id === wait.id && await geminiOn();
+
+async function startOpenWait(tabId, phase) {
+  const wait = {id: crypto.randomUUID(), tabId, openedAt: openClock().now(), phase};
+  await chrome.storage.session.set({[GEMINI_OPEN_KEY]: wait});
+  // No 'complete' in time: one read at the deadline. A worker that went down
+  // loses this timer; the next event for the tab does the same check.
+  if (phase === 'waiting') openClock().wait(GEMINI_OPEN_DEADLINE_MS).then(() => readOnceIfWaiting(wait.id)).catch(() => {});
+  return wait;
+}
+
+// Reads already started for a wait in this worker, so two events can't start two.
+const geminiOpenReads = new Set();
+async function takeWait(id) {
+  const wait = await getOpenWait();
+  if (!wait || wait.id !== id || wait.phase !== 'waiting' || geminiOpenReads.has(id)) return null;
+  geminiOpenReads.add(id);
+  const reading = {...wait, phase: 'reading'};
+  await chrome.storage.session.set({[GEMINI_OPEN_KEY]: reading});
+  return reading;
+}
+
+// First read after `first` ms, then GEMINI_OPEN_RETRY_MS while the current card
+// is missing (logged out, still drawing). Stops on a read with it, a tab that
+// closed or left the usage screen, a newer wait, Gemini turned off — or the
+// deadline, which only holds back retries.
+async function readOpenedGemini(wait, first) {
+  const steps = [first, ...GEMINI_OPEN_RETRY_MS];
+  for (let i = 0; i < steps.length; i += 1) {
+    if (steps[i]) await openClock().wait(steps[i]);
+    if (!await isCurrentWait(wait)) return;
+    if (i > 0 && openClock().now() - wait.openedAt >= GEMINI_OPEN_DEADLINE_MS) break;
+    const result = await refreshGemini();
+    if (result?.status === 'ok') break;
+  }
+  await clearOpenWait(wait.id);
+}
+
+async function readOnceIfWaiting(id) {
+  const wait = await takeWait(id);
+  if (!wait) return;
+  if (await geminiOn()) await refreshGemini();
+  await clearOpenWait(id);
+}
+
+// Most recently used first. lastAccessed is Chrome 121+; without it the
+// active tab, then the order tabs.query gave.
+async function openGeminiUsageTab() {
+  let tabs = [];
+  try { tabs = await chrome.tabs.query({url:'https://gemini.google.com/*'}); }
+  catch (_) {}
+  const usageTabs = tabs.filter(tab => isGeminiUsageUrl(tab.url));
+  usageTabs.sort((a, b) => ((b.lastAccessed ?? -1) - (a.lastAccessed ?? -1)) || (Number(Boolean(b.active)) - Number(Boolean(a.active))));
+  return usageTabs[0] || null;
+}
+
+async function openGeminiUsage() {
+  if (await geminiOn()) {
+    const tab = await openGeminiUsageTab();
+    if (tab) return showGeminiUsageTab(tab);
+  }
+  const tab = await chrome.tabs.create({url: GEMINI_USAGE_URL, active: true});
+  if (tab?.id == null || !(await geminiOn())) return;
+  const wait = await startOpenWait(tab.id, 'waiting');
+  // Loaded before the wait was saved: its 'complete' has gone by.
+  let now = null;
+  try { now = await chrome.tabs.get(tab.id); }
+  catch (_) {}
+  if (now?.status === 'complete' && isGeminiUsageUrl(now.url)) {
+    const reading = await takeWait(wait.id);
+    if (reading) await readOpenedGemini(reading, GEMINI_OPEN_SETTLE_MS);
+  }
+}
+
+// An already-open usage tab: brought forward, not reopened. Discarded or still
+// loading, it (re)loads now, so it waits for 'complete' like a new tab. Frozen
+// (Chrome 132+), activation thaws it without a load: read after a short pause.
+// Loaded, read now.
+async function showGeminiUsageTab(tab) {
+  const loads = Boolean(tab.discarded) || tab.status === 'unloaded' || tab.status === 'loading';
+  const wait = await startOpenWait(tab.id, loads ? 'waiting' : 'reading');
+  try { await chrome.tabs.update(tab.id, {active: true}); }
+  catch (_) {}
+  if (tab.windowId != null) {
+    try { await chrome.windows.update(tab.windowId, {focused: true}); }
+    catch (_) {}
+  }
+  if (loads) return;
+  geminiOpenReads.add(wait.id);
+  await readOpenedGemini(wait, tab.frozen ? GEMINI_OPEN_SETTLE_MS : 0);
+}
+
+// Every tab's updates come here (onUpdated has no URL filter in Chrome); one
+// storage.session read and out unless it is the tab being waited for. The URL
+// is the tab's, not changeInfo's: with the gemini.google.com permission (no
+// "tabs" permission) tab.url is there on that site and missing elsewhere, so
+// a tab that left for another site reads as "not the usage screen".
+async function onGeminiTabUpdated(tabId, changeInfo, tab) {
+  const wait = await getOpenWait();
+  if (!wait || wait.tabId !== tabId) return;
+  if (!isGeminiUsageUrl(tab?.url) && !isGeminiUsageUrl(tab?.pendingUrl)) return clearOpenWait(wait.id);
+  if (wait.phase !== 'waiting') return;
+  if (openClock().now() - wait.openedAt >= GEMINI_OPEN_DEADLINE_MS) return readOnceIfWaiting(wait.id);
+  if (changeInfo?.status !== 'complete' || !isGeminiUsageUrl(tab?.url)) return;
+  const reading = await takeWait(wait.id);
+  if (reading) await readOpenedGemini(reading, GEMINI_OPEN_SETTLE_MS);
+}
+
+async function onGeminiTabRemoved(tabId) {
+  const wait = await getOpenWait();
+  if (wait?.tabId === tabId) await clearOpenWait(wait.id);
 }
 
 // ---- toolbar badge (CLAUDE.md §4) ------------------------------------------
@@ -607,6 +750,16 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 updateBadge();
 
+// The Gemini usage tab opened from the popup. Registered here, at the top and
+// at once, so a service worker started by a tab event still hears it; the
+// wait itself is in storage.session.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  onGeminiTabUpdated(tabId, changeInfo, tab).catch(error => console.warn('gemini tab wait:', String(error)));
+});
+chrome.tabs.onRemoved.addListener(tabId => {
+  onGeminiTabRemoved(tabId).catch(() => {});
+});
+
 // Only the extension's own pages talk to background. Content scripts don't
 // report by themselves (background asks chatgpt.js with SCAN_USAGE), so a
 // message from a web page is ignored. sender.url is the page that sent it.
@@ -636,7 +789,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message?.type === 'OPEN_CLAUDE_USAGE') { chrome.tabs.create({url:'https://claude.ai/settings/usage',active:true}); sendResponse({ok:true}); }
   if (message?.type === 'OPEN_CHATGPT_USAGE') { chrome.tabs.create({url:CHATGPT_USAGE_URL,active:true}); sendResponse({ok:true}); }
-  if (message?.type === 'OPEN_GEMINI_USAGE') { chrome.tabs.create({url:GEMINI_USAGE_URL,active:true}); sendResponse({ok:true}); }
+  // The popup closes as the tab opens; the read after it runs on here.
+  if (message?.type === 'OPEN_GEMINI_USAGE') { openGeminiUsage().catch(error => console.warn('gemini usage tab:', String(error))); sendResponse({ok:true}); }
 });
 
 // Granted from the popup's toggle (or anywhere else): turn the provider on,
