@@ -21,7 +21,7 @@
 - [ ] 0.6.2 승인 확인 → 오버레이 수정분을 0.6.3으로 제출
 - [x] bridge 잔재 제거 (`background.js`의 `127.0.0.1:8765` 관련 코드와 테스트)
 - [ ] `tabs` 권한 제거 가능성 검토 — 빼면 설치 시 "방문 기록 읽기" 경고가 사라진다. 빼고 Gemini 탭 찾기·ChatGPT 대체 경로·오버레이 열기를 실제 Chrome에서 확인
-- [x] README 한국어 라벨, `popup.html` `lang`, `package.json` `name` 정리 (중국어 간체 로캘 `zh` → `zh_CN`도 함께)
+- [x] README 한국어 라벨, `popup.html` `lang`, `package.json` `name` 정리
 - [ ] 스토어 등록정보 다국어: 한국어·일본어·중국어(간체·번체)·스페인어 설명 (UI는 이미 6개 언어)
 - [ ] 스토어 스크린샷 갱신: 팝업, 펼친 오버레이, 접힌 오버레이
 - [ ] 실계정 확인: ChatGPT 5시간·주간 계정, Claude Pro·Team 요금제 표기 (받은 화면을 fixture로 추가)

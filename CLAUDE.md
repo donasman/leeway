@@ -55,7 +55,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `extension/i18n.js` | `chrome.i18n` → view.js용 라벨 맵 |
 | `extension/popup.html`, `popup.js` | 팝업 |
 | `extension/overlay_inject.js` | 현재 탭에 주입되어 Document Picture-in-Picture 오버레이를 연다 |
-| `extension/_locales/{en,ko,es,ja,zh_CN,zh_TW}` | UI 문자열 6개 언어. 중국어는 Chrome이 지원하는 `zh_CN`·`zh_TW`만 쓴다(`zh` 폴더는 Chrome이 무시) |
+| `extension/_locales/{en,ko,es,ja,zh,zh_TW}` | UI 문자열 6개 언어. 간체는 `zh` 폴더(UI 로캘 zh-CN은 `zh`로 대체됨), 번체는 `zh_TW` |
 | `helper/` | Leeway helper (Go, 의존성 없음). Native Messaging 호스트, `install`/`uninstall` |
 | `tests/` | Node 테스트 (`npm test`), `tests/fixtures/` HTML 픽스처 |
 | `docs/index.html` | GitHub Pages 개인정보처리방침 (`PRIVACY.md`와 같은 내용을 유지) |
