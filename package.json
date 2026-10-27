@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Test tooling only. The extension has no build step and no runtime dependencies.",
   "scripts": {
-    "test": "node tests/test_parsers.mjs && node tests/test_snapshot.mjs && node tests/test_view.mjs && node tests/test_chatgpt_api.mjs && node tests/test_gemini.mjs && node tests/test_gemini_scan.mjs && node tests/test_background.mjs && node tests/test_popup.mjs && node tests/test_chatgpt_parser.mjs && node tests/test_formats.mjs && node tests/test_peers.mjs && node tests/test_locales.mjs"
+    "test": "node tests/test_parsers.mjs && node tests/test_snapshot.mjs && node tests/test_view.mjs && node tests/test_chatgpt_api.mjs && node tests/test_gemini.mjs && node tests/test_gemini_scan.mjs && node tests/test_background.mjs && node tests/test_popup.mjs && node tests/test_chatgpt_parser.mjs && node tests/test_formats.mjs && node tests/test_overlay.mjs && node tests/test_peers.mjs && node tests/test_locales.mjs"
   },
   "devDependencies": {
     "jsdom": "^29.1.1"

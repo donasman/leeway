@@ -2,7 +2,7 @@ import { clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from './parser
 import { snapshotWrites, usageKey, lastOkKey } from './snapshot.js';
 import { whamPayload, whamPlan, whamWindows } from './chatgpt_api.js';
 import { geminiPayload } from './gemini.js';
-import { badgeView, peerViews, providerView } from './view.js';
+import { badgeView, formatAge, peerViews, providerView } from './view.js';
 import { HELPER_HOST, PEER_PERMISSION, cleanLabel, newProfileId, peerRecord, sharedSnapshots } from './peers.js';
 import { viewLabels } from './i18n.js';
 
@@ -149,16 +149,21 @@ async function overlayData() {
   const enabled = await getEnabledProviders();
   const now = Date.now();
   const providers = [];
+  let newest = NaN; // the latest read of any service that is on, for the header
   for (const provider of Object.keys(PROVIDER_HOSTS)) {
     const on = enabled.has(provider);
     const permitted = on && await hasHostPermission(provider);
     const stored = await chrome.storage.local.get([usageKey(provider), lastOkKey(provider)]);
+    const readAt = Date.parse(stored[usageKey(provider)]?.collected_at);
+    if (permitted && Number.isFinite(readAt) && !(readAt <= newest)) newest = readAt;
     const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels);
     providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note, plan: view.plan, accounts: view.accounts});
   }
   const {peer_settings: settings, peer_profiles: record} = await chrome.storage.local.get(['peer_settings', 'peer_profiles']);
   const peers = settings?.on ? peerViews(record, now, undefined, labels) : [];
-  return {providers, peers, now};
+  const age = Number.isFinite(newest) ? formatAge(now - newest, labels) : '';
+  const checked = age ? String(labels.checked || '').replace('{age}', age) : '';
+  return {providers, peers, checked, now};
 }
 
 async function fetchClaudeJson(url) {

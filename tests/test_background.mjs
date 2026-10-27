@@ -954,6 +954,7 @@ console.log('\noverlay data — one providerView per provider, same as the popup
   check('content script may read overlay data', Array.isArray(data?.providers), true);
   const claude = data.providers.find(p => p.provider === 'claude');
   check('claude: enabled, ok, 5-hour primary 60%', [claude?.enabled, claude?.state, claude?.rows.find(r => r.primary)?.percent], [true, 'ok', '60%']);
+  check('header: when the newest value was read', data.checked, KO.checked.replace('{age}', KO.just_now));
   const chatgpt = data.providers.find(p => p.provider === 'chatgpt');
   check('chatgpt: not enabled → off, no rows', [chatgpt?.enabled, chatgpt?.state, chatgpt?.rows], [false, 'off', []]);
   check('a content script still cannot trigger a refresh (state change stays page-only)', await send({type: 'REFRESH_ALL'}, CONTENT), undefined);

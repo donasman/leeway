@@ -4,6 +4,10 @@
 // native app), and renders the same remaining-usage the popup shows — computed
 // by background (view.js) via OVERLAY_DATA, refreshed on storage changes and
 // on a timer. The PiP's opener is this page, so it lives while this tab does.
+//
+// Layout: expanded = one block per service (name, plan, big main value, bar,
+// then the main limit's reset and the other limits on one line); collapsed =
+// one line of small rings, one per service. Click toggles between them.
 (async () => {
   'use strict';
   if (!('documentPictureInPicture' in window)) {
@@ -17,105 +21,120 @@
   }
 
   const CSS = `
-    body{margin:0;background:#0e1319;color:#e7ecf3;-webkit-font-smoothing:antialiased;
-      font:12px/1.4 system-ui,-apple-system,"Segoe UI","Noto Sans KR","Noto Sans JP","Noto Sans SC","Noto Sans TC",sans-serif;padding:10px 12px}
-    #ov .hd{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;margin-bottom:6px}
-    #ov .st .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#3fca82;vertical-align:middle}
-    #ov .st.partial .dot{background:#ecb23f}
-    #ov .prov{margin:10px 0 0}
-    #ov .prov.dim .lim{opacity:.5}
-    #ov .pname{display:flex;justify-content:space-between;align-items:baseline;font-weight:600;font-size:12.5px}
-    #ov .pstatus{font-size:10.5px;color:#8a97a8;font-weight:500}
-    #ov .lim{position:relative;display:grid;grid-template-columns:1fr auto;gap:1px 8px;margin:6px 0 9px;padding-bottom:9px}
-    #ov .lim .lb{grid-row:1;grid-column:1;font-size:10.5px;color:#8a97a8;align-self:center}
-    #ov .lim .pc{grid-row:1;grid-column:2;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
-    #ov .lim.primary .pc{font-size:16px;line-height:1}
-    #ov .lim.good .pc{color:#3fca82}#ov .lim.warn .pc{color:#ecb23f}#ov .lim.bad .pc{color:#ff6168}
-    #ov .lim .rs{grid-row:2;grid-column:1/-1;font-size:10px;color:#8a97a8;font-variant-numeric:tabular-nums}
-    #ov .lim::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;border-radius:3px;background:rgba(255,255,255,.11)}
-    #ov .lim::before{content:"";position:absolute;left:0;bottom:0;height:4px;border-radius:3px;width:calc(var(--pct, 0) * 1%)}
-    #ov .lim.good::before{background:#3fca82}#ov .lim.warn::before{background:#ecb23f}#ov .lim.bad::before{background:#ff6168}
-    #ov .note{color:#8a97a8;font-size:10.5px;margin-top:1px}
-    #ov .empty{color:#8a97a8;font-size:11.5px;text-align:center;padding:22px 6px}
-    #ov .cline{display:flex;flex-wrap:wrap;align-items:center;gap:1px 7px;font-size:13px;padding:2px 0}
-    #ov .cline .b{font-weight:800}
-    #ov .cline .p{font-weight:700;font-variant-numeric:tabular-nums}
-    #ov .cline .sep{color:#8a97a8}
-    #ov .plan{margin-left:5px;font-size:10px;font-weight:600;color:#8a97a8}
-    #ov .acct{margin-top:6px}
-    #ov .aname{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;color:#c3ccd8}
-    #ov .peer{margin-top:12px;padding-top:8px;border-top:1px solid #283241}
-    #ov .peerh{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;font-weight:700}
-    body{cursor:pointer}`;
+    html,body{margin:0;background:#0f141b}
+    body{color:#e7ecf3;-webkit-font-smoothing:antialiased;cursor:pointer;overflow-y:auto;
+      font:12px/1.4 "Segoe UI",system-ui,-apple-system,"Malgun Gothic","Noto Sans KR","Noto Sans JP","Noto Sans SC","Noto Sans TC",sans-serif}
+    #ov{padding:12px 14px;display:flex;flex-direction:column;gap:12px;font-variant-numeric:tabular-nums}
+    #ov .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    #ov .brand{font-size:12px;font-weight:700;letter-spacing:.02em}
+    #ov .muted{font-size:10.5px;color:#94a1b2}
+    #ov .prov{display:flex;flex-direction:column;gap:5px}
+    #ov .prov.dim{opacity:.55}
+    #ov .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+    #ov .name{display:flex;align-items:center;gap:6px;min-width:0;font-size:12.5px;font-weight:600}
+    #ov .plan{font-size:10.5px;font-weight:600;color:#94a1b2;white-space:nowrap}
+    #ov .chip{font-size:9.5px;font-weight:600;color:#e7ecf3;background:#283241;padding:1px 6px;border-radius:999px;white-space:nowrap}
+    #ov .big{font-size:20px;font-weight:700;line-height:1}
+    #ov .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+    #ov .bar i{display:block;height:4px}
+    #ov .sub{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;color:#94a1b2}
+    #ov .sub b{font-weight:600}
+    #ov .good{color:#3fca82}#ov .warn{color:#ecb23f}#ov .bad{color:#ff6168}
+    #ov .bar i.good{background:#3fca82}#ov .bar i.warn{background:#ecb23f}#ov .bar i.bad{background:#ff6168}
+    #ov .peer{display:flex;flex-direction:column;gap:12px;border-top:1px solid #283241;padding-top:10px}
+    #ov .peerh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px;font-weight:700}
+    #ov .empty{color:#94a1b2;font-size:11.5px;text-align:center;padding:22px 6px}
+    #ov.compact{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;min-height:100vh;box-sizing:border-box}
+    #ov .ci{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;min-width:0}
+    #ov .ci.dim{opacity:.55}
+    #ov .ci b{font-weight:700}
+    #ov .ci svg{flex:none}
+    #ov.compact .empty{padding:0}`;
 
   const NAMES = { claude: 'Claude', chatgpt: 'ChatGPT', gemini: 'Gemini' };
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const tone = (pct) => { const n = parseInt(pct, 10); return Number.isFinite(n) ? (n < 20 ? 'bad' : n < 50 ? 'warn' : 'good') : ''; };
   const TONE_HEX = { good: '#3fca82', warn: '#ecb23f', bad: '#ff6168' };
+  const RING = 2 * Math.PI * 10; // the collapsed ring's circumference (r = 10)
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // "0%" is a value (red), "?" is none (no colour) — same thresholds as the popup and badge.
+  const pctOf = (text) => { const n = parseInt(text, 10); return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null; };
+  const tone = (text) => { const n = pctOf(text); return n === null ? '' : n < 20 ? 'bad' : n < 50 ? 'warn' : 'good'; };
+  const msg = (key, fallback) => { try { return chrome.i18n.getMessage(key) || fallback; } catch (_) { return fallback; } };
   let collapsed = false;
   let lastData = { providers: [] };
 
-  function renderRows(list) {
-    return (list || []).map((r) => {
-      const n = parseInt(r.percent, 10);
-      const t = tone(r.percent);
-      const pctStyle = Number.isFinite(n) ? ` style="--pct:${Math.max(0, Math.min(100, n))}"` : '';
-      return `<div class="lim ${r.primary ? 'primary ' : ''}${t}"${pctStyle}>`
-        + `<span class="lb">${esc(r.label)}</span><span class="pc">${esc(r.percent)}</span>`
-        + (r.reset ? `<span class="rs">${esc(r.reset)}</span>` : '') + '</div>';
-    }).join('');
+  // One service (or one Claude organization, or another profile's service).
+  // v: {name, plan, state, status, dim, rows, note}
+  function block(v) {
+    const rows = Array.isArray(v.rows) ? v.rows : [];
+    const main = rows.find((r) => r.primary) || rows[0];
+    const chip = v.state && v.state !== 'ok' && v.status ? `<span class="chip">${esc(v.status)}</span>` : '';
+    const plan = v.plan ? `<span class="plan">${esc(v.plan)}</span>` : '';
+    const name = `<span class="name"><span>${esc(v.name)}</span>${plan}${chip}</span>`;
+    const note = v.note && (!main || v.dim) ? `<div class="muted">${esc(v.note)}</div>` : '';
+    if (!main) return `<div class="prov${v.dim ? ' dim' : ''}"><div class="top">${name}</div>${note}</div>`;
+    const t = tone(main.percent);
+    const width = pctOf(main.percent) ?? 0;
+    const left = [main.label, main.reset].filter(Boolean).map(esc).join(' · ');
+    const right = rows.filter((r) => r !== main).slice(0, 2)
+      .map((r) => `${esc(r.label)} <b class="${tone(r.percent)}">${esc(r.percent)}</b>`).join(' · ');
+    return `<div class="prov${v.dim ? ' dim' : ''}">`
+      + `<div class="top">${name}<span class="big ${t}">${esc(main.percent)}</span></div>`
+      + `<div class="bar"><i class="${t}" style="width:${width}%"></i></div>`
+      + `<div class="sub"><span>${left}</span><span>${right}</span></div>${note}</div>`;
   }
 
-  // Several Claude organizations: one block each, named by its plan; the
-  // provider line then carries no plan of its own.
-  function renderProvider(p) {
+  // A service with several Claude organizations: one block per organization,
+  // named "Claude" with the organization's plan beside it.
+  function serviceBlocks(p) {
     const name = NAMES[p.provider] || p.provider;
     const accounts = Array.isArray(p.accounts) ? p.accounts : [];
-    const plan = p.plan && !accounts.length ? `<span class="plan">${esc(p.plan)}</span>` : '';
-    const badge = p.state === 'ok' ? '' : `<span class="pstatus">${esc(p.status)}</span>`;
-    const rows = accounts.length
-      ? accounts.map((a) => `<div class="acct"><div class="aname"><span>${esc(a.label)}</span>`
-        + (a.state === 'ok' ? '' : `<span class="pstatus">${esc(a.status)}</span>`) + `</div>${renderRows(a.rows)}</div>`).join('')
-      : renderRows(p.rows);
-    const note = p.note ? `<div class="note">${esc(p.note)}</div>` : '';
-    return `<div class="prov${p.dim ? ' dim' : ''}"><div class="pname"><span>${esc(name)}${plan}</span>${badge}</div>${rows}${note}</div>`;
-  }
-
-  // Other Chrome profiles (through the Leeway helper), under this one's own.
-  function renderPeers(data) {
-    return (data && Array.isArray(data.peers) ? data.peers : []).map((peer) => `<div class="peer"><div class="peerh"><span>${esc(peer.label)}</span>`
-      + `<span class="pstatus">${esc(peer.updated)}</span></div>${(peer.providers || []).map(renderProvider).join('')}</div>`).join('');
+    if (!accounts.length) return block({ name, plan: p.plan, state: p.state, status: p.status, dim: p.dim, rows: p.rows, note: p.note });
+    return accounts.map((a, i) => block({ name, plan: a.label, state: a.state, status: a.status, dim: p.dim, rows: a.rows, note: i === accounts.length - 1 ? p.note : '' })).join('');
   }
 
   function render(root, data) {
+    root.className = '';
     const provs = (data && data.providers || []).filter((p) => p.enabled);
-    const peers = renderPeers(data);
+    const peers = (data && Array.isArray(data.peers) ? data.peers : []).map((peer) => `<div class="peer"><div class="peerh"><span>${esc(peer.label)}</span>`
+      + `<span class="muted">${esc(peer.updated)}</span></div>${(peer.providers || []).map(serviceBlocks).join('')}</div>`).join('');
+    const head = `<div class="hd"><span class="brand">Leeway</span><span class="muted">${esc(data && data.checked)}</span></div>`;
     if (!provs.length && !peers) {
-      const empty = (chrome.i18n && chrome.i18n.getMessage('overlay_empty')) || 'Turn on a service in the popup.';
-      root.innerHTML = '<div class="hd"><span>Leeway</span></div><div class="empty">' + esc(empty) + '</div>';
+      root.innerHTML = head + `<div class="empty">${esc(msg('overlay_empty', 'Turn on a service in the popup.'))}</div>`;
       return;
     }
-    const partial = provs.some((p) => p.dim);
-    root.innerHTML = `<div class="hd"><span>Leeway</span><span class="st ${partial ? 'partial' : ''}"><span class="dot"></span></span></div>`
-      + provs.map(renderProvider).join('') + peers;
+    root.innerHTML = head + provs.map(serviceBlocks).join('') + peers;
   }
 
-  // One-line "Leeway · Claude 72% · …" for the collapsed state.
-  function renderCompact(host, data) {
-    const provs = (data && data.providers || []).filter((p) => p.enabled && p.rows && p.rows.length);
-    if (!provs.length) { render(host, data); return; }
-    const part = (p) => {
-      const r = p.rows.find((x) => x.primary) || p.rows[0];
-      return `<span class="b">${esc(NAMES[p.provider] || p.provider)}</span> `
-        + `<span class="p" style="color:${TONE_HEX[tone(r.percent)] || '#e7ecf3'}">${esc(r.percent)}</span>`;
-    };
-    host.innerHTML = '<div class="cline"><span class="b">Leeway</span><span class="sep">·</span>'
-      + provs.map(part).join('<span class="sep">·</span>') + '</div>';
+  function ring(text) {
+    const n = pctOf(text);
+    const arc = n === null ? '' : `<circle cx="12" cy="12" r="10" fill="none" stroke="${TONE_HEX[tone(text)]}" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(RING * n / 100).toFixed(1)} ${RING.toFixed(1)}" transform="rotate(-90 12 12)"></circle>`;
+    return `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3.5"></circle>${arc}</svg>`;
+  }
+
+  // Collapsed: one ring + name + main value per service this profile has on.
+  // A service with nothing read yet still gets its place, as "?".
+  function renderCompact(root, data) {
+    root.className = 'compact';
+    const provs = (data && data.providers || []).filter((p) => p.enabled).slice(0, 4);
+    if (!provs.length) {
+      root.innerHTML = `<div class="empty">${esc(msg('overlay_empty', 'Turn on a service in the popup.'))}</div>`;
+      return;
+    }
+    root.innerHTML = provs.map((p) => {
+      const rows = Array.isArray(p.rows) ? p.rows : [];
+      const main = rows.find((r) => r.primary) || rows[0];
+      const pct = main ? main.percent : '?';
+      const t = tone(pct);
+      // Digits only, like the toolbar badge: three services fit in 300 px even at 100.
+      const shown = pctOf(pct) === null ? '?' : String(pctOf(pct));
+      return `<span class="ci${p.dim ? ' dim' : ''}">${ring(pct)}<span>${esc(NAMES[p.provider] || p.provider)}</span>`
+        + `<b class="${t === 'good' ? '' : t}">${esc(shown)}</b></span>`;
+    }).join('');
   }
 
   let pip;
   try {
-    pip = await documentPictureInPicture.requestWindow({ width: 280, height: 240 });
+    pip = await documentPictureInPicture.requestWindow({ width: 280, height: 270 }); // three services fit
   } catch (e) {
     console.warn('Leeway overlay: could not open PiP', e);
     return;
@@ -125,12 +144,22 @@
   const style = doc.createElement('style'); style.textContent = CSS; doc.head.appendChild(style);
   const root = doc.createElement('div'); root.id = 'ov'; doc.body.appendChild(root);
 
-  // Click the overlay to collapse to one line / expand; try to resize the PiP
-  // window to match (resizeTo may be a no-op in some Chrome builds — harmless).
-  const SIZE = { full: [280, 240], compact: [300, 58] };
-  const resizePip = () => { try { pip.resizeTo(...(collapsed ? SIZE.compact : SIZE.full)); } catch (_) {} };
+  // Click to collapse to one line / expand. The window follows: collapsed is a
+  // fixed strip; expanded fits its content up to 560 px (then it scrolls).
+  // resizeTo needs the click's user activation and may be a no-op in some
+  // Chrome builds — harmless either way.
+  const COMPACT = [300, 58];
+  const WIDTH = 280;
+  function resizePip() {
+    try {
+      if (collapsed) { pip.resizeTo(...COMPACT); return; }
+      const frame = Math.max(0, (pip.outerHeight || 0) - (pip.innerHeight || 0));
+      const content = root.scrollHeight;
+      pip.resizeTo(WIDTH, content > 0 ? Math.min(560, Math.max(120, content + frame)) : 270);
+    } catch (_) {}
+  }
   const paint = () => (collapsed ? renderCompact : render)(root, lastData);
-  root.addEventListener('click', () => { collapsed = !collapsed; resizePip(); paint(); });
+  root.addEventListener('click', () => { collapsed = !collapsed; paint(); resizePip(); });
 
   async function refresh() {
     try {
@@ -139,7 +168,7 @@
     } catch (_) { /* background asleep between alarms; the next tick retries */ }
   }
   const onChanged = (changes, area) => {
-    if (area === 'local' && Object.keys(changes).some((k) => k === 'enabledProviders' || k.startsWith('usage_'))) refresh();
+    if (area === 'local' && Object.keys(changes).some((k) => k === 'enabledProviders' || k.startsWith('usage_') || k.startsWith('peer_'))) refresh();
   };
   chrome.storage.onChanged.addListener(onChanged);
   const timer = setInterval(refresh, 30 * 1000); // keep "N min ago" / staleness current
