@@ -490,6 +490,11 @@ console.log('\noverlay button — injects overlay_inject.js into the active tab'
   activeTab = {id: 2, url: 'chrome://extensions'};
   await clickAndSettle('openOverlay');
   check('chrome:// page: no inject, shows the hint', [calls, $('ovmsg').textContent], [[], KO.overlay_hint]);
+  // Without the "tabs" permission the url comes from activeTab (opening the
+  // popup grants it); a restricted page gets no grant, so no url at all.
+  activeTab = {id: 3};
+  await clickAndSettle('openOverlay');
+  check('no url (restricted page, no activeTab grant): no inject, shows the hint', [calls, $('ovmsg').textContent], [[], KO.overlay_hint]);
 }
 
 // ---------------------------------------------------------------------------
