@@ -109,8 +109,18 @@ globalThis.chrome = {
   // Tabs are whatever a test puts in openTabs; a tab answers SCAN_USAGE only
   // if tabAnswers has its id (chatgpt.js itself is test_chatgpt_parser.mjs).
   // tabCalls shows whether background touched the tabs at all.
+  // query() answers like Chrome without the "tabs" permission: a tab's url and
+  // title are there only for a site with a granted host permission, and the
+  // url filter only applies to those tabs — the others come back without them.
   tabs: {
-    async query(query) { tabCalls.push(['query', query]); return structuredClone(openTabs); },
+    async query(query) {
+      tabCalls.push(['query', query]);
+      const patterns = [].concat(query?.url ?? []);
+      return openTabs.flatMap(tab => {
+        if (!hostGranted(tab.url)) { const {url, title, ...rest} = tab; return [structuredClone(rest)]; }
+        return !patterns.length || patterns.some(p => matchesPattern(p, tab.url)) ? [structuredClone(tab)] : [];
+      });
+    },
     async create(props) { tabCalls.push(['create', props.url]); throw new Error('no new tabs in this test'); },
     async sendMessage(tabId, message) {
       tabCalls.push(['sendMessage', tabId, message?.type]);
@@ -127,6 +137,9 @@ globalThis.chrome = {
 let nativeCalls = [];
 const nativeHelper = {installed: true, profiles: new Map()};
 let openTabs = [];
+// Only the 'https://host/*' patterns this extension uses.
+const matchesPattern = (pattern, url) => pattern.endsWith('/*') && String(url).startsWith(pattern.slice(0, -1));
+const hostGranted = url => [...granted].some(pattern => matchesPattern(pattern, url));
 let tabAnswers = {};
 let tabGate = null;
 
@@ -958,6 +971,35 @@ console.log('\noverlay data — one providerView per provider, same as the popup
   const chatgpt = data.providers.find(p => p.provider === 'chatgpt');
   check('chatgpt: not enabled → off, no rows', [chatgpt?.enabled, chatgpt?.state, chatgpt?.rows], [false, 'off', []]);
   check('a content script still cannot trigger a refresh (state change stays page-only)', await send({type: 'REFRESH_ALL'}, CONTENT), undefined);
+}
+
+console.log('\nno "tabs" permission — usage tabs are found through the site permission alone');
+{
+  // ChatGPT on (API refused, so its page fallback runs), Gemini on; Gemini's
+  // and ChatGPT's usage tabs are open, and so is a Claude tab without a grant.
+  reset({enabled: ['chatgpt', 'gemini'], permissions: [CHATGPT_HOST, GEMINI_HOST]});
+  chatgptAccount({usageStatus: 403, usage: '<!DOCTYPE html>', usageType: 'text/html'});
+  openTabs = [
+    {id: 4, url: 'https://claude.ai/settings/usage', title: 'Claude'},
+    {id: 5, url: 'https://chatgpt.com/settings/usage', title: 'ChatGPT'},
+    {id: 6, url: 'https://gemini.google.com/usage', title: 'Gemini'},
+  ];
+  tabAnswers = {4: geminiAnswer(), 5: {ok: true, payload: chatgptOk(), debug: {url: 'https://chatgpt.com/settings/usage', routeDetected: true, failedStep: 'none'}}, 6: geminiAnswer()};
+  await send({type: 'REFRESH_ALL'});
+  check('chatgpt read from its usage tab', [get('usage_chatgpt')?.status, pct(get('usage_chatgpt'), 'chatgpt_5h')], ['ok', 61]);
+  check('gemini read from its usage tab', [get('usage_gemini')?.status, pct(get('usage_gemini'), 'gemini_5h')], ['ok', 100]);
+  check('only those two tabs were asked', tabCalls.filter(c => c[0] === 'sendMessage').map(c => c[1]).sort(), [5, 6]);
+}
+{
+  // Without the site permission a usage tab comes back without its url, and
+  // refresh asks no tab at all.
+  reset({enabled: ['gemini'], permissions: [GEMINI_HOST]});
+  openTabs = geminiTab();
+  tabAnswers = {5: geminiAnswer()};
+  granted.delete(GEMINI_HOST);
+  check('query without the grant: no url on the tab', (await chrome.tabs.query({url: 'https://gemini.google.com/*'})).map(t => [t.id, t.url]), [[5, undefined]]);
+  await send({type: 'REFRESH_ALL'});
+  check('needs_permission, no tab asked', [get('usage_gemini')?.status, tabCalls.filter(c => c[0] === 'sendMessage')], ['needs_permission', []]);
 }
 
 // ---------------------------------------------------------------------------
