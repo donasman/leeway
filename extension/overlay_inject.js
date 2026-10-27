@@ -44,7 +44,7 @@
     #ov .peer{display:flex;flex-direction:column;gap:12px;border-top:1px solid #283241;padding-top:10px}
     #ov .peerh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px;font-weight:700}
     #ov .empty{color:#94a1b2;font-size:11.5px;text-align:center;padding:22px 6px}
-    #ov.compact{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;min-height:100vh;box-sizing:border-box}
+    #ov.compact{flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:0 14px;min-height:100vh;box-sizing:border-box}
     #ov .ci{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;min-width:0}
     #ov .ci.dim{opacity:.55}
     #ov .ci b{font-weight:700}
@@ -125,10 +125,8 @@
       const main = rows.find((r) => r.primary) || rows[0];
       const pct = main ? main.percent : '?';
       const t = tone(pct);
-      // Digits only, like the toolbar badge: three services fit in 300 px even at 100.
-      const shown = pctOf(pct) === null ? '?' : String(pctOf(pct));
       return `<span class="ci${p.dim ? ' dim' : ''}">${ring(pct)}<span>${esc(NAMES[p.provider] || p.provider)}</span>`
-        + `<b class="${t === 'good' ? '' : t}">${esc(shown)}</b></span>`;
+        + `<b class="${t === 'good' ? '' : t}">${esc(pct)}</b></span>`;
     }).join('');
   }
 
@@ -144,18 +142,25 @@
   const style = doc.createElement('style'); style.textContent = CSS; doc.head.appendChild(style);
   const root = doc.createElement('div'); root.id = 'ov'; doc.body.appendChild(root);
 
-  // Click to collapse to one line / expand. The window follows: collapsed is a
-  // fixed strip; expanded fits its content up to 560 px (then it scrolls).
-  // resizeTo needs the click's user activation and may be a no-op in some
-  // Chrome builds — harmless either way.
-  const COMPACT = [300, 58];
-  const WIDTH = 280;
+  // Click to collapse to one line / expand. The window follows:
+  //   collapsed — a fixed strip, COMPACT_W wide and COMPACT_H of content;
+  //   expanded  — EXPANDED_W wide, as tall as its content between
+  //               EXPANDED_MIN_H and EXPANDED_MAX_H (more than that scrolls).
+  // Heights are content heights; Chrome's title bar is added on top. Chrome
+  // lets the user resize a PiP window at any time and offers no way to stop
+  // it: these sizes are applied on open and on every click. resizeTo needs
+  // the click's user activation and may be a no-op in some Chrome builds.
+  const COMPACT_W = 360;
+  const COMPACT_H = 44;
+  const EXPANDED_W = 280;
+  const EXPANDED_MIN_H = 140;
+  const EXPANDED_MAX_H = 520;
   function resizePip() {
     try {
-      if (collapsed) { pip.resizeTo(...COMPACT); return; }
       const frame = Math.max(0, (pip.outerHeight || 0) - (pip.innerHeight || 0));
-      const content = root.scrollHeight;
-      pip.resizeTo(WIDTH, content > 0 ? Math.min(560, Math.max(120, content + frame)) : 270);
+      if (collapsed) { pip.resizeTo(COMPACT_W, COMPACT_H + frame); return; }
+      const content = root.scrollHeight || 240;
+      pip.resizeTo(EXPANDED_W, Math.min(EXPANDED_MAX_H, Math.max(EXPANDED_MIN_H, content)) + frame);
     } catch (_) {}
   }
   const paint = () => (collapsed ? renderCompact : render)(root, lastData);
@@ -179,5 +184,8 @@
   });
 
   paint(); // first paint while the message round-trips
-  refresh(); // background's 2-min alarm keeps the stored values fresh after this
+  // Background's 2-min alarm keeps the stored values fresh after this. Once
+  // the first values are drawn, fit the window to them (allowed only while the
+  // popup click's activation lasts; otherwise the first click does it).
+  refresh().then(resizePip);
 })();

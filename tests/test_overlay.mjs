@@ -59,7 +59,8 @@ const DATA = {
 
 console.log('\nexpanded — one block per service');
 {
-  const {root} = await openOverlay(DATA);
+  const {root, resizes} = await openOverlay(DATA);
+  check('on open, the window is fitted once the first values are drawn', resizes.length >= 1 && resizes[0][0] === 280, true);
   const blocks = [...root.querySelectorAll('.prov')];
   check('header: brand and when it was read', [text(root.querySelector('.brand')), text(root.querySelector('.hd .muted'))], ['Leeway', '2분 전 확인']);
   check('one block per service that is on', blocks.map(b => text(b.querySelector('.name > span'))), ['Claude', 'ChatGPT', 'Gemini']);
@@ -115,20 +116,21 @@ console.log('\ncollapsed — one ring per service');
   await click();
   const items = [...root.querySelectorAll('.ci')];
   check('collapsed: a strip, no service blocks', [root.className, root.querySelectorAll('.prov').length], ['compact', 0]);
-  check('name and main value per service, digits only like the badge; 0 stays 0', items.map(i => [text(i.querySelector('span')), text(i.querySelector('b'))]), [['Claude', '72'], ['ChatGPT', '0'], ['Gemini', '?']]);
+  check('name and main value per service; 0% stays 0%', items.map(i => [text(i.querySelector('span')), text(i.querySelector('b'))]), [['Claude', '72%'], ['ChatGPT', '0%'], ['Gemini', '?']]);
   check('a ring arc for a value, none for "?"', items.map(i => i.querySelectorAll('circle').length), [2, 2, 1]);
   check('low values coloured, plenty stays plain', items.map(i => i.querySelector('b').className), ['', 'bad', '']);
   check('stale stays dimmed', items[2].classList.contains('dim'), true);
-  check('the window shrinks to the strip', resizes.at(-1), [300, 58]);
+  check('the window becomes the fixed strip: 360 wide, 44 of content plus the title bar (30)', resizes.at(-1), [360, 74]);
   await click();
-  check('click again: expanded, window back to its content height', [root.className, root.querySelectorAll('.prov').length, resizes.at(-1)[0]], ['', 3, 280]);
+  check('click again: expanded, 280 wide', [root.className, root.querySelectorAll('.prov').length, resizes.at(-1)[0]], ['', 3, 280]);
+  check('expanded height stays within 140–520 of content (+30 title bar)', resizes.at(-1)[1] >= 170 && resizes.at(-1)[1] <= 550, true);
 }
 
 console.log('\ncollapsed — a service with nothing read yet keeps its place');
 {
   const {root, click} = await openOverlay({checked: '', providers: [provider('claude', {state: 'waiting', status: '대기 중'}), provider('chatgpt', {rows: [row('5시간', '61%', '', true)]})], peers: []});
   await click();
-  check('"?" for it, and no full blocks in the strip (the old fallback)', [[...root.querySelectorAll('.ci b')].map(text), root.querySelectorAll('.prov').length], [['?', '61'], 0]);
+  check('"?" for it, and no full blocks in the strip (the old fallback)', [[...root.querySelectorAll('.ci b')].map(text), root.querySelectorAll('.prov').length], [['?', '61%'], 0]);
 }
 
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);
