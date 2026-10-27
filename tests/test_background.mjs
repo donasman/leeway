@@ -132,7 +132,6 @@ let tabGate = null;
 
 // ---- fetch stub ------------------------------------------------------------
 
-const bridge = {up: false, requests: []};
 let routes = {}; // url → {status, body, type?, gate?}
 let claudeRequests = [];
 let chatgptRequests = [];
@@ -141,11 +140,6 @@ let fetched = []; // every URL fetch() was called with
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
   fetched.push(url);
-  if (url.startsWith('http://127.0.0.1:8765/')) {
-    if (!bridge.up) throw new TypeError('fetch failed');
-    bridge.requests.push({url, method: init.method || 'GET', headers: init.headers || {}, body: init.body});
-    return new Response('{"ok":true}', {status: 200, headers: {'Content-Type': 'application/json'}});
-  }
   if (url.startsWith('https://claude.ai/')) claudeRequests.push(url);
   if (url.startsWith('https://chatgpt.com/')) chatgptRequests.push({url, headers: init.headers || {}, credentials: init.credentials, redirect: init.redirect});
   const route = routes[url];
@@ -177,15 +171,11 @@ async function waitFor(condition) {
   if (!condition()) throw new Error('waitFor: condition never became true');
 }
 
-function reset({enabled = [], permissions = [], bridgeUp = false, token} = {}) {
+function reset({enabled = [], permissions = []} = {}) {
   store.clear();
   granted.clear();
   for (const origin of permissions) granted.add(origin);
-  if (bridgeUp) granted.add('http://127.0.0.1:8765/*'); // bridge host is an optional permission now; a reachable bridge implies it was granted
   store.set('enabledProviders', enabled);
-  if (token) store.set('bridge_token', token);
-  bridge.up = bridgeUp;
-  bridge.requests = [];
   routes = {};
   claudeRequests = [];
   chatgptRequests = [];
@@ -204,7 +194,6 @@ const settle = async () => { for (let i = 0; i < 10; i += 1) await new Promise(r
 
 const get = key => store.get(key);
 const pct = (snapshot, id) => snapshot?.limits.find(l => l.id === id)?.remaining_percent;
-const bridgeBodies = () => bridge.requests.map(r => JSON.parse(r.body));
 
 // Fresh objects every call, so no test can leak a mutation into another.
 const chatgptOk = () => ({
@@ -235,7 +224,7 @@ function claudeAccount({orgsStatus = 200, sessionUsed = 40, weeklyUsed = 100} = 
 }
 
 // ---------------------------------------------------------------------------
-console.log('\nbridge down — the result is still saved');
+console.log('\nusage message — the result is saved');
 {
   reset({enabled: ['chatgpt']});
   const result = await send({type: 'usage', payload: chatgptOk()});
@@ -245,23 +234,18 @@ console.log('\nbridge down — the result is still saved');
   check('usage_chatgpt weekly', pct(s, 'chatgpt_weekly'), 60);
   check('primary_limit_id', s?.primary_limit_id, 'chatgpt_5h');
   check('usage_last_ok_chatgpt = latest', get('usage_last_ok_chatgpt'), s);
-  check('bridge failure only in the reply', result?.ok, false);
+  check('reply says saved', [result?.ok, result?.status], [true, 'ok']);
   check('send result not stored (last_chatgpt)', get('last_chatgpt'), undefined);
 }
 
-console.log('\nbridge up — payload reaches it unchanged');
+console.log('\nusage message — publish() does not change the payload');
 {
-  reset({enabled: ['chatgpt'], bridgeUp: true, token: 'tok-123'});
+  reset({enabled: ['chatgpt']});
   const payload = chatgptOk();
   const before = JSON.stringify(payload);
-  const result = await send({type: 'usage', payload});
-  check('one POST', bridge.requests.map(r => `${r.method} ${r.url}`), ['POST http://127.0.0.1:8765/usage']);
-  check('body is byte-identical to the payload before publish()', bridge.requests[0]?.body, before);
+  await send({type: 'usage', payload});
   check('payload object not mutated', JSON.stringify(payload), before);
-  check('X-Bridge-Token', bridge.requests[0]?.headers['X-Bridge-Token'], 'tok-123');
-  check('reply says sent', result?.ok, true);
-  check('send result not stored (last_chatgpt)', get('last_chatgpt'), undefined);
-  check('usage_chatgpt saved too', get('usage_chatgpt')?.status, 'ok');
+  check('usage_chatgpt saved', get('usage_chatgpt')?.status, 'ok');
 }
 
 console.log('\nparse_failed after ok — last ok is kept');
@@ -277,10 +261,9 @@ console.log('\nparse_failed after ok — last ok is kept');
 
 console.log('\nprovider not enabled — dropped (stale content script)');
 {
-  reset({enabled: [], bridgeUp: true});
+  reset({enabled: []});
   const result = await send({type: 'usage', payload: chatgptOk()});
   check('nothing saved', get('usage_chatgpt'), undefined);
-  check('nothing sent to bridge', bridge.requests.length, 0);
   check('result says why', result?.error, 'provider-not-enabled');
 }
 
@@ -290,7 +273,7 @@ const GEMINI_HOST = 'https://gemini.google.com/*';
 
 console.log('\nturning off — PROVIDER_DISABLED: out of enabledProviders, then disabled saved, then the permission removed');
 {
-  reset({enabled: ['chatgpt', 'claude'], permissions: [CHATGPT_HOST, CLAUDE_HOST], bridgeUp: true});
+  reset({enabled: ['chatgpt', 'claude'], permissions: [CHATGPT_HOST, CLAUDE_HOST]});
   await send({type: 'usage', payload: chatgptOk()});
   writes = [];
   check('response', await send({type: 'PROVIDER_DISABLED', provider: 'chatgpt'}), {ok: true});
@@ -300,12 +283,11 @@ console.log('\nturning off — PROVIDER_DISABLED: out of enabledProviders, then 
   check('usage_chatgpt.status (disabled is let through), not flipped by onRemoved', get('usage_chatgpt')?.status, 'disabled');
   check('usage_last_ok_chatgpt cleared', get('usage_last_ok_chatgpt'), null);
   check('site permission removed, the other kept', [granted.has(CHATGPT_HOST), granted.has(CLAUDE_HOST)], [false, true]);
-  check('bridge told too', bridgeBodies().map(b => b.status), ['ok', 'disabled']);
 }
 
 console.log('\nturning off while a refresh is in flight — the late result is dropped');
 {
-  reset({enabled: ['claude'], permissions: [CLAUDE_HOST], bridgeUp: true});
+  reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
   claudeAccount();
   let release;
   routes['https://claude.ai/api/organizations/org-1/usage'].gate = new Promise(resolve => { release = resolve; });
@@ -317,7 +299,6 @@ console.log('\nturning off while a refresh is in flight — the late result is d
   await settle();
   check('usage_claude stays disabled', get('usage_claude')?.status, 'disabled');
   check('usage_last_ok_claude stays cleared', get('usage_last_ok_claude'), null);
-  check('bridge never saw the late ok', bridgeBodies().map(b => b.status), ['disabled']);
 }
 
 console.log('\nturning on — PROVIDER_ENABLED (the popup was still open after the prompt)');
@@ -419,7 +400,7 @@ const iso = seconds => new Date(seconds * 1000).toISOString();
 
 console.log('\nChatGPT — read through its usage API, like Claude: no tab');
 {
-  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST], bridgeUp: true});
+  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST]});
   chatgptAccount();
   check('response', await send({type: 'REFRESH_ALL'}), {ok: true});
   const s = get('usage_chatgpt');
@@ -434,7 +415,6 @@ console.log('\nChatGPT — read through its usage API, like Claude: no tab');
     [chatgptRequests[1]?.headers.Authorization, chatgptRequests[1]?.headers['chatgpt-account-id']], [`Bearer ${TOKEN}`, ACCOUNT]);
   check('the token request follows no redirect', chatgptRequests[1]?.redirect, 'error');
   check('no token, session token, account id or email in storage', leaked(everythingStored()), []);
-  check('...nor sent to the bridge', leaked(JSON.stringify(bridge.requests)), []);
   const d = get('chatgpt_debug');
   check('diagnostics', [d?.source, d?.sessionStatus, d?.token, d?.usageStatus, d?.contentType, d?.plan, d?.windows, d?.failedStep],
     ['api', 200, true, 200, 'application/json', 'plus', [{seconds: 18000, used: 39}, {seconds: 604800, used: 60}], 'none']);
@@ -450,11 +430,11 @@ console.log('\nChatGPT — one 30-day window only (as seen 2026-10-15): it is th
   check('no 5-hour entry: the answer has no 5-hour window', s?.limits.map(l => l.id), ['chatgpt_monthly']);
 }
 
-const noSecrets = label => check(label, leaked(everythingStored() + JSON.stringify(bridge.requests)), []);
+const noSecrets = label => check(label, leaked(everythingStored()), []);
 
 console.log('\nChatGPT — signed out');
 {
-  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST], bridgeUp: true});
+  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST]});
   chatgptAccount({session: {}});
   await send({type: 'REFRESH_ALL'});
   check('session without an access token → logged_out', get('usage_chatgpt')?.status, 'logged_out');
@@ -463,7 +443,7 @@ console.log('\nChatGPT — signed out');
   check('diagnostics', [get('chatgpt_debug')?.token, get('chatgpt_debug')?.failedStep], [false, 'session: no access token (signed out?)']);
 }
 {
-  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST], bridgeUp: true});
+  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST]});
   chatgptAccount({usageStatus: 401, usage: {detail: `Unauthorized ${TOKEN} ${EMAIL}`}});
   await send({type: 'REFRESH_ALL'});
   check('usage API 401 with JSON → logged_out', get('usage_chatgpt')?.status, 'logged_out');
@@ -485,7 +465,7 @@ console.log('\nChatGPT — blocked or refused another way: parse_failed, and an 
   check('...diagnostics', get('chatgpt_debug')?.failedStep, 'session: HTTP 403, not JSON (text/html)');
 }
 {
-  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST], bridgeUp: true});
+  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST]});
   chatgptAccount({usageStatus: 403, usage: {detail: `Unusual activity ${EMAIL}`}});
   await send({type: 'REFRESH_ALL'});
   check('usage API 403 with JSON → parse_failed (not necessarily signed out)', get('usage_chatgpt')?.status, 'parse_failed');
@@ -494,7 +474,7 @@ console.log('\nChatGPT — blocked or refused another way: parse_failed, and an 
   noSecrets('...nothing of the answer kept or sent');
 }
 {
-  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST], bridgeUp: true});
+  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST]});
   chatgptAccount();
   routes['https://chatgpt.com/backend-api/wham/usage'] = {throws: `Headers.append: "Bearer ${TOKEN}" is an invalid header value.`};
   await send({type: 'REFRESH_ALL'});
@@ -510,7 +490,7 @@ console.log('\nChatGPT — blocked or refused another way: parse_failed, and an 
   check('only looked for open tabs — none opened', tabCalls, [['query', {url: 'https://chatgpt.com/*'}]]);
 }
 {
-  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST], bridgeUp: true});
+  reset({enabled: ['chatgpt'], permissions: [CHATGPT_HOST]});
   chatgptAccount({primary: windowOf(18000, undefined, RESET_5H)});
   await send({type: 'REFRESH_ALL'});
   const s = get('usage_chatgpt');
@@ -518,7 +498,6 @@ console.log('\nChatGPT — blocked or refused another way: parse_failed, and an 
   check('...what the API could read is kept for display', s?.limits.map(l => [l.id, l.remaining_percent]), [['chatgpt_5h', null], ['chatgpt_weekly', 40]]);
   check('...the step is in the diagnostics, and usage tabs were looked for',
     [get('chatgpt_debug')?.failedStep, tabCalls], ['wham/usage: 5-hour limit has no usable used_percent', [['query', {url: 'https://chatgpt.com/*'}]]]);
-  check('...the bridge gets value "?"', bridgeBodies().map(b => b.value), ['?']);
 }
 
 console.log('\nChatGPT — the page fallback: Settings > Usage tabs only, no page text kept');
@@ -599,7 +578,7 @@ const geminiTab = (id = 5) => [{id, url: 'https://gemini.google.com/usage'}];
 
 console.log('\nGemini — read from an already-open usage tab (no tab opened)');
 {
-  reset({enabled: ['gemini'], permissions: [GEMINI_HOST], bridgeUp: true});
+  reset({enabled: ['gemini'], permissions: [GEMINI_HOST]});
   openTabs = [
     {id: 6, url: 'https://gemini.google.com/app/some-chat'},            // a conversation, not /usage
     {id: 7, url: 'https://evil.example/usage'},                          // /usage but not gemini.google.com
@@ -616,7 +595,6 @@ console.log('\nGemini — read from an already-open usage tab (no tab opened)');
   check('resets computed from the wording (both ISO strings)', s?.limits.map(l => typeof l.resets_at === 'string'), [true, true]);
   check('only the open usage tab read — none opened', tabCalls, [['query', {url: 'https://gemini.google.com/*'}], ['sendMessage', 5, 'SCAN_GEMINI']]);
   check('last ok saved', get('usage_last_ok_gemini')?.status, 'ok');
-  check('bridge got the gemini payload', bridgeBodies().map(b => [b.provider, b.status]), [['gemini', 'ok']]);
 }
 
 console.log('\nGemini — no open usage tab: parse_failed, last ok kept, nothing opened');
@@ -668,7 +646,7 @@ console.log('\nGemini — enabled without the site permission → needs_permissi
 
 console.log('\nGemini — turned off while a read is running: the late result is dropped');
 {
-  reset({enabled: ['gemini'], permissions: [GEMINI_HOST], bridgeUp: true});
+  reset({enabled: ['gemini'], permissions: [GEMINI_HOST]});
   openTabs = geminiTab();
   tabAnswers = {5: geminiAnswer()};
   let release;
@@ -680,12 +658,11 @@ console.log('\nGemini — turned off while a read is running: the late result is
   await refresh;
   await settle();
   check('stays disabled: the late ok is dropped', get('usage_gemini')?.status, 'disabled');
-  check('bridge never saw the late ok', bridgeBodies().map(b => b.status), ['disabled']);
 }
 
 console.log('\ntoolbar badge — follows what is stored (CLAUDE.md §4)');
 {
-  reset({enabled: ['claude'], permissions: [CLAUDE_HOST], bridgeUp: true});
+  reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
   claudeAccount({sessionUsed: 40, weeklyUsed: 100});
   await send({type: 'REFRESH_ALL'});
   await settle();
@@ -775,15 +752,13 @@ console.log('\nREFRESH_ALL — Claude: used → remaining, 0 stays 0');
 
 console.log('\nREFRESH_ALL — Claude 5-hour unreadable: weekly is not promoted (CLAUDE.md §1)');
 {
-  reset({enabled: ['claude'], permissions: ['https://claude.ai/*'], bridgeUp: true});
+  reset({enabled: ['claude'], permissions: ['https://claude.ai/*']});
   claudeAccount({sessionUsed: 40, weeklyUsed: 100});
   await send({type: 'REFRESH_ALL'});
   claudeAccount({sessionUsed: null, weeklyUsed: 30});
   await send({type: 'REFRESH_ALL'});
-  const sent = bridgeBodies()[1];
-  check('bridge: claude_5h listed as null', sent?.limits.map(l => [l.id, l.remaining_percent]), [['claude_5h', null], ['claude_weekly', 70]]);
-  check('bridge: legacy value', sent?.value, '?');
   const s = get('usage_claude');
+  check('claude_5h listed as null', s?.limits.map(l => [l.id, l.remaining_percent]), [['claude_5h', null], ['claude_weekly', 70]]);
   check('snapshot not ok', s?.status, 'parse_failed');
   check('no primary', s?.primary_limit_id, null);
   check('weekly kept for display', pct(s, 'claude_weekly'), 70);
@@ -826,6 +801,7 @@ console.log('\ninstall / update — keys nothing reads any more are removed');
   store.set('last_claude', {ok: false, at: 1, error: 'TypeError: fetch failed', status: 'ok'});
   store.set('last_chatgpt', {ok: true, at: 1, value: '61%', detail: '', status: 'ok'});
   store.set('chatgptUsageTabId', 123);
+  store.set('bridge_token', 'tok-123'); // the removed 127.0.0.1 desktop bridge's pairing token
   // What the old chatgpt.js wrote from any ChatGPT tab, conversations included.
   store.set('chatgpt_debug', {at: 1, url: 'https://chatgpt.com/c/abc', snippets: ['my private chat line that resets things']});
   handlers.installed({reason: 'update'});
@@ -833,6 +809,7 @@ console.log('\ninstall / update — keys nothing reads any more are removed');
   check('last_claude removed', get('last_claude'), undefined);
   check('last_chatgpt removed', get('last_chatgpt'), undefined);
   check('chatgptUsageTabId removed', get('chatgptUsageTabId'), undefined);
+  check('bridge_token removed', get('bridge_token'), undefined);
   check('old chatgpt_debug removed', get('chatgpt_debug'), undefined);
   check('usage_chatgpt kept', get('usage_chatgpt')?.status, 'ok');
   check('usage_last_ok_chatgpt kept', pct(get('usage_last_ok_chatgpt'), 'chatgpt_5h'), 61);
@@ -966,9 +943,8 @@ console.log('\noverlay data — one providerView per provider, same as the popup
 console.log('\nas shipped — no 127.0.0.1 permission: nothing goes to localhost, results unchanged');
 {
   // The manifest grants no 127.0.0.1 origin, so this is the only path a
-  // released build takes. Something listening there must make no difference.
+  // released build took; publish() now calls no bridge at all.
   reset({enabled: ['claude', 'chatgpt', 'gemini'], permissions: [CLAUDE_HOST, CHATGPT_HOST, GEMINI_HOST]});
-  bridge.up = true;
   claudeAccount({sessionUsed: 40, weeklyUsed: 100});
   chatgptAccount();
   openTabs = geminiTab();
@@ -988,7 +964,7 @@ console.log('\nas shipped — no 127.0.0.1 permission: nothing goes to localhost
     ['parse_failed', null, [['claude_5h', null], ['claude_weekly', 70]]]);
   const reply = await send({type: 'usage', payload: chatgptOk()});
   check('usage message: saved', get('usage_chatgpt')?.status, 'ok');
-  check('usage message: reply', [reply?.ok, reply?.status], [false, 'ok']);
+  check('usage message: reply', [reply?.ok, reply?.status], [true, 'ok']);
   await send({type: 'PROVIDER_DISABLED', provider: 'gemini'});
   await settle();
   check('turned off', [get('usage_gemini')?.status, get('usage_last_ok_gemini')], ['disabled', null]);

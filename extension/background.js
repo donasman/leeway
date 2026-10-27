@@ -6,15 +6,11 @@ import { badgeView, formatAge, peerViews, providerView } from './view.js';
 import { HELPER_HOST, PEER_PERMISSION, cleanLabel, newProfileId, peerRecord, sharedSnapshots } from './peers.js';
 import { viewLabels } from './i18n.js';
 
-const ENDPOINT = 'http://127.0.0.1:8765/usage';
-const HEALTH = 'http://127.0.0.1:8765/health';
-const BRIDGE_ORIGIN = 'http://127.0.0.1:8765/*';
 const ALARM = 'llm-usage-refresh';
 const CHATGPT_USAGE_URL = 'https://chatgpt.com/settings/usage';
 const CHATGPT_SESSION_URL = 'https://chatgpt.com/api/auth/session';
 const CHATGPT_USAGE_API_URL = 'https://chatgpt.com/backend-api/wham/usage';
 const POLL_MINUTES = 2;
-const BRIDGE_TIMEOUT_MS = 5000;
 const GEMINI_USAGE_URL = 'https://gemini.google.com/usage';
 const PROVIDER_HOSTS = {claude:'https://claude.ai/*', chatgpt:'https://chatgpt.com/*', gemini:'https://gemini.google.com/*'};
 
@@ -27,15 +23,6 @@ async function hasHostPermission(provider) {
   const host = PROVIDER_HOSTS[provider];
   if (!host) return false;
   try { return await chrome.permissions.contains({origins:[host]}); }
-  catch (_) { return false; }
-}
-
-// The desktop bridge host is an optional permission (not requested until the
-// Phase 2 desktop app asks for it), so there is no install-time 127.0.0.1
-// warning. Until it is granted every bridge call no-ops and the overlay reads
-// as off.
-async function bridgeAllowed() {
-  try { return await chrome.permissions.contains({origins:[BRIDGE_ORIGIN]}); }
   catch (_) { return false; }
 }
 
@@ -83,21 +70,9 @@ function disableProvider(provider) {
   });
 }
 
-async function pairIfNeeded() {
-  if (!await bridgeAllowed()) return;
-  try {
-    const r = await fetch('http://127.0.0.1:8765/pair', {cache: 'no-store'});
-    if (r.ok) {
-      const data = await r.json();
-      if (data.token) await chrome.storage.local.set({bridge_token: data.token});
-    }
-  } catch (_) {}
-}
-
-// Every collector result goes through here: save first, then try the desktop
-// bridge. The bridge is optional (CLAUDE.md §2) — absent or failing, it never
-// touches the usage_* keys. Results for providers the user hasn't enabled are
-// dropped, e.g. from a chatgpt.js still running in a tab after ChatGPT was
+// Every collector result goes through here and is saved. Results for
+// providers the user hasn't enabled are dropped, e.g. from a chatgpt.js still
+// running in a tab after ChatGPT was
 // turned off, or a refresh that lands after it was turned off
 // (disableProvider() takes it out of enabledProviders before this).
 // 'disabled' is let through: it is the turning-off itself.
@@ -113,33 +88,9 @@ async function publish(payload) {
     if (writes) await chrome.storage.local.set(writes);
   } catch (error) {
     console.warn('usage snapshot not saved:', String(error));
+    return {ok: false, at: Date.now(), error: 'not-saved', status: payload?.status};
   }
-  return sendToBridge(payload);
-}
-
-// Bridge send only. The result goes back to the caller and is not stored. The
-// payload shape is what the desktop builds expect — keep it. The timeout keeps
-// a hung desktop app from holding up publish() — turning off waits for it.
-async function sendToBridge(payload) {
-  if (!await bridgeAllowed()) return {ok: false, at: Date.now(), error: 'no-bridge-permission', status: payload.status || 'parse_failed'};
-  try {
-    const stored = await chrome.storage.local.get('bridge_token');
-    const token = stored.bridge_token || '';
-    const response = await fetch(ENDPOINT, {
-      method: 'POST', headers: {'Content-Type': 'application/json', 'X-Bridge-Token': token}, body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return {ok: true, at: Date.now(), value: payload.value, detail: payload.detail || '', status: payload.status};
-  } catch (error) {
-    return {ok: false, at: Date.now(), error: String(error), status: payload.status || 'parse_failed'};
-  }
-}
-
-async function checkHealth() {
-  if (!await bridgeAllowed()) return {ok: false, error: 'no-permission'};
-  try { const r = await fetch(HEALTH, {cache:'no-store'}); return {ok:r.ok,status:r.status}; }
-  catch (error) { return {ok:false,error:String(error)}; }
+  return {ok: true, at: Date.now(), status: payload?.status};
 }
 
 // What the floating overlay (overlay_inject.js) renders: one providerView per
@@ -271,7 +222,7 @@ async function jsonOrNull(response) {
 // The endpoint ChatGPT's own Settings > Usage page reads (unofficial,
 // CLAUDE.md §2), like refreshClaude(): no tab needed. The access token exists
 // only in this function's variables — never stored, logged, put in the
-// diagnostics or sent to the bridge (CLAUDE.md §3). Of the session only
+// diagnostics (CLAUDE.md §3). Of the session only
 // accessToken and account.id are read.
 async function fetchChatGPTUsage(debug) {
   let sessionResponse;
@@ -639,11 +590,15 @@ function setupAlarm() {
 // before the API switch it could hold conversation text; the next read
 // writes it again.
 const LEGACY_KEYS = ['last_claude', 'last_chatgpt', 'chatgptUsageTabId', 'chatgpt_debug'];
-chrome.runtime.onInstalled.addListener(() => {
+// Removed on update (2026-10-27): the pairing token of the 127.0.0.1 desktop
+// bridge, which is gone. A new install never had it.
+const BRIDGE_KEYS = ['bridge_token'];
+chrome.runtime.onInstalled.addListener(details => {
   chrome.storage.local.remove(LEGACY_KEYS).catch(() => {});
-  pairIfNeeded(); setupAlarm(); setTimeout(refreshAll, 1000);
+  if (details?.reason === 'update') chrome.storage.local.remove(BRIDGE_KEYS).catch(() => {});
+  setupAlarm(); setTimeout(refreshAll, 1000);
 });
-chrome.runtime.onStartup.addListener(() => { pairIfNeeded(); setupAlarm(); setTimeout(refreshAll, 1000); });
+chrome.runtime.onStartup.addListener(() => { setupAlarm(); setTimeout(refreshAll, 1000); });
 chrome.alarms.onAlarm.addListener(a => { if (a.name === ALARM) refreshAll(); });
 
 // The badge follows what is stored: every saved result (publish()) and every
@@ -667,7 +622,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const fromPage = String(sender?.url || '').startsWith(EXTENSION_ORIGIN);
   if (!fromPage && !(message?.type === 'OVERLAY_DATA' && sender?.id === chrome.runtime.id)) return;
   if (message?.type === 'usage') { publish(message.payload).then(sendResponse); return true; }
-  if (message?.type === 'health') { checkHealth().then(sendResponse); return true; }
   if (message?.type === 'OVERLAY_DATA') { overlayData().then(sendResponse); return true; }
   if (message?.type === 'REFRESH_ALL') { refreshAll().then(() => sendResponse({ok:true})); return true; }
   if (message?.type === 'PROVIDER_ENABLED') {
