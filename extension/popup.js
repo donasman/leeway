@@ -1,12 +1,12 @@
 import { usageKey, lastOkKey } from './snapshot.js';
 import { peerViews, providerView } from './view.js';
 import { viewLabels, msg } from './i18n.js';
+import { helperNote } from './peers.js';
 
 const PROVIDER_HOSTS = {claude:'https://claude.ai/*', chatgpt:'https://chatgpt.com/*', gemini:'https://gemini.google.com/*'};
 const POPUP_PROVIDERS = Object.keys(PROVIDER_HOSTS);
 const PROVIDER_NAMES = {claude: 'Claude', chatgpt: 'ChatGPT', gemini: 'Gemini'};
 const PEER_PERMISSION = {permissions: ['nativeMessaging']};
-const PEER_NOTES = {helper_missing: 'peers_helper_missing', helper_forbidden: 'peers_helper_failed', helper_failed: 'peers_helper_failed'};
 const LABELS = viewLabels();
 const REFRESH_TEXT = msg('refresh');
 const REFUSED_NOTE = msg('refused_note');
@@ -123,6 +123,8 @@ function showPeers(settings, record, now) {
   document.getElementById('peers_list').replaceChildren(...peers.map(peerBlock));
   const status = document.getElementById('status_peers');
   let note = '';
+  // One line on the cause and one on what to do (CLAUDE.md §2 Leeway helper).
+  const helper = on ? helperNote(record, now, LABELS, chrome.runtime.id || '') : {state: 'off', lines: []};
   if (!on) {
     status.textContent = LABELS.status_off;
     status.className = 'badge off';
@@ -133,17 +135,17 @@ function showPeers(settings, record, now) {
   } else if (!record.ok) {
     status.textContent = LABELS.status_parse_failed;
     status.className = 'badge parse_failed';
-    note = msg(PEER_NOTES[record.error] || 'peers_helper_failed');
+    note = helper.lines.join('\n');
   } else {
     status.textContent = String(peers.length);
     status.className = 'badge ok';
-    if (!peers.length) note = msg('peers_none');
+    note = [peers.length ? '' : msg('peers_none'), ...helper.lines].filter(Boolean).join('\n');
   }
   document.getElementById('note_peers').textContent = note;
   // Experimental: folded away until it is on (then it stays open). The
   // download and "what it does" links show while it is off or failing.
   if (on) document.getElementById('labs').open = true;
-  document.getElementById('peer_links').hidden = on && Boolean(record?.ok);
+  document.getElementById('peer_links').hidden = on && helper.state === 'ok';
 }
 
 // Storage changes, the clock tick and toggles can overlap; only the newest
