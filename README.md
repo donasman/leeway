@@ -86,8 +86,9 @@ Click **Open overlay** in the popup (on a normal http/https tab) to open a small
 The UI ships in English (default), Korean, Spanish, Chinese (Simplified and
 Traditional) and Japanese, under `extension/_locales/`. Chrome selects the
 locale from the browser language and falls back to English. Simplified Chinese
-is the `zh` folder (Chrome falls back from `zh_CN` to `zh`); Traditional Chinese
-is `zh_TW`.
+is in two folders with the same content: `zh_CN`, which the Chrome Web Store
+lists as a language, and `zh`, which Chrome falls back to for other Chinese UI
+locales. Traditional Chinese is `zh_TW`.
 
 ## Privacy
 

@@ -22,7 +22,11 @@ const langs = readdirSync(dir, {withFileTypes: true}).filter(e => e.isDirectory(
 const tokensOf = message => [...String(message).matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
 
 console.log('\n_locales — every language matches the default (en) keys and placeholders');
-check('the five planned locales + en are present', langs, ['en', 'es', 'ja', 'ko', 'zh', 'zh_TW']);
+check('the five planned locales + en are present (Simplified Chinese twice)', langs, ['en', 'es', 'ja', 'ko', 'zh', 'zh_CN', 'zh_TW']);
+// zh_CN is what the Chrome Web Store lists; zh is what Chrome falls back to for
+// other Chinese UI locales. Same content in both (CLAUDE.md §2 다국어).
+check('zh_CN/messages.json is byte-identical to zh/messages.json',
+  readFileSync(new URL('zh_CN/messages.json', dir), 'utf8') === readFileSync(new URL('zh/messages.json', dir), 'utf8'), true);
 const en = load('en');
 const enKeys = Object.keys(en).sort();
 
