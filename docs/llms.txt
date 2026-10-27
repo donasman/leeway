@@ -1,0 +1,32 @@
+# Leeway
+
+> Leeway is a free, open-source Chrome extension that shows how much of your Claude, ChatGPT and Gemini usage limits is left — the 5-hour and weekly limits — as a percentage with reset times, in a popup, the toolbar badge and an always-on-top overlay. Unofficial; not affiliated with Anthropic, OpenAI or Google.
+
+## What it does
+- Shows the remaining percentage and reset time of each usage limit, as the signed-in usage pages show them (not a token-count estimate). A value that could not be read is shown as "?", never as 0%.
+- Toolbar badge with the lowest remaining value among the enabled services, color-coded (green from 50, orange 20–49, red below 20, grey when stale).
+- Always-on-top floating overlay through Chrome's Document Picture-in-Picture (Chrome 116+), collapsible to one line.
+- Plan names (e.g. Max 5x, Plus) when the service reports them; every Claude organization of one sign-in shown separately.
+- Refreshes every 2 minutes; UI in English, Korean, Spanish, Japanese, Chinese (Simplified and Traditional).
+
+## Supported services
+- Claude (claude.ai): 5-hour and weekly limits, read in the background from the usage endpoint claude.ai's usage page uses.
+- ChatGPT (chatgpt.com): what Settings > Usage shows — the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel (5-hour, weekly or 30-day depending on the account). Ordinary chat conversations are not counted there.
+- Gemini (gemini.google.com): read from an open gemini.google.com/usage tab; that page must be open.
+
+## Privacy
+- Uses the sessions already signed in to in Chrome. No sign-in, and no cookie, password or API key to paste.
+- Session tokens are never stored, logged or transmitted. Conversations are never read.
+- No server, no account, no analytics; data stays in the browser (chrome.storage.local).
+- Site permissions are optional and requested per service when it is turned on.
+
+## Several accounts
+- Separate accounts: one Chrome profile per account. On Windows, the optional and experimental Leeway helper (leeway-helper.exe, GitHub Releases) lets each profile show the others' remaining usage, through a local file only.
+
+## Links
+- Install (Chrome Web Store): https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga
+- Website: https://donasman.github.io/leeway/
+- Korean page: https://donasman.github.io/leeway/ko/
+- Privacy policy: https://donasman.github.io/leeway/privacy/
+- Source code (MIT): https://github.com/donasman/leeway
+- Helper releases: https://github.com/donasman/leeway/releases/latest

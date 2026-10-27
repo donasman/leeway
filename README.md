@@ -1,8 +1,16 @@
 # Leeway
 
-> **Status: preparing the first Chrome Web Store release.**
-> The goal is a standalone Chrome extension that shows the **remaining** Claude, ChatGPT and Gemini usage in its popup and toolbar badge. An always-on-top floating overlay is built in via Chrome's Document Picture-in-Picture — no separate app to install.
->
+Remaining **Claude, ChatGPT and Gemini** usage — the 5-hour and weekly limits — in Chrome's toolbar badge, a popup and an always-on-top overlay. Free and open source.
+
+**[Add to Chrome (Chrome Web Store)](https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga)** · [Website](https://donasman.github.io/leeway/) · [한국어](https://donasman.github.io/leeway/ko/) · [Privacy policy](https://donasman.github.io/leeway/privacy/)
+
+![Leeway popup: remaining 5-hour and weekly usage for Claude, ChatGPT and Gemini](docs/img/popup.png)
+
+- Shows the remaining percentage and reset time that your signed-in usage pages show — not a token-count estimate.
+- No sign-in, and no cookie, password or API key to paste. No server, no analytics; session tokens are never stored.
+- Toolbar badge with the lowest remaining value (color-coded), and a floating always-on-top overlay (Chrome 116+).
+- Plan names (Max 5x, Plus, …), every Claude organization of your sign-in, UI in 6 languages.
+
 > Unofficial project. Not affiliated with Anthropic, OpenAI or Google.
 
 The extension uses the normal Chrome profile that is already signed in. It does not use Playwright, automate sign-in, or copy cookies/passwords out of the browser.

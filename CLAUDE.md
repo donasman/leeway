@@ -3,7 +3,7 @@
 Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한도)을 Chrome 팝업, 툴바 배지,
 항상 위에 뜨는 오버레이로 보여주는 Chrome 확장. 선택 기능은 Windows용 Leeway helper가 맡는다.
 
-- 저장소: https://github.com/donasman/leeway · 개인정보처리방침: https://donasman.github.io/leeway/
+- 저장소: https://github.com/donasman/leeway · 사이트: https://donasman.github.io/leeway/ · 개인정보처리방침: https://donasman.github.io/leeway/privacy/
 - Chrome Web Store ID `dlifmhanolkjflblnofiifgkffhkpgga` (스토어판)
 - 이 문서는 2026-10-27 기준 실제 코드에서 작성했다. 코드 주석의 `CLAUDE.md §n`은 아래 절 번호를 가리킨다.
   절을 고치면 그 번호를 쓰는 주석도 함께 확인한다.
@@ -58,7 +58,9 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `extension/_locales/{en,ko,es,ja,zh,zh_TW}` | UI 문자열 6개 언어. 간체는 `zh` 폴더(UI 로캘 zh-CN은 `zh`로 대체됨), 번체는 `zh_TW` |
 | `helper/` | Leeway helper (Go, 의존성 없음). Native Messaging 호스트, `install`/`uninstall` |
 | `tests/` | Node 테스트 (`npm test`), `tests/fixtures/` HTML 픽스처 |
-| `docs/index.html` | GitHub Pages 개인정보처리방침 (`PRIVACY.md`와 같은 내용을 유지) |
+| `docs/index.html`, `docs/ko/index.html` | GitHub Pages 제품 페이지(영어·한국어). 기능·FAQ와 JSON-LD(SoftwareApplication, FAQPage)는 화면 문구와 같게 유지 |
+| `docs/privacy/index.html` | GitHub Pages 개인정보처리방침 (`PRIVACY.md`와 같은 내용을 유지) |
+| `docs/llms.txt`, `docs/sitemap.xml`, `docs/img/` | 사이트 요약(사실만), 사이트맵, 스크린샷 |
 | `.github/workflows/helper-release.yml` | `v*` 태그 → helper 빌드·Release 첨부 |
 
 ### pure layer
@@ -134,7 +136,7 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 - 토큰·쿠키는 함수 변수 안에서만 쓰고 저장·로그·진단·helper 어디에도 넣지 않는다. 오류 메시지도 헤더를 인용할 수 있으니 오류 이름만 남긴다.
 - `detail`이나 진단에 들어가는 URL은 origin만 남긴다(대화 ID 노출 방지).
 - 서버에서 온 문자열(라벨, 리셋 문구, 다른 프로필 이름)은 화면에 **텍스트로만** 넣는다. 오버레이는 `esc()`를 거친다.
-- 개인정보 처리 방식이 바뀌면 `PRIVACY.md`와 `docs/index.html`을 **둘 다** 고친다. 스토어 대시보드의 개인정보 탭도 맞춘다.
+- 개인정보 처리 방식이 바뀌면 `PRIVACY.md`와 `docs/privacy/index.html`을 **둘 다** 고친다. 기능이 바뀌면 제품 페이지 두 개와 `docs/llms.txt`, README 첫 부분도 맞춘다. 스토어 대시보드의 개인정보 탭도 맞춘다.
 
 ---
 
