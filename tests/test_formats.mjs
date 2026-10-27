@@ -2,7 +2,7 @@
 //
 // Locks the per-locale composition that the native-speaker review drove: how
 // view.js joins a duration (number/unit spacing), lays out a reset date, writes
-// "N ago", and builds a toolbar tooltip line — in es, ja, zh_CN and zh_TW (en as the
+// "N ago", and builds a toolbar tooltip line — in es, ja, zh and zh_TW (en as the
 // baseline). The pieces live across messages.json (reset_date_fmt, badge_pct,
 // badge_sep, badge_note_fmt, unit_*) and i18n.js (duration separators); this
 // runs the real functions with each locale's real strings, so a stray space or
@@ -50,7 +50,7 @@ const CASES = {
   en:    {dur: 'resets in 2h 48m',                 date: 'resets 10/20 (Tue) 00:00',               age: '3m ago',     badge: 'Claude: 5-hour 50% left · resets in 2h 48m'},
   es:    {dur: 'se restablece en 2 h 48 min',      date: 'se restablece el mar 20/10 a las 00:00', age: 'hace 3 min', badge: 'Claude: 5 horas 50% restante · se restablece en 2 h 48 min'},
   ja:    {dur: 'あと2時間48分でリセット',            date: '10/20（火）00:00にリセット',               age: '3分前',      badge: 'Claude: 5時間 残り50%、あと2時間48分でリセット'},
-  zh_CN: {dur: '2小时48分钟后重置',                  date: '10月20日（周二）00:00 重置',               age: '3分钟前',    badge: 'Claude: 5小时 剩余50% · 2小时48分钟后重置'},
+  zh:    {dur: '2小时48分钟后重置',                  date: '10月20日（周二）00:00 重置',               age: '3分钟前',    badge: 'Claude: 5小时 剩余50% · 2小时48分钟后重置'},
   zh_TW: {dur: '2小時48分鐘後重設',                  date: '10/20（週二）00:00 重設',                  age: '3分鐘前',    badge: 'Claude: 5小時 剩餘50% · 2小時48分鐘後重設'},
 };
 

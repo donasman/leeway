@@ -22,7 +22,7 @@ const langs = readdirSync(dir, {withFileTypes: true}).filter(e => e.isDirectory(
 const tokensOf = message => [...String(message).matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
 
 console.log('\n_locales — every language matches the default (en) keys and placeholders');
-check('the five planned locales + en are present', langs, ['en', 'es', 'ja', 'ko', 'zh_CN', 'zh_TW']);
+check('the five planned locales + en are present', langs, ['en', 'es', 'ja', 'ko', 'zh', 'zh_TW']);
 const en = load('en');
 const enKeys = Object.keys(en).sort();
 
