@@ -55,7 +55,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `extension/i18n.js` | `chrome.i18n` → view.js용 라벨 맵 |
 | `extension/popup.html`, `popup.js` | 팝업 |
 | `extension/overlay_inject.js` | 현재 탭에 주입되어 Document Picture-in-Picture 오버레이를 연다 |
-| `extension/_locales/{en,ko,es,ja,zh,zh_TW}` | UI 문자열 6개 언어. 간체는 `zh` 폴더(UI 로캘 zh-CN은 `zh`로 대체됨), 번체는 `zh_TW` |
+| `extension/_locales/{en,ko,es,ja,zh_CN,zh,zh_TW}` | UI 문자열 6개 언어. 간체 중국어는 `zh_CN`(스토어 표시)과 `zh`(대체용) 두 폴더, 내용은 같게 유지. 번체는 `zh_TW` |
 | `helper/` | Leeway helper (Go, 의존성 없음). Native Messaging 호스트, `install`/`uninstall` |
 | `tests/` | Node 테스트 (`npm test`), `tests/fixtures/` HTML 픽스처 |
 | `docs/index.html`, `docs/ko/index.html` | GitHub Pages 제품 페이지(영어·한국어). 기능·FAQ와 JSON-LD(SoftwareApplication, FAQPage)는 화면 문구와 같게 유지 |
@@ -104,6 +104,8 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 ### 다국어
 
 UI 문자열은 `_locales/<lang>/messages.json`. 6개 언어가 **같은 키**를 가져야 한다(`tests/test_locales.mjs`가 확인).
+간체 중국어는 `zh_CN`(Chrome Web Store가 언어로 표시)과 `zh`(Chrome이 zh-CN 외 중국어 UI에서 대체로 씀) 두 폴더이고, 내용은 같게 유지한다.
+간체 문구를 고치면 두 파일을 함께 고친다(`test_locales`가 두 파일이 같은지 확인).
 템플릿은 `$1`이 아니라 `{token}`을 쓰고 view.js의 `fill()`이 치환한다. 기간 표기의 간격은 `i18n.js`의 `separatorsFor()`가 언어별로 정한다.
 
 ### Gemini
