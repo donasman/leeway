@@ -27,9 +27,12 @@ const (
 	maxMessageSize = 64 * 1024
 )
 
-// Extensions allowed to talk to the helper. The unpacked development build
-// (its manifest "key") is listed; the Chrome Web Store ID is added at release.
+// Extensions allowed to talk to the helper: the Chrome Web Store build and
+// the unpacked development build that carries the old manifest "key". An
+// unpacked copy without the key has a path-based ID; pass it with
+// --extension-id.
 var defaultExtensionIDs = []string{
+	"dlifmhanolkjflblnofiifgkffhkpgga", // Chrome Web Store
 	"nnknbbnoekgbalackpaekkemnjibicia", // development key
 }
 

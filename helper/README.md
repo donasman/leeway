@@ -54,6 +54,6 @@ helper, so the extension's link to
 `releases/latest/download/leeway-helper.exe` always resolves.
 
 The extension IDs allowed to talk to the helper are compiled in
-(`defaultExtensionIDs` in `main.go`); add the Chrome Web Store ID there before
-the first public release; otherwise the store build gets "access forbidden"
-from a double-click install.
+(`defaultExtensionIDs` in `main.go`): the Chrome Web Store build
+(`dlifmhanolkjflblnofiifgkffhkpgga`) and the development key. Any other ID gets
+"access forbidden" until it is added there or passed with `--extension-id`.
