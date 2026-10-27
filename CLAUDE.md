@@ -95,7 +95,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `usage_last_ok_<provider>` | 최신 `ok` 스냅샷. 실패해도 남고, 끄거나 권한이 없어지면 `null` |
 | `chatgpt_debug` | ChatGPT 진단(단계·상태 코드만, 토큰·본문 없음) |
 | `peer_settings` | `{on, id, label}` — 다른 프로필 기능. `id`는 무작위 16자리 hex |
-| `peer_profiles` | 마지막 helper 응답 중 **다른** 프로필들 `{at, ok, error, profiles[]}` |
+| `peer_profiles` | 마지막 helper 응답 중 **다른** 프로필들 `{at, ok, error, version, profiles[]}`. `error`는 `helper_missing`·`_forbidden`·`_blocked`·`_failed`, `version`은 `x.y.z`·`dev`·`null`(이 필드가 없는 예전 기록은 버전을 판단하지 않음) |
 
 ### 다국어
 
@@ -114,6 +114,12 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 - 허용 확장 ID는 `helper/main.go`의 `defaultExtensionIDs`: 스토어 `dlifmhanolkjflblnofiifgkffhkpgga`, 개발용 key `nnknbbnoekgbalackpaekkemnjibicia`.
   키 없이 압축해제 로드한 확장은 경로 기반 ID라 `leeway-helper.exe install --extension-id <ID>`로 추가해야 한다.
 - 확장 쪽에서 받은 다른 프로필 값은 같은 사용자의 것이어도 **검증 안 된 입력**으로 다룬다(`fromShared`로 재검증, 화면에는 텍스트로만).
+- 연결 진단(팝업): Chrome의 `runtime.lastError` 문자열(Chromium `native_message_host.cc`·`message_service.cc`)을
+  설치 안 됨·금지됨·정책 차단·실행 실패로 나누고, 상태마다 원인 한 줄과 다음 행동 한 줄을 보여준다(`peers.js` `helperState`).
+  정상이면 helper 버전과 마지막 동기화 시각. 원문 오류 문자열은 저장하지 않는다.
+- 버전: 릴리스 빌드는 태그에서 `-X main.version`을 받는다(소스 빌드는 `dev`). `MIN_HELPER_VERSION`(`peers.js`)보다 낮으면 업데이트 안내, `dev`는 통과.
+- `leeway-helper.exe check`: 레지스트리·manifest·exe 경로·허용 ID·데이터 폴더·`profiles.json`·Chrome 정책·실제 실행(`hello`)을 항목별 OK/FAIL과 고치는 법으로 출력,
+  하나라도 실패하면 종료 코드 1. 더블클릭하면 install 뒤 바로 실행. 레지스트리는 `registry` 인터페이스 뒤라 Windows 밖에서도 `go test`가 돈다.
 
 ---
 
