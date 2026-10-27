@@ -56,5 +56,14 @@
   "open_overlay": {"message": "Open overlay"},
   "overlay_hint": {"message": "Open it from a normal web page tab."},
   "overlay_empty": {"message": "Turn on a service in the popup."},
-  "account_n": {"message": "Account {n}", "description": "Name of a Claude organization whose plan is unknown. {n} is its position, e.g. 2."}
+  "account_n": {"message": "Account {n}", "description": "Name of a Claude organization whose plan is unknown. {n} is its position, e.g. 2."},
+
+  "peers_title": {"message": "Other Chrome profiles"},
+  "peers_label": {"message": "This profile's name"},
+  "peers_label_placeholder": {"message": "e.g. Work", "description": "Placeholder for the profile name field"},
+  "peers_hint": {"message": "Turn this on in each Chrome profile where Leeway is installed to see their usage here too. Needs the Leeway helper."},
+  "peers_none": {"message": "No other profile has shared its usage yet."},
+  "peers_helper_missing": {"message": "The Leeway helper isn't installed. Run leeway-helper.exe once, then turn this on again."},
+  "peers_helper_failed": {"message": "Couldn't reach the Leeway helper. Run leeway-helper.exe again to repair it."},
+  "peers_updated": {"message": "updated {age}", "description": "{age} is a relative time like '3m ago'"}
 }

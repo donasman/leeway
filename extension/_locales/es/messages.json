@@ -56,5 +56,14 @@
   "open_overlay": {"message": "Abrir superposición"},
   "overlay_hint": {"message": "Ábrela desde una pestaña de una página web normal."},
   "overlay_empty": {"message": "Activa un servicio en la ventana emergente."},
-  "account_n": {"message": "Cuenta {n}"}
+  "account_n": {"message": "Cuenta {n}"},
+
+  "peers_title": {"message": "Otros perfiles de Chrome"},
+  "peers_label": {"message": "Nombre de este perfil"},
+  "peers_label_placeholder": {"message": "p. ej., Trabajo"},
+  "peers_hint": {"message": "Actívalo en cada perfil de Chrome donde esté instalado Leeway para ver aquí también su uso. Necesita el asistente de Leeway."},
+  "peers_none": {"message": "Ningún otro perfil ha compartido su uso todavía."},
+  "peers_helper_missing": {"message": "El asistente de Leeway no está instalado. Ejecuta leeway-helper.exe una vez y vuelve a activarlo."},
+  "peers_helper_failed": {"message": "No se pudo conectar con el asistente de Leeway. Ejecuta de nuevo leeway-helper.exe para repararlo."},
+  "peers_updated": {"message": "actualizado {age}"}
 }

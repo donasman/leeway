@@ -1,9 +1,12 @@
 import { usageKey, lastOkKey } from './snapshot.js';
-import { providerView } from './view.js';
+import { peerViews, providerView } from './view.js';
 import { viewLabels, msg } from './i18n.js';
 
 const PROVIDER_HOSTS = {claude:'https://claude.ai/*', chatgpt:'https://chatgpt.com/*', gemini:'https://gemini.google.com/*'};
 const POPUP_PROVIDERS = Object.keys(PROVIDER_HOSTS);
+const PROVIDER_NAMES = {claude: 'Claude', chatgpt: 'ChatGPT', gemini: 'Gemini'};
+const PEER_PERMISSION = {permissions: ['nativeMessaging']};
+const PEER_NOTES = {helper_missing: 'peers_helper_missing', helper_forbidden: 'peers_helper_failed', helper_failed: 'peers_helper_failed'};
 const LABELS = viewLabels();
 const REFRESH_TEXT = msg('refresh');
 const REFUSED_NOTE = msg('refused_note');
@@ -75,12 +78,76 @@ function showProvider(provider, view) {
   document.getElementById(`note_${provider}`).textContent = view.note;
 }
 
+// Another profile's service: its name and plan, its status when not ok, and
+// its rows (or one block per Claude organization).
+function peerProviderBlock(view) {
+  const block = document.createElement('div');
+  block.className = view.dim ? 'peer-provider dim' : 'peer-provider';
+  const head = document.createElement('div');
+  head.className = 'peer-name';
+  const name = document.createElement('span');
+  name.textContent = [PROVIDER_NAMES[view.provider] || view.provider, view.accounts.length ? '' : view.plan].filter(Boolean).join(' · ');
+  head.append(name);
+  if (view.state !== 'ok') {
+    const status = document.createElement('span');
+    status.className = `badge ${view.state}`;
+    status.textContent = view.status;
+    head.append(status);
+  }
+  block.append(head, ...(view.accounts.length ? view.accounts.map(accountBlock) : view.rows.map(limitRow)));
+  return block;
+}
+
+function peerBlock(peer) {
+  const block = document.createElement('div');
+  block.className = 'peer';
+  const head = document.createElement('div');
+  head.className = 'peer-head';
+  const name = document.createElement('span');
+  name.textContent = peer.label; // another profile's name: text, never HTML
+  const updated = document.createElement('span');
+  updated.className = 'muted';
+  updated.textContent = peer.updated;
+  head.append(name, updated);
+  block.append(head, ...peer.providers.map(peerProviderBlock));
+  return block;
+}
+
+function showPeers(settings, record, now) {
+  const on = Boolean(settings?.on);
+  if (!toggling.has('peers')) document.getElementById('toggle_peers').checked = on;
+  document.getElementById('peer_setup').hidden = !on;
+  const input = document.getElementById('peer_label');
+  if (document.activeElement !== input) input.value = on && typeof settings.label === 'string' ? settings.label : '';
+  const peers = on ? peerViews(record, now, undefined, LABELS) : [];
+  document.getElementById('peers_list').replaceChildren(...peers.map(peerBlock));
+  const status = document.getElementById('status_peers');
+  let note = '';
+  if (!on) {
+    status.textContent = LABELS.status_off;
+    status.className = 'badge off';
+    note = refused.has('peers') ? REFUSED_NOTE : msg('peers_hint');
+  } else if (!record) {
+    status.textContent = LABELS.status_waiting;
+    status.className = 'badge waiting';
+  } else if (!record.ok) {
+    status.textContent = LABELS.status_parse_failed;
+    status.className = 'badge parse_failed';
+    note = msg(PEER_NOTES[record.error] || 'peers_helper_failed');
+  } else {
+    status.textContent = String(peers.length);
+    status.className = 'badge ok';
+    if (!peers.length) note = msg('peers_none');
+  }
+  document.getElementById('note_peers').textContent = note;
+}
+
 // Storage changes, the clock tick and toggles can overlap; only the newest
 // render writes to the page.
 let renders = 0;
 async function render() {
   const current = ++renders;
-  const keys = ['enabledProviders', ...POPUP_PROVIDERS.flatMap(p => [usageKey(p), lastOkKey(p)])];
+  const keys = ['enabledProviders', 'peer_settings', 'peer_profiles', ...POPUP_PROVIDERS.flatMap(p => [usageKey(p), lastOkKey(p)])];
   const data = await chrome.storage.local.get(keys);
   const enabled = new Set(Array.isArray(data.enabledProviders) ? data.enabledProviders : []);
   const permitted = await Promise.all(POPUP_PROVIDERS.map(p => enabled.has(p) && hasHostPermission(p)));
@@ -100,6 +167,8 @@ async function render() {
       console.warn(`popup: ${provider} not shown:`, String(error));
     }
   });
+  try { showPeers(data.peer_settings, data.peer_profiles, now); }
+  catch (error) { console.warn('popup: other profiles not shown:', String(error)); }
 }
 
 // Called before anything else in the click handler: it needs the click's user gesture.
@@ -139,6 +208,42 @@ async function handleToggle(provider, event) {
   await render();
 }
 
+// Other Chrome profiles: the nativeMessaging permission is asked for here, in
+// the click (it needs the user gesture); background turns it on — also from
+// permissions.onAdded, in case Chrome closed this popup during the prompt.
+async function handlePeersToggle(event) {
+  const checkbox = event.target;
+  let asked = null;
+  if (checkbox.checked) {
+    try { asked = chrome.permissions.request(PEER_PERMISSION).catch(() => false); }
+    catch (_) { asked = Promise.resolve(false); }
+  }
+  checkbox.disabled = true;
+  toggling.add('peers');
+  refused.delete('peers');
+  try {
+    if (!asked) {
+      try { await chrome.runtime.sendMessage({type:'PEERS_DISABLE'}); }
+      catch (_) {}
+    } else if (await asked) {
+      try { await chrome.runtime.sendMessage({type:'PEERS_ENABLE', label: document.getElementById('peer_label').value}); }
+      catch (_) {}
+    } else {
+      refused.add('peers');
+    }
+  } finally {
+    toggling.delete('peers');
+    checkbox.disabled = false;
+  }
+  await render();
+}
+document.getElementById('toggle_peers').addEventListener('change', handlePeersToggle);
+document.getElementById('peer_label').addEventListener('change', async event => {
+  try { await chrome.runtime.sendMessage({type:'PEERS_LABEL', label: event.target.value}); }
+  catch (_) {}
+});
+document.getElementById('peer_label').placeholder = msg('peers_label_placeholder');
+
 document.getElementById('toggle_claude').addEventListener('change', event => handleToggle('claude', event));
 document.getElementById('toggle_chatgpt').addEventListener('change', event => handleToggle('chatgpt', event));
 document.getElementById('toggle_gemini').addEventListener('change', event => handleToggle('gemini', event));
@@ -174,7 +279,7 @@ document.getElementById('openOverlay').addEventListener('click', async () => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
-  if (Object.keys(changes).some(key => key === 'enabledProviders' || key.startsWith('usage_'))) render();
+  if (Object.keys(changes).some(key => key === 'enabledProviders' || key.startsWith('usage_') || key.startsWith('peer_'))) render();
 });
 
 document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;

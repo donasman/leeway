@@ -44,6 +44,8 @@
     #ov .plan{margin-left:5px;font-size:10px;font-weight:600;color:#8a97a8}
     #ov .acct{margin-top:6px}
     #ov .aname{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;color:#c3ccd8}
+    #ov .peer{margin-top:12px;padding-top:8px;border-top:1px solid #283241}
+    #ov .peerh{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;font-weight:700}
     body{cursor:pointer}`;
 
   const NAMES = { claude: 'Claude', chatgpt: 'ChatGPT', gemini: 'Gemini' };
@@ -79,16 +81,23 @@
     return `<div class="prov${p.dim ? ' dim' : ''}"><div class="pname"><span>${esc(name)}${plan}</span>${badge}</div>${rows}${note}</div>`;
   }
 
+  // Other Chrome profiles (through the Leeway helper), under this one's own.
+  function renderPeers(data) {
+    return (data && Array.isArray(data.peers) ? data.peers : []).map((peer) => `<div class="peer"><div class="peerh"><span>${esc(peer.label)}</span>`
+      + `<span class="pstatus">${esc(peer.updated)}</span></div>${(peer.providers || []).map(renderProvider).join('')}</div>`).join('');
+  }
+
   function render(root, data) {
     const provs = (data && data.providers || []).filter((p) => p.enabled);
-    if (!provs.length) {
+    const peers = renderPeers(data);
+    if (!provs.length && !peers) {
       const empty = (chrome.i18n && chrome.i18n.getMessage('overlay_empty')) || 'Turn on a service in the popup.';
       root.innerHTML = '<div class="hd"><span>Leeway</span></div><div class="empty">' + esc(empty) + '</div>';
       return;
     }
     const partial = provs.some((p) => p.dim);
     root.innerHTML = `<div class="hd"><span>Leeway</span><span class="st ${partial ? 'partial' : ''}"><span class="dot"></span></span></div>`
-      + provs.map(renderProvider).join('');
+      + provs.map(renderProvider).join('') + peers;
   }
 
   // One-line "Leeway · Claude 72% · …" for the collapsed state.

@@ -2,7 +2,8 @@ import { clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from './parser
 import { snapshotWrites, usageKey, lastOkKey } from './snapshot.js';
 import { whamPayload, whamPlan, whamWindows } from './chatgpt_api.js';
 import { geminiPayload } from './gemini.js';
-import { badgeView, providerView } from './view.js';
+import { badgeView, peerViews, providerView } from './view.js';
+import { HELPER_HOST, PEER_PERMISSION, cleanLabel, newProfileId, peerRecord, sharedSnapshots } from './peers.js';
 import { viewLabels } from './i18n.js';
 
 const ENDPOINT = 'http://127.0.0.1:8765/usage';
@@ -155,7 +156,9 @@ async function overlayData() {
     const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels);
     providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note, plan: view.plan, accounts: view.accounts});
   }
-  return {providers, now};
+  const {peer_settings: settings, peer_profiles: record} = await chrome.storage.local.get(['peer_settings', 'peer_profiles']);
+  const peers = settings?.on ? peerViews(record, now, undefined, labels) : [];
+  return {providers, peers, now};
 }
 
 async function fetchClaudeJson(url) {
@@ -532,7 +535,96 @@ async function refreshAll() {
       : publish({provider:'gemini', value:'?', detail:'Grant gemini.google.com permission in extension popup', status:'needs_permission', limits:[]}));
   }
   await Promise.allSettled(tasks);
+  await syncPeers().catch(error => console.warn('peers not synced:', String(error)));
 }
+
+// ---- other Chrome profiles (Leeway helper, Native Messaging) -----------------
+// Optional and off by default: the nativeMessaging permission is asked for
+// only when the user turns it on in the popup. peer_settings is written only
+// here; peer_profiles holds the other profiles' entries from the last round trip.
+
+async function peersAllowed() {
+  try { return await chrome.permissions.contains(PEER_PERMISSION); }
+  catch (_) { return false; }
+}
+
+function askHelper(message) {
+  return new Promise(resolve => {
+    try {
+      chrome.runtime.sendNativeMessage(HELPER_HOST, message, reply => {
+        const error = chrome.runtime.lastError?.message;
+        resolve(error ? {ok: false, error} : (reply || {ok: false, error: 'no answer'}));
+      });
+    } catch (error) {
+      resolve({ok: false, error: String(error?.message || error)});
+    }
+  });
+}
+
+async function ownSharedSnapshots() {
+  const enabled = await getEnabledProviders();
+  const entries = [];
+  for (const provider of Object.keys(PROVIDER_HOSTS)) {
+    if (!enabled.has(provider) || !await hasHostPermission(provider)) continue;
+    const stored = await chrome.storage.local.get([usageKey(provider), lastOkKey(provider)]);
+    entries.push({latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]});
+  }
+  return sharedSnapshots(entries);
+}
+
+let peerChanges = Promise.resolve();
+function peersOneAtATime(task) {
+  const run = peerChanges.then(task);
+  peerChanges = run.catch(() => {});
+  return run;
+}
+
+function syncPeers() {
+  return peersOneAtATime(async () => {
+    const {peer_settings: settings} = await chrome.storage.local.get('peer_settings');
+    if (!settings?.on || !await peersAllowed()) return null;
+    const reply = await askHelper({type: 'put', profile_id: settings.id, label: settings.label, snapshots: await ownSharedSnapshots()});
+    // Turned off while the helper answered: keep nothing.
+    const now = (await chrome.storage.local.get('peer_settings')).peer_settings;
+    if (!now?.on) return null;
+    const record = peerRecord(reply, settings.id, Date.now());
+    await chrome.storage.local.set({peer_profiles: record});
+    return record;
+  });
+}
+
+async function enablePeers(label) {
+  if (!await peersAllowed()) return {ok: false, error: 'no-permission'};
+  await peersOneAtATime(async () => {
+    const {peer_settings: old} = await chrome.storage.local.get('peer_settings');
+    const id = typeof old?.id === 'string' && /^[a-f0-9]{16}$/.test(old.id) ? old.id : newProfileId(crypto.getRandomValues(new Uint8Array(8)));
+    await chrome.storage.local.set({peer_settings: {on: true, id, label: cleanLabel(label ?? old?.label)}});
+  });
+  return {ok: true, record: await syncPeers()};
+}
+
+async function setPeerLabel(label) {
+  await peersOneAtATime(async () => {
+    const {peer_settings: settings} = await chrome.storage.local.get('peer_settings');
+    if (settings?.on) await chrome.storage.local.set({peer_settings: {...settings, label: cleanLabel(label)}});
+  });
+  return {ok: true, record: await syncPeers()};
+}
+
+// Off: this profile's entry leaves the shared file, the other profiles'
+// values are dropped here, and the permission goes back.
+async function disablePeers() {
+  await peersOneAtATime(async () => {
+    const {peer_settings: settings} = await chrome.storage.local.get('peer_settings');
+    if (settings?.on && await peersAllowed()) await askHelper({type: 'remove', profile_id: settings.id});
+    await chrome.storage.local.set({peer_settings: {...(settings || {}), on: false}});
+    await chrome.storage.local.remove('peer_profiles');
+  });
+  try { await chrome.permissions.remove(PEER_PERMISSION); }
+  catch (_) {}
+  return {ok: true};
+}
+
 function setupAlarm() {
   chrome.alarms.create(ALARM, {periodInMinutes:POLL_MINUTES});
 }
@@ -579,6 +671,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(turnedOn => { sendResponse({ok:true}); if (turnedOn) refreshAll(); });
     return true;
   }
+  if (message?.type === 'PEERS_ENABLE') { enablePeers(message.label).then(sendResponse); return true; }
+  if (message?.type === 'PEERS_DISABLE') { disablePeers().then(sendResponse); return true; }
+  if (message?.type === 'PEERS_LABEL') { setPeerLabel(message.label).then(sendResponse); return true; }
   if (message?.type === 'PROVIDER_DISABLED') {
     disableProvider(message.provider).catch(() => {}).then(() => sendResponse({ok:true}));
     return true;
@@ -591,6 +686,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Granted from the popup's toggle (or anywhere else): turn the provider on,
 // whether or not the popup is still open to ask.
 chrome.permissions.onAdded.addListener(async permissions => {
+  // Granted from the popup's "Other Chrome profiles" switch: turn it on even if
+  // Chrome closed the popup while it asked.
+  if ((permissions?.permissions || []).includes('nativeMessaging')) {
+    const {peer_settings: settings} = await chrome.storage.local.get('peer_settings');
+    if (!settings?.on) await enablePeers(undefined);
+  }
   const addedOrigins = permissions?.origins || [];
   let turnedOn = false;
   for (const [provider, host] of Object.entries(PROVIDER_HOSTS)) {
@@ -600,6 +701,13 @@ chrome.permissions.onAdded.addListener(async permissions => {
 });
 
 chrome.permissions.onRemoved.addListener(async permissions => {
+  if ((permissions?.permissions || []).includes('nativeMessaging')) {
+    const {peer_settings: settings} = await chrome.storage.local.get('peer_settings');
+    if (settings?.on) {
+      await chrome.storage.local.set({peer_settings: {...settings, on: false}});
+      await chrome.storage.local.remove('peer_profiles');
+    }
+  }
   const removedOrigins = permissions?.origins || [];
   if (!removedOrigins.length) return;
   const enabled = await getEnabledProviders();

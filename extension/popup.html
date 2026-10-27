@@ -55,6 +55,17 @@ h1 svg{width:18px;height:18px;display:block}
 .account-name{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;font-weight:700;color:var(--ink)}
 .account-name .badge{font-size:10px}
 .account .limit{margin:7px 0;padding-bottom:9px}
+#status_peers:empty{display:none}
+.peer-setup{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;color:var(--dim)}
+.peer-setup label{flex:none}
+.peer-setup input{flex:1;min-width:0;font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
+.peer{margin-top:11px;padding-top:9px;border-top:1px solid var(--line)}
+.peer-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700;font-size:12.5px}
+.peer-head .muted{font-weight:400;font-size:11px}
+.peer-provider{margin-top:7px}
+.peer-provider.dim .limit{opacity:.5}
+.peer-name{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;font-weight:600;color:var(--dim)}
+.peer-provider .limit{margin:6px 0;padding-bottom:9px}
 .note:empty{display:none}
 
 .hint{margin:12px 2px 10px;color:var(--dim);font-size:11.5px}
@@ -82,6 +93,12 @@ button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line
 <section class="provider">
 <div class="provider-row"><label for="toggle_gemini">Gemini<span class="plan" id="plan_gemini"></span></label><span class="badge" id="status_gemini" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_gemini"></div>
 <div class="limits" id="limits_gemini"></div><p class="note" id="note_gemini"></p>
+</section>
+
+<section class="provider" id="peers">
+<div class="provider-row"><label for="toggle_peers" data-i18n="peers_title">다른 Chrome 프로필</label><span class="badge" id="status_peers"></span><input type="checkbox" id="toggle_peers"></div>
+<div class="peer-setup" id="peer_setup" hidden><label for="peer_label" data-i18n="peers_label">이 프로필 이름</label><input id="peer_label" maxlength="24" autocomplete="off"></div>
+<div id="peers_list"></div><p class="note" id="note_peers"></p>
 </section>
 
 <p class="hint" data-i18n="note_main">숫자는 남은 비율입니다. Gemini는 사용량 페이지(gemini.google.com/usage) 탭이 열려 있을 때 읽습니다.</p>

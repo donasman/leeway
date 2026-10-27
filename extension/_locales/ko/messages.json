@@ -56,5 +56,14 @@
   "open_overlay": {"message": "오버레이 열기"},
   "overlay_hint": {"message": "일반 웹페이지 탭에서 열어주세요."},
   "overlay_empty": {"message": "확장 팝업에서 서비스를 켜세요."},
-  "account_n": {"message": "계정 {n}"}
+  "account_n": {"message": "계정 {n}"},
+
+  "peers_title": {"message": "다른 Chrome 프로필"},
+  "peers_label": {"message": "이 프로필 이름"},
+  "peers_label_placeholder": {"message": "예: 업무용"},
+  "peers_hint": {"message": "Leeway를 설치한 각 Chrome 프로필에서 켜면 그 프로필의 사용량도 여기에 함께 보입니다. Leeway helper가 필요합니다."},
+  "peers_none": {"message": "아직 사용량을 보낸 다른 프로필이 없습니다."},
+  "peers_helper_missing": {"message": "Leeway helper가 설치되어 있지 않습니다. leeway-helper.exe를 한 번 실행한 뒤 다시 켜세요."},
+  "peers_helper_failed": {"message": "Leeway helper에 연결하지 못했습니다. leeway-helper.exe를 다시 실행해 복구하세요."},
+  "peers_updated": {"message": "{age} 갱신"}
 }

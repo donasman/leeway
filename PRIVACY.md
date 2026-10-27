@@ -17,6 +17,9 @@ sponsored by Anthropic, OpenAI or Google.
 - Everything it reads stays **on your computer** (`chrome.storage.local`).
 - Leeway has **no server of its own** and sends your data to no one. The
   floating overlay runs inside Chrome — there is no separate app to install.
+- The optional **Other Chrome profiles** feature uses a small helper program on
+  your own computer. It passes usage numbers between your Chrome profiles
+  through a file on your computer, and nothing leaves your computer.
 - No analytics, no tracking, no advertising identifiers.
 
 ## What Leeway reads
@@ -76,6 +79,8 @@ anywhere. Removing the extension removes it.
   from that page.
 - **Site access** to `claude.ai`, `chatgpt.com`, `gemini.google.com` — these are
   **optional** and requested only when you turn that service on.
+- **nativeMessaging** — **optional**, requested only when you turn on "Other
+  Chrome profiles". It lets Leeway talk to the Leeway helper on your computer.
 
 ## Floating overlay
 
@@ -84,10 +89,30 @@ The floating overlay is a small always-on-top window drawn by Chrome itself
 the same on-device usage summary the popup shows, and reads nothing from the web
 page it is opened over.
 
+## Other Chrome profiles (optional, off by default)
+
+If you use several Chrome profiles (for example one per Claude account), you can
+see all of their usage in one popup and overlay. This needs the Leeway helper, a
+small program you install yourself on Windows (`leeway-helper.exe`).
+
+- **What each profile sends to the helper**: the same values its popup shows —
+  remaining percentages, reset times, the plan name — plus the name you give
+  the profile (e.g. "Work") and a random id Leeway made for that profile.
+- **What it never sends**: cookies, passwords, session or access tokens, email
+  addresses, organization names, page text or conversations.
+- **Where it goes**: the helper keeps the entries in one file on your computer,
+  `%LOCALAPPDATA%\Leeway\profiles.json`, so your other profiles can read them.
+  The helper has no network access of its own and sends nothing anywhere.
+- **How long**: an entry is replaced on every refresh. Turning the feature off in
+  a profile removes that profile's entry; an entry not refreshed for 7 days is
+  removed; `leeway-helper.exe uninstall` removes the file and the helper.
+
 ## Data deletion
 
-Uninstalling Leeway deletes everything it stored. You can also remove its data
-from the extension's entry in `chrome://extensions`.
+Uninstalling Leeway deletes everything it stored in Chrome. You can also remove
+its data from the extension's entry in `chrome://extensions`. If you used Other
+Chrome profiles, run `leeway-helper.exe uninstall` to remove the helper and its
+file.
 
 ## Contact
 

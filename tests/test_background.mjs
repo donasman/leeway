@@ -75,15 +75,32 @@ globalThis.chrome = {
     onInstalled: {addListener(fn) { handlers.installed = fn; }},
     onStartup: {addListener() {}},
     onMessage: {addListener(fn) { handlers.message = fn; }},
+    lastError: undefined,
+    // The Leeway helper, as Chrome reaches it: callback style, errors through
+    // runtime.lastError. Behaves like helper/store.go (keyed by profile_id).
+    sendNativeMessage(host, message, callback) {
+      nativeCalls.push({host, message: structuredClone(message)});
+      setTimeout(() => {
+        if (!nativeHelper.installed) {
+          globalThis.chrome.runtime.lastError = {message: 'Specified native messaging host not found.'};
+          callback(undefined);
+          globalThis.chrome.runtime.lastError = undefined;
+          return;
+        }
+        if (message.type === 'put') nativeHelper.profiles.set(message.profile_id, {id: message.profile_id, label: message.label || 'Chrome', updated_at: new Date().toISOString(), snapshots: message.snapshots});
+        if (message.type === 'remove') nativeHelper.profiles.delete(message.profile_id);
+        callback({ok: true, version: '0.1.0', profiles: [...nativeHelper.profiles.values()].map(p => structuredClone(p))});
+      }, 0);
+    },
   },
   alarms: {create() {}, onAlarm: {addListener() {}}},
   permissions: {
-    async contains({origins}) { return origins.every(origin => granted.has(origin)); },
-    async remove({origins}) {
-      writes.push(['permissions.remove', ...origins]);
-      origins.forEach(origin => granted.delete(origin));
+    async contains({origins = [], permissions = []}) { return [...origins, ...permissions].every(item => granted.has(item)); },
+    async remove({origins = [], permissions = []}) {
+      writes.push(['permissions.remove', ...origins, ...permissions]);
+      [...origins, ...permissions].forEach(item => granted.delete(item));
       // Chrome then fires onRemoved, as it does for a revoke in chrome://extensions.
-      setTimeout(() => handlers.permissionsRemoved({origins}), 0);
+      setTimeout(() => handlers.permissionsRemoved({origins, permissions}), 0);
       return true;
     },
     onAdded: {addListener(fn) { handlers.permissionsAdded = fn; }},
@@ -107,6 +124,8 @@ globalThis.chrome = {
     throw new Error('Cannot access contents of the page.');
   }},
 };
+let nativeCalls = [];
+const nativeHelper = {installed: true, profiles: new Map()};
 let openTabs = [];
 let tabAnswers = {};
 let tabGate = null;
@@ -173,6 +192,9 @@ function reset({enabled = [], permissions = [], bridgeUp = false, token} = {}) {
   openTabs = [];
   tabAnswers = {};
   tabGate = null;
+  nativeCalls = [];
+  nativeHelper.installed = true;
+  nativeHelper.profiles = new Map();
 }
 
 const settle = async () => { for (let i = 0; i < 10; i += 1) await new Promise(resolve => setTimeout(resolve, 0)); };
@@ -862,6 +884,62 @@ console.log('\nClaude plan and organizations — one sign-in, several organizati
   const claude = data.providers.find(p => p.provider === 'claude');
   check('overlay data carries the accounts', (claude?.accounts || []).map(a => [a.label, a.rows.find(r => r.primary)?.percent ?? '?']),
     [['Max 20x', '60%'], ['Team', '10%'], ['Pro', '?']]);
+}
+
+console.log('\nother Chrome profiles — off by default, then through the Leeway helper');
+{
+  const NM = 'nativeMessaging';
+  const OTHER = 'fedcba9876543210';
+  reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
+  claudeAccount({sessionUsed: 40, weeklyUsed: 100});
+  await send({type: 'REFRESH_ALL'});
+  check('off: the helper is never asked', nativeCalls.length, 0);
+  check('turning on without the permission is refused', await send({type: 'PEERS_ENABLE', label: 'x'}), {ok: false, error: 'no-permission'});
+  check('a content script cannot turn it on', await send({type: 'PEERS_ENABLE', label: 'x'}, CHATGPT_TAB), undefined);
+
+  granted.add(NM);
+  nativeHelper.profiles.set(OTHER, {id: OTHER, label: '개인', updated_at: new Date().toISOString(), snapshots: [
+    {provider: 'claude', status: 'ok', collected_at: new Date().toISOString(), primary_limit_id: 'claude_5h', plan: 'Pro', limits: [{id: 'claude_5h', label: '5-hour limit', remaining_percent: 0, resets_at: null, reset_text: null}]},
+  ]});
+  const on = await send({type: 'PEERS_ENABLE', label: '  업무용\u0007 '});
+  const settings = get('peer_settings');
+  check('on: a random 16-hex profile id and the cleaned name', [settings?.on, /^[a-f0-9]{16}$/.test(settings?.id || ''), settings?.label], [true, true, '업무용']);
+  const put = nativeCalls.at(-1)?.message;
+  check("sent: this profile's shown values, no detail text", [put?.type, put?.label, put?.snapshots.map(x => [x.provider, x.status]), put?.snapshots.some(x => 'detail' in x)], ['put', '업무용', [['claude', 'ok']], false]);
+  check('sent: nothing else (no url, cookie or token fields)', Object.keys(put || {}).sort(), ['label', 'profile_id', 'snapshots', 'type']);
+  check('kept: the other profile only, not this one', [on?.ok, get('peer_profiles')?.profiles.map(p => p.id)], [true, [OTHER]]);
+
+  const data = await send({type: 'OVERLAY_DATA'}, {id: 'test-extension-id', tab: {id: 9}, url: 'https://example.com/'});
+  check('overlay: the other profile, its plan and 0% as 0%', data.peers?.map(p => [p.label, p.providers[0].plan, p.providers[0].rows[0].percent]), [['개인', 'Pro', '0%']]);
+
+  nativeCalls = [];
+  await send({type: 'REFRESH_ALL'});
+  check('every refresh sends again', nativeCalls.map(c => c.message.type), ['put']);
+
+  await send({type: 'PEERS_LABEL', label: '회사'});
+  check('renamed: stored and sent', [get('peer_settings')?.label, nativeCalls.at(-1)?.message.label], ['회사', '회사']);
+
+  nativeHelper.installed = false;
+  await send({type: 'REFRESH_ALL'});
+  check('helper not installed: an error code, no profiles', [get('peer_profiles')?.ok, get('peer_profiles')?.error, get('peer_profiles')?.profiles], [false, 'helper_missing', []]);
+  nativeHelper.installed = true;
+
+  const id = get('peer_settings')?.id;
+  nativeCalls = [];
+  check('turn off', await send({type: 'PEERS_DISABLE'}), {ok: true});
+  check('off: this profile leaves the shared file', nativeCalls.map(c => [c.message.type, c.message.profile_id]), [['remove', id]]);
+  check("off: the others' values dropped, permission given back", [get('peer_profiles'), get('peer_settings')?.on, granted.has(NM)], [undefined, false, false]);
+  nativeCalls = [];
+  await send({type: 'REFRESH_ALL'});
+  check('off again: the helper is not asked', nativeCalls.length, 0);
+
+  granted.add(NM);
+  await send({type: 'PEERS_ENABLE', label: ''});
+  check('on again: the same profile id', get('peer_settings')?.id, id);
+  granted.delete(NM);
+  await handlers.permissionsRemoved({permissions: [NM]});
+  check('permission removed in chrome://extensions → off', [get('peer_settings')?.on, get('peer_profiles')], [false, undefined]);
+  await settle();
 }
 
 console.log('\noverlay data — one providerView per provider, same as the popup');

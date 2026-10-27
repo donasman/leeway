@@ -41,3 +41,6 @@ node_modules/
 
 # oh-my-claude-code per-session tool/state (local only)
 .omc/
+
+# Leeway helper build output
+helper/dist/

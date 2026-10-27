@@ -39,6 +39,16 @@ For each service that is turned on, the popup shows the remaining percentage of 
 - Turning a service on asks Chrome for that site's permission. If the popup closes while Chrome asks, allowing it still turns the service on.
 - The UI is available in English, Korean, Spanish, Chinese (Simplified and Traditional) and Japanese. Chrome picks it from your browser language, falling back to English.
 
+## Other Chrome profiles (optional)
+
+To see several Claude (or ChatGPT, Gemini) accounts at once, sign in to each in its own Chrome profile and install Leeway in each. With the **Leeway helper** installed, every profile's popup and overlay also show the other profiles' remaining usage.
+
+1. Download `leeway-helper.exe` and run it once. It registers itself for your Windows user (no administrator rights) and copies itself to `%LOCALAPPDATA%\Leeway\helper`.
+2. In each profile's popup, turn on **Other Chrome profiles** (Chrome asks for the "communicate with cooperating native applications" permission) and give the profile a name, e.g. `Work`.
+3. Each profile then sends its own values on every refresh and shows the others' under its own. The toolbar badge still shows only this profile.
+
+Only the values the popup shows travel, through a file on your computer: no cookies, tokens or email addresses, and nothing leaves the computer. Remove it with `leeway-helper.exe uninstall`. Building the helper: see [helper/README.md](helper/README.md).
+
 ## Toolbar badge
 
 The extension icon shows the lowest main value among the services that are turned on, as a number without `%` (e.g. `70`). Its colour follows that number: green from 50, orange from 20 to 49, red below 20, grey when it is more than 6 minutes old. `?` means services are on but none has a value yet; no badge means none is on. Hover the icon for each service's value and reset time.

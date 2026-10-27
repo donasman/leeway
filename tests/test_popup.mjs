@@ -82,6 +82,18 @@ function background(message) {
     write({[`usage_${message.provider}`]: snapshot(message.provider, 'disabled', [], 0, 'disabled by user'), [`usage_last_ok_${message.provider}`]: null});
     granted.delete(host);
   }
+  // Other Chrome profiles: what background.js writes for these messages.
+  if (message.type === 'PEERS_ENABLE' && granted.has('nativeMessaging')) {
+    write({peer_settings: {on: true, id: '0123456789abcdef', label: String(message.label || '').trim()}});
+  }
+  if (message.type === 'PEERS_DISABLE') {
+    write({peer_settings: {on: false, id: '0123456789abcdef', label: ''}});
+    store.delete('peer_profiles');
+    granted.delete('nativeMessaging');
+  }
+  if (message.type === 'PEERS_LABEL') {
+    write({peer_settings: {...store.get('peer_settings'), label: String(message.label || '').trim()}});
+  }
 }
 
 globalThis.chrome = {
@@ -107,18 +119,18 @@ globalThis.chrome = {
   runtime: {
     getManifest: () => structuredClone(manifest),
     async sendMessage(message) {
-      calls.push(['runtime.sendMessage', message.type]);
+      calls.push(['runtime.sendMessage', message.type, ...(message.label !== undefined ? [message.label] : [])]);
       if (message.type === 'REFRESH_ALL' && refreshGate) await refreshGate;
       background(message);
       return {ok: true};
     },
   },
   permissions: {
-    async contains({origins}) { return origins.every(origin => granted.has(origin)); },
-    async request({origins}) {
-      calls.push(['permissions.request', origins]);
+    async contains({origins = [], permissions = []}) { return [...origins, ...permissions].every(item => granted.has(item)); },
+    async request({origins, permissions}) {
+      calls.push(['permissions.request', origins ?? permissions]);
       if (requestGate) await requestGate; // the prompt is open
-      if (permissionAnswer) origins.forEach(origin => granted.add(origin));
+      if (permissionAnswer) [...(origins || []), ...(permissions || [])].forEach(item => granted.add(item));
       return permissionAnswer;
     },
     async remove({origins}) {
@@ -236,6 +248,50 @@ console.log('\nstorage changes → the popup re-renders');
   });
   await storeAndRender({usage_claude: claudeOk()});
   check('fresh again', card('claude').status, '정상');
+}
+
+console.log('\nother Chrome profiles');
+{
+  check('off by default: switch off, how-to note', [$('toggle_peers').checked, $('status_peers').textContent, $('peer_setup').hidden, $('note_peers').textContent], [false, '꺼짐', true, KO.peers_hint]);
+  $('peer_label').value = '업무용';
+  $('toggle_peers').checked = true;
+  calls.length = 0;
+  $('toggle_peers').dispatchEvent(new globalThis.document.defaultView.Event('change'));
+  await settle();
+  check('on: asks for nativeMessaging, then background turns it on with the name', calls.filter(c => c[0] !== 'storage.set'), [['permissions.request', ['nativeMessaging']], ['runtime.sendMessage', 'PEERS_ENABLE', '업무용']]);
+  check('on, nothing from the helper yet: waiting, name field shown', [$('toggle_peers').checked, $('status_peers').textContent, $('peer_setup').hidden, $('peer_label').value], [true, '대기 중', false, '업무용']);
+
+  const at = new Date(Date.now() - 3 * MIN).toISOString();
+  await storeAndRender({peer_profiles: {at, ok: true, error: null, profiles: [{id: 'fedcba9876543210', label: '<b>개인</b>', updated_at: at, snapshots: [
+    {provider: 'claude', status: 'ok', collected_at: at, plan: 'Pro', limits: [limit('claude_5h', 0), limit('claude_weekly', 41)]},
+  ]}]}});
+  const peer = $('peers_list').querySelector('.peer');
+  check('another profile: its name as text, when it sent', [peer?.querySelector('.peer-head span')?.textContent, peer?.querySelector('.peer-head .muted')?.textContent, peer?.querySelector('b')], ['<b>개인</b>', '3분 전 갱신', null]);
+  check('its service, plan and 0% as 0%', [peer?.querySelector('.peer-name')?.textContent, [...peer.querySelectorAll('.limit .pct')].map(c => c.textContent)], ['Claude · Pro', ['0%', '41%']]);
+  check('count of other profiles', [$('status_peers').textContent, $('note_peers').textContent], ['1', '']);
+
+  await storeAndRender({peer_profiles: {at, ok: false, error: 'helper_missing', profiles: []}});
+  check('helper not installed: says how to fix it', [$('status_peers').textContent, $('note_peers').textContent, $('peers_list').children.length], ['읽기 실패', KO.peers_helper_missing, 0]);
+
+  $('peer_label').value = '회사';
+  calls.length = 0;
+  $('peer_label').dispatchEvent(new globalThis.document.defaultView.Event('change'));
+  await settle();
+  check('renaming sends the new name', calls.filter(c => c[0] === 'runtime.sendMessage'), [['runtime.sendMessage', 'PEERS_LABEL', '회사']]);
+
+  $('toggle_peers').checked = false;
+  calls.length = 0;
+  $('toggle_peers').dispatchEvent(new globalThis.document.defaultView.Event('change'));
+  await settle();
+  check('off: background turns it off, no permission prompt', calls.filter(c => c[0] !== 'storage.set'), [['runtime.sendMessage', 'PEERS_DISABLE']]);
+  check('off again: hint, list empty', [$('toggle_peers').checked, $('note_peers').textContent, $('peers_list').children.length], [false, KO.peers_hint, 0]);
+
+  permissionAnswer = false;
+  $('toggle_peers').checked = true;
+  $('toggle_peers').dispatchEvent(new globalThis.document.defaultView.Event('change'));
+  await settle();
+  check('permission refused: stays off and says why', [$('toggle_peers').checked, $('note_peers').textContent], [false, KO.refused_note]);
+  permissionAnswer = true;
 }
 
 console.log('\nplan and Claude organizations');

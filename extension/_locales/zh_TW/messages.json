@@ -56,5 +56,14 @@
   "open_overlay": {"message": "開啟浮動視窗"},
   "overlay_hint": {"message": "請在一般網頁分頁中開啟。"},
   "overlay_empty": {"message": "請在彈出式視窗中開啟服務。"},
-  "account_n": {"message": "帳戶 {n}"}
+  "account_n": {"message": "帳戶 {n}"},
+
+  "peers_title": {"message": "其他 Chrome 設定檔"},
+  "peers_label": {"message": "此設定檔的名稱"},
+  "peers_label_placeholder": {"message": "例如：工作"},
+  "peers_hint": {"message": "在每個安裝了 Leeway 的 Chrome 設定檔中開啟，即可在這裡一併查看其用量。需要 Leeway 輔助程式。"},
+  "peers_none": {"message": "還沒有其他設定檔分享用量。"},
+  "peers_helper_missing": {"message": "尚未安裝 Leeway 輔助程式。請執行一次 leeway-helper.exe，然後重新開啟。"},
+  "peers_helper_failed": {"message": "無法連線到 Leeway 輔助程式。請再次執行 leeway-helper.exe 進行修復。"},
+  "peers_updated": {"message": "{age}更新"}
 }

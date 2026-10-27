@@ -8,6 +8,8 @@
 // chrome.i18n); tests pass the map built from _locales/<lang>/messages.json.
 // Template values use {token} placeholders that `fill` substitutes.
 
+import { fromShared } from './snapshot.js';
+
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
@@ -231,6 +233,40 @@ export function providerView({enabled, permitted, latest, lastOk}, nowMs, timeZo
     return view(state, {rows, dim: isStale(latest, nowMs), note: joinNote(labels.note_partial, checked), detail});
   }
   return view(state, {note: joinNote(checked, state === 'logged_out' ? labels.note_login : labels.note_unread), detail});
+}
+
+// ---- other Chrome profiles (through the Leeway helper) -------------------------
+
+const PEER_ID = /^[a-f0-9]{16,32}$/;
+const MAX_PEERS = 8;
+
+// A name another profile chose: short and printable, never markup (the
+// popup and overlay put it in as text anyway).
+function peerLabel(value) {
+  const label = typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24) : '';
+  return label || 'Chrome';
+}
+
+// What the popup and overlay show for the other profiles: per profile its
+// name, when it last sent, and one providerView per service it shared — the
+// same view as this profile's own, so 0% stays 0% and an old value is dimmed.
+export function peerViews(record, nowMs, timeZone, labels = {}) {
+  const profiles = Array.isArray(record?.profiles) ? record.profiles : [];
+  const views = [];
+  for (const profile of profiles) {
+    if (!profile || typeof profile.id !== 'string' || !PEER_ID.test(profile.id)) continue;
+    const providers = [];
+    for (const raw of Array.isArray(profile.snapshots) ? profile.snapshots : []) {
+      const snapshot = fromShared(raw);
+      if (!snapshot || providers.some(p => p.provider === snapshot.provider)) continue;
+      providers.push({provider: snapshot.provider, ...providerView({enabled: true, permitted: true, latest: snapshot}, nowMs, timeZone, labels)});
+    }
+    if (!providers.length) continue;
+    const age = formatAge(nowMs - Date.parse(profile.updated_at), labels);
+    views.push({id: profile.id, label: peerLabel(profile.label), updated: age ? fill(labels.peers_updated, {age}) : '', providers});
+    if (views.length === MAX_PEERS) break;
+  }
+  return views;
 }
 
 // ---- toolbar badge (CLAUDE.md §4) --------------------------------------------

@@ -134,6 +134,18 @@ export function toSnapshot(payload, nowMs) {
   return snapshot;
 }
 
+// A snapshot another Chrome profile shared through the Leeway helper. It was
+// sanitized there, but it crossed a process and a file, so every value is
+// checked again here, and only an ok snapshot with a readable time is kept.
+// Its own collected_at is kept, so its age shows as it is.
+export function fromShared(raw) {
+  if (!raw || typeof raw !== 'object' || raw.status !== 'ok') return null;
+  const collectedAt = isoOrNull(raw.collected_at);
+  if (!collectedAt) return null;
+  const snapshot = toSnapshot({provider: raw.provider, status: 'ok', limits: raw.limits, plan: raw.plan, accounts: raw.accounts}, Date.parse(collectedAt));
+  return snapshot && snapshot.status === 'ok' ? snapshot : null;
+}
+
 // Everything one payload writes, as a single chrome.storage.local.set() object.
 // usage_<provider> always holds the latest attempt. usage_last_ok_<provider>
 // holds the latest "ok" one. It survives failed reads and logged_out (a 403
