@@ -32,11 +32,20 @@ jobs:
           go vet ./...
           go test ./...
 
+      # The helper reports its version to the extension (MIN_HELPER_VERSION in
+      # extension/peers.js): the tag without its "v". A run by hand has no
+      # tag and stays "dev".
       - name: Build the Windows helper
         working-directory: helper
         run: |
           mkdir -p dist
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/leeway-helper.exe .
+          VERSION=dev
+          if [ "$GITHUB_REF_TYPE" = tag ]; then VERSION="${GITHUB_REF_NAME#v}"; fi
+          echo "helper version: $VERSION"
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=$VERSION" -o dist/leeway-helper.exe .
+          dist_version=$(go run -ldflags="-X main.version=$VERSION" . version)
+          echo "$dist_version"
+          [ "$dist_version" = "leeway-helper $VERSION" ]
           cd dist && sha256sum leeway-helper.exe > leeway-helper.exe.sha256 && cat leeway-helper.exe.sha256
 
       - name: Keep the build

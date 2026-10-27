@@ -1,9 +1,11 @@
 // Leeway helper: lets Leeway in several Chrome profiles show each other's
 // remaining usage. Chrome starts it through Native Messaging; run on its own
-// (double-click) it registers itself for the current Windows user.
+// (double-click) it registers itself for the current Windows user, then
+// checks that Chrome can reach it.
 //
-//	leeway-helper.exe                 register (same as "install")
+//	leeway-helper.exe                 install, then check (double-click)
 //	leeway-helper.exe install [--extension-id ID]...
+//	leeway-helper.exe check           each step between Chrome and the helper
 //	leeway-helper.exe uninstall
 package main
 
@@ -23,9 +25,12 @@ import (
 
 const (
 	hostName       = "com.leeway.helper"
-	version        = "0.1.0"
 	maxMessageSize = 64 * 1024
 )
+
+// version is set by the release build from its tag
+// (-ldflags "-X main.version=0.6.3"); a build from source says "dev".
+var version = "dev"
 
 // Extensions allowed to talk to the helper: the Chrome Web Store build and
 // the unpacked development build that carries the old manifest "key". An
@@ -179,26 +184,35 @@ func main() {
 		command = args[0]
 	}
 	var err error
+	passed := true
 	switch command {
 	case "install":
 		var ids []string
 		if ids, err = extensionIDs(args); err == nil {
 			err = install(ids)
 		}
+	case "check":
+		passed = printChecks(os.Stdout, newChecker().run())
 	case "uninstall":
 		err = uninstall()
 	case "version", "--version":
 		fmt.Println("leeway-helper", version)
 	default:
-		err = fmt.Errorf("unknown command %q (install, uninstall)", command)
+		err = fmt.Errorf("unknown command %q (install, check, uninstall)", command)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 	}
+	// Double-click: right after installing, show whether Chrome can reach it
+	// (also when installing failed — the check says which step).
+	if interactive {
+		fmt.Println()
+		passed = printChecks(os.Stdout, newChecker().run())
+	}
 	if interactive && runtime.GOOS == "windows" {
 		pause()
 	}
-	if err != nil {
+	if err != nil || !passed {
 		os.Exit(1)
 	}
 }
