@@ -62,6 +62,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `docs/privacy/index.html` | GitHub Pages 개인정보처리방침 (`PRIVACY.md`와 같은 내용을 유지) |
 | `docs/llms.txt`, `docs/sitemap.xml`, `docs/img/` | 사이트 요약(사실만), 사이트맵, 스크린샷 |
 | `.github/workflows/helper-release.yml` | `v*` 태그 → helper 빌드·Release 첨부 |
+| `.github/workflows/metrics.yml`, `.github/scripts/collect_metrics.py` | 매일 09:00 KST 출시 지표(트래픽·유입·다운로드·스타) → `metrics` 브랜치 `data/*.csv`. 시크릿·컬럼은 `docs/metrics.md` |
 
 ### pure layer
 
