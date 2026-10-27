@@ -73,7 +73,7 @@ globalThis.chrome = {
     id: 'test-extension-id',
     getURL: path => `chrome-extension://test-extension-id/${path}`,
     onInstalled: {addListener(fn) { handlers.installed = fn; }},
-    onStartup: {addListener() {}},
+    onStartup: {addListener(fn) { handlers.startup = fn; }},
     onMessage: {addListener(fn) { handlers.message = fn; }},
     lastError: undefined,
     // The Leeway helper, as Chrome reaches it: callback style, errors through
@@ -136,9 +136,11 @@ const bridge = {up: false, requests: []};
 let routes = {}; // url → {status, body, type?, gate?}
 let claudeRequests = [];
 let chatgptRequests = [];
+let fetched = []; // every URL fetch() was called with
 
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
+  fetched.push(url);
   if (url.startsWith('http://127.0.0.1:8765/')) {
     if (!bridge.up) throw new TypeError('fetch failed');
     bridge.requests.push({url, method: init.method || 'GET', headers: init.headers || {}, body: init.body});
@@ -187,6 +189,7 @@ function reset({enabled = [], permissions = [], bridgeUp = false, token} = {}) {
   routes = {};
   claudeRequests = [];
   chatgptRequests = [];
+  fetched = [];
   writes = [];
   tabCalls = [];
   openTabs = [];
@@ -958,6 +961,39 @@ console.log('\noverlay data — one providerView per provider, same as the popup
   const chatgpt = data.providers.find(p => p.provider === 'chatgpt');
   check('chatgpt: not enabled → off, no rows', [chatgpt?.enabled, chatgpt?.state, chatgpt?.rows], [false, 'off', []]);
   check('a content script still cannot trigger a refresh (state change stays page-only)', await send({type: 'REFRESH_ALL'}, CONTENT), undefined);
+}
+
+console.log('\nas shipped — no 127.0.0.1 permission: nothing goes to localhost, results unchanged');
+{
+  // The manifest grants no 127.0.0.1 origin, so this is the only path a
+  // released build takes. Something listening there must make no difference.
+  reset({enabled: ['claude', 'chatgpt', 'gemini'], permissions: [CLAUDE_HOST, CHATGPT_HOST, GEMINI_HOST]});
+  bridge.up = true;
+  claudeAccount({sessionUsed: 40, weeklyUsed: 100});
+  chatgptAccount();
+  openTabs = geminiTab();
+  tabAnswers = {5: geminiAnswer()};
+  handlers.installed({reason: 'update'});
+  handlers.startup();
+  check('REFRESH_ALL', await send({type: 'REFRESH_ALL'}), {ok: true});
+  await settle();
+  check('claude', [get('usage_claude')?.status, pct(get('usage_claude'), 'claude_5h'), pct(get('usage_claude'), 'claude_weekly')], ['ok', 60, 0]);
+  check('chatgpt', [get('usage_chatgpt')?.status, pct(get('usage_chatgpt'), 'chatgpt_5h'), pct(get('usage_chatgpt'), 'chatgpt_weekly')], ['ok', 61, 40]);
+  check('gemini', [get('usage_gemini')?.status, pct(get('usage_gemini'), 'gemini_5h')], ['ok', 100]);
+  check('last ok saved for each', ['claude', 'chatgpt', 'gemini'].map(p => get(`usage_last_ok_${p}`)?.status), ['ok', 'ok', 'ok']);
+  claudeAccount({sessionUsed: null, weeklyUsed: 30});
+  await send({type: 'REFRESH_ALL'});
+  check('claude 5-hour unreadable: listed null, weekly not promoted',
+    [get('usage_claude')?.status, get('usage_claude')?.primary_limit_id, get('usage_claude')?.limits.map(l => [l.id, l.remaining_percent])],
+    ['parse_failed', null, [['claude_5h', null], ['claude_weekly', 70]]]);
+  const reply = await send({type: 'usage', payload: chatgptOk()});
+  check('usage message: saved', get('usage_chatgpt')?.status, 'ok');
+  check('usage message: reply', [reply?.ok, reply?.status], [false, 'ok']);
+  await send({type: 'PROVIDER_DISABLED', provider: 'gemini'});
+  await settle();
+  check('turned off', [get('usage_gemini')?.status, get('usage_last_ok_gemini')], ['disabled', null]);
+  check('nothing fetched from 127.0.0.1', fetched.filter(url => url.startsWith('http://127.0.0.1')), []);
+  check('no bridge_token written', get('bridge_token'), undefined);
 }
 
 // ---------------------------------------------------------------------------
