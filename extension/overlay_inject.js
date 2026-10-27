@@ -132,7 +132,10 @@
 
   let pip;
   try {
-    pip = await documentPictureInPicture.requestWindow({ width: 280, height: 270 }); // three services fit
+    // Three services fit. preferInitialWindowPlacement: open at this size every
+    // time — without it Chrome reopens at the size and place the window last
+    // had (e.g. one the user dragged bigger) and ignores width/height.
+    pip = await documentPictureInPicture.requestWindow({ width: 280, height: 270, preferInitialWindowPlacement: true });
   } catch (e) {
     console.warn('Leeway overlay: could not open PiP', e);
     return;
