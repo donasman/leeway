@@ -213,6 +213,13 @@ const timers = await openPopup('first');
 console.log('\nopened — values from storage, no desktop app running');
 {
   check('version from manifest', $('version').textContent, `v${manifest.version}`);
+  check('static lang matches the manifest default_locale', new JSDOM(html).window.document.documentElement.lang, manifest.default_locale);
+  check('lang set from the UI language on load', document.documentElement.lang, 'ko');
+  const enMessages = JSON.parse(readFileSync(new URL('../extension/_locales/en/messages.json', import.meta.url), 'utf8'));
+  const fallbacks = [...new JSDOM(html).window.document.querySelectorAll('[data-i18n]')];
+  check('static fallback text is the en message', fallbacks.filter(el => el.textContent !== enMessages[el.dataset.i18n]?.message).map(el => el.dataset.i18n), []);
+  check('...for every data-i18n element', fallbacks.length, 14);
+  check('i18n replaces it on load', document.getElementById('refresh').textContent, KO.refresh);
   check('claude', card('claude'), {
     status: '정상',
     rows: [['5시간', '60%', '4시간 20분 후 초기화'], ['주간', '0%', '20시간 5분 후 초기화']],

@@ -21,8 +21,8 @@ The extension keeps the latest usage in its own storage and shows it in its popu
 
 1. Open chrome://extensions, enable Developer mode, and choose **Load unpacked**.
 2. Select this project's extension folder. If an older copy is loaded, remove or reload it.
-3. In the extension popup, turn on Claude, ChatGPT and/or Gemini and allow the site permission it asks for. Gemini is read from an open gemini.google.com/usage tab — keep that page open (the **Gemini 사용량** button opens it) for its values to refresh.
-4. Keep the normal Chrome profile signed in to those services. Values refresh every 2 minutes; **새로고침** (refresh) in the popup reads them again right away.
+3. In the extension popup, turn on Claude, ChatGPT and/or Gemini and allow the site permission it asks for. Gemini is read from an open gemini.google.com/usage tab — keep that page open (the **Gemini usage** button opens it) for its values to refresh.
+4. Keep the normal Chrome profile signed in to those services. Values refresh every 2 minutes; **Refresh** in the popup reads them again right away.
 
 The floating overlay is built into the extension (click **Open overlay** in the popup); it uses Chrome's Document Picture-in-Picture, so there is no separate app to install.
 
@@ -34,7 +34,7 @@ For each service that is turned on, the popup shows the remaining percentage of 
 - One claude.ai sign-in can belong to several organizations (a personal plan and a Team workspace, say). Each one with chat limits gets its own block, named by its plan, so you can see which has how much left. The first one is the main value (the toolbar badge and the overlay's collapsed line).
 
 - When a read fails, the last good values stay visible, dimmed, with how old they are. Hover the status label for the failure reason.
-- Values older than 6 minutes (three missed refreshes) are dimmed; a good read that old is marked 오래됨 (stale).
+- Values older than 6 minutes (three missed refreshes) are dimmed; a good read that old is marked **Outdated**.
 - Reset times come from the services as exact times. Only ChatGPT's page fallback gives relative "4시간 20분 후 초기화"-style text; the popup counts that down (in the current UI language) from when it was read.
 - Turning a service on asks Chrome for that site's permission. If the popup closes while Chrome asks, allowing it still turns the service on.
 - The UI is available in English, Korean, Spanish, Chinese (Simplified and Traditional) and Japanese. Chrome picks it from your browser language, falling back to English.
@@ -77,8 +77,9 @@ Click **Open overlay** in the popup (on a normal http/https tab) to open a small
 
 The UI ships in English (default), Korean, Spanish, Chinese (Simplified and
 Traditional) and Japanese, under `extension/_locales/`. Chrome selects the
-locale from the browser language and falls back to English. Taiwan and Hong
-Kong (`zh_TW`) get Traditional Chinese; other Chinese locales get Simplified.
+locale from the browser language and falls back to English. Simplified Chinese
+is the `zh` folder (Chrome falls back from `zh_CN` to `zh`); Traditional Chinese
+is `zh_TW`.
 
 ## Privacy
 

@@ -55,7 +55,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `extension/i18n.js` | `chrome.i18n` → view.js용 라벨 맵 |
 | `extension/popup.html`, `popup.js` | 팝업 |
 | `extension/overlay_inject.js` | 현재 탭에 주입되어 Document Picture-in-Picture 오버레이를 연다 |
-| `extension/_locales/{en,ko,es,ja,zh,zh_TW}` | UI 문자열 6개 언어 |
+| `extension/_locales/{en,ko,es,ja,zh,zh_TW}` | UI 문자열 6개 언어. 간체는 `zh` 폴더(UI 로캘 zh-CN은 `zh`로 대체됨), 번체는 `zh_TW` |
 | `helper/` | Leeway helper (Go, 의존성 없음). Native Messaging 호스트, `install`/`uninstall` |
 | `tests/` | Node 테스트 (`npm test`), `tests/fixtures/` HTML 픽스처 |
 | `docs/index.html` | GitHub Pages 개인정보처리방침 (`PRIVACY.md`와 같은 내용을 유지) |
@@ -96,6 +96,8 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `chatgpt_debug` | ChatGPT 진단(단계·상태 코드만, 토큰·본문 없음) |
 | `peer_settings` | `{on, id, label}` — 다른 프로필 기능. `id`는 무작위 16자리 hex |
 | `peer_profiles` | 마지막 helper 응답 중 **다른** 프로필들 `{at, ok, error, profiles[]}` |
+
+더 이상 쓰지 않는 키(`background.js`의 `LEGACY_KEYS`, 없앤 127.0.0.1 bridge의 `bridge_token` 포함)는 설치·업데이트 때 `onInstalled`에서 지운다.
 
 ### 다국어
 
@@ -170,9 +172,7 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 
 ## 7. 알려진 과제
 
-- `background.js`에 쓰이지 않는 bridge 코드(`127.0.0.1:8765`, `pairIfNeeded`, `sendToBridge`, `checkHealth`)가 남아 있다. 권한이 없어 실행되지 않지만 정리 대상.
 - `tabs` 권한 제거 가능성 검토(설치 시 "방문 기록 읽기" 경고). `tabs.query({url})`가 호스트 권한만으로 되는지 확인 필요.
-- README의 한국어 UI 라벨, `popup.html`의 `lang="ko"`, `package.json`의 `name`(`llm-usage-overlay`) 정리.
 - 실계정으로 확인 못 한 것: ChatGPT 5시간·주간 한도 계정, Claude Pro·Team·Enterprise의 요금제 표기.
 - helper: 코드 서명 없음(SmartScreen 경고, Windows 11 Smart App Control은 차단). Microsoft Store(MSIX) 패키지에서 Native Messaging 등록이 Chrome에 보이는지 미확인.
 - v0.6.0 태그 때 `helper-release` 워크플로가 실행되지 않았다(원인 미확인). v0.6.1부터는 정상.

@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
 :root{
   --bg:#ffffff; --card:#f7f8fa; --ink:#1a1d23; --dim:#6b7280; --line:#e8eaed;
   --track:rgba(0,0,0,.09); --good:#16a34a; --warn:#d97706; --bad:#dc2626; --accent:#4f46e5;
@@ -89,31 +89,31 @@ button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line
 </header>
 
 <section class="provider">
-<div class="provider-row"><label for="toggle_claude">Claude<span class="plan" id="plan_claude"></span></label><span class="badge" id="status_claude" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_claude"></div>
+<div class="provider-row"><label for="toggle_claude">Claude<span class="plan" id="plan_claude"></span></label><span class="badge" id="status_claude" data-i18n="status_waiting">Waiting</span><input type="checkbox" id="toggle_claude"></div>
 <div class="limits" id="limits_claude"></div><p class="note" id="note_claude"></p>
 </section>
 <section class="provider">
-<div class="provider-row"><label for="toggle_chatgpt">ChatGPT<span class="plan" id="plan_chatgpt"></span></label><span class="badge" id="status_chatgpt" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_chatgpt"></div>
+<div class="provider-row"><label for="toggle_chatgpt">ChatGPT<span class="plan" id="plan_chatgpt"></span></label><span class="badge" id="status_chatgpt" data-i18n="status_waiting">Waiting</span><input type="checkbox" id="toggle_chatgpt"></div>
 <div class="limits" id="limits_chatgpt"></div><p class="note" id="note_chatgpt"></p>
 </section>
 <section class="provider">
-<div class="provider-row"><label for="toggle_gemini">Gemini<span class="plan" id="plan_gemini"></span></label><span class="badge" id="status_gemini" data-i18n="status_waiting">대기 중</span><input type="checkbox" id="toggle_gemini"></div>
+<div class="provider-row"><label for="toggle_gemini">Gemini<span class="plan" id="plan_gemini"></span></label><span class="badge" id="status_gemini" data-i18n="status_waiting">Waiting</span><input type="checkbox" id="toggle_gemini"></div>
 <div class="limits" id="limits_gemini"></div><p class="note" id="note_gemini"></p>
 </section>
 
 <details class="labs" id="labs">
-<summary data-i18n="labs_title">실험 기능</summary>
+<summary data-i18n="labs_title">Experimental</summary>
 <section class="provider" id="peers">
-<div class="provider-row"><label for="toggle_peers" data-i18n="peers_title">다른 Chrome 프로필</label><span class="badge" id="status_peers"></span><input type="checkbox" id="toggle_peers"></div>
-<div class="peer-setup" id="peer_setup" hidden><label for="peer_label" data-i18n="peers_label">이 프로필 이름</label><input id="peer_label" maxlength="24" autocomplete="off"></div>
+<div class="provider-row"><label for="toggle_peers" data-i18n="peers_title">Other Chrome profiles</label><span class="badge" id="status_peers"></span><input type="checkbox" id="toggle_peers"></div>
+<div class="peer-setup" id="peer_setup" hidden><label for="peer_label" data-i18n="peers_label">This profile's name</label><input id="peer_label" maxlength="24" autocomplete="off"></div>
 <div id="peers_list"></div><p class="note" id="note_peers"></p>
-<div class="peer-links" id="peer_links"><a id="peer_get_helper" href="https://github.com/donasman/leeway/releases/latest/download/leeway-helper.exe" target="_blank" rel="noopener" data-i18n="peers_get_helper">helper 받기 (Windows)</a><a id="peer_about_helper" href="https://github.com/donasman/leeway/blob/main/helper/README.md" target="_blank" rel="noopener" data-i18n="peers_about_helper">helper가 하는 일</a></div>
+<div class="peer-links" id="peer_links"><a id="peer_get_helper" href="https://github.com/donasman/leeway/releases/latest/download/leeway-helper.exe" target="_blank" rel="noopener" data-i18n="peers_get_helper">Get the helper (Windows)</a><a id="peer_about_helper" href="https://github.com/donasman/leeway/blob/main/helper/README.md" target="_blank" rel="noopener" data-i18n="peers_about_helper">What the helper does</a></div>
 </section>
 </details>
 
-<p class="hint" data-i18n="note_main">숫자는 남은 비율입니다. Gemini는 사용량 페이지(gemini.google.com/usage) 탭이 열려 있을 때 읽습니다.</p>
-<button id="refresh" data-i18n="refresh">새로고침</button>
-<button id="openOverlay" data-i18n="open_overlay">오버레이 열기</button>
+<p class="hint" data-i18n="note_main">Numbers are the remaining percent. Gemini is read while its usage page (gemini.google.com/usage) tab is open.</p>
+<button id="refresh" data-i18n="refresh">Refresh</button>
+<button id="openOverlay" data-i18n="open_overlay">Open overlay</button>
 <p class="ovmsg" id="ovmsg"></p>
-<div class="row"><button id="openClaude" data-i18n="open_claude">Claude 사용량</button><button id="openChatGPT" data-i18n="open_chatgpt">ChatGPT 사용량</button><button id="openGemini" data-i18n="open_gemini">Gemini 사용량</button></div>
+<div class="row"><button id="openClaude" data-i18n="open_claude">Claude usage</button><button id="openChatGPT" data-i18n="open_chatgpt">ChatGPT usage</button><button id="openGemini" data-i18n="open_gemini">Gemini usage</button></div>
 <script type="module" src="popup.js"></script></body></html>
