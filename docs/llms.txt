@@ -12,7 +12,7 @@
 ## Supported services
 - Claude (claude.ai): 5-hour and weekly limits, read in the background from the usage endpoint claude.ai's usage page uses.
 - ChatGPT (chatgpt.com): what Settings > Usage shows — the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel (5-hour, weekly or 30-day depending on the account). Ordinary chat conversations are not counted there.
-- Gemini (gemini.google.com): read from an open gemini.google.com/usage tab; that page must be open.
+- Gemini (gemini.google.com): read from an open gemini.google.com/usage tab; that page must be open. The popup's "Gemini usage" button opens that page, or switches to it if it is already open, and reads it once it has loaded.
 
 ## Privacy
 - Uses the sessions already signed in to in Chrome. No sign-in, and no cookie, password or API key to paste.

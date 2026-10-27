@@ -1352,6 +1352,31 @@ console.log('\nGemini button — the service worker restarted: the wait in stora
   await tabEvent(11, {title: 'Gemini'}, {id: 11, url: USAGE, status: 'loading'});
   check('past 30s: the next event for the tab reads once and ends it', [scans(), openWait()], [1, null]);
 }
+
+console.log('\nGemini button — no "tabs" permission: the usage tab is found through the gemini.google.com grant alone');
+{
+  check('the manifest asks for no "tabs"', JSON.parse(readFileSync(new URL('../extension/manifest.json', import.meta.url), 'utf8')).permissions.includes('tabs'), false);
+  openReset();
+  // Most recently used: a tab on a site without a grant. Chrome gives its id
+  // but no url, so it can't look like the usage page.
+  openTabs = [
+    {id: 9, windowId: 1, url: 'https://example.com/usage', title: 'Example', status: 'complete', lastAccessed: 900},
+    {id: 5, windowId: 2, url: USAGE, title: 'Gemini', status: 'complete', lastAccessed: 100},
+  ];
+  check('the ungranted tab comes back without url or title', (await chrome.tabs.query({url: 'https://gemini.google.com/*'})).find(t => t.id === 9), {id: 9, windowId: 1, status: 'complete', lastAccessed: 900});
+  tabCalls = [];
+  tabAnswers = {5: geminiAnswer()};
+  await press();
+  check('the Gemini usage tab is brought forward and read', [calls('update'), scans(), get('usage_gemini')?.status], [[['update', 5, {active: true}]], 1, 'ok']);
+
+  openReset();
+  newTab = loadingTab();
+  await press();
+  await newTabLoaded(11); // its 'complete' as Chrome sends it: the tab's url seen through the grant
+  check('a new tab: its url via the grant (tabs.get) is enough to wait and read', (await chrome.tabs.get(11)).url, USAGE);
+  await clock.to(2000);
+  check('...read 2s after complete', [scans(), get('usage_gemini')?.status, openWait()], [1, 'ok', null]);
+}
 delete globalThis.__leewayGeminiOpenClock;
 
 // ---------------------------------------------------------------------------

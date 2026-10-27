@@ -52,7 +52,7 @@
     {"@type": "Question", "name": "How do I see how much of my Claude usage limit is left?",
      "acceptedAnswer": {"@type": "Answer", "text": "Install Leeway from the Chrome Web Store, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows the remaining percentage of your 5-hour and weekly limits and when each resets, and the toolbar badge shows the lowest remaining value."}},
     {"@type": "Question", "name": "Does Leeway work with ChatGPT and Gemini too?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Yes. For ChatGPT it shows what ChatGPT's Settings > Usage page shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Ordinary chat conversations are not counted there. For Gemini it reads the numbers on an open gemini.google.com/usage tab, so that page needs to be open."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "Yes. For ChatGPT it shows what ChatGPT's Settings > Usage page shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Ordinary chat conversations are not counted there. For Gemini it reads the numbers on an open gemini.google.com/usage tab, so that page needs to be open. The popup's Gemini usage button opens that page, or switches to it if it is already open, and reads it once it has loaded."}},
     {"@type": "Question", "name": "Do I need to paste a cookie, password or API key?",
      "acceptedAnswer": {"@type": "Answer", "text": "No. Leeway uses the sessions you are already signed in to in Chrome. It never asks for a password, cookie or API key, and session tokens are never stored, logged or sent anywhere."}},
     {"@type": "Question", "name": "Does Leeway read my conversations?",
@@ -125,7 +125,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
   <tr><th>Service</th><th>What Leeway reads</th></tr>
   <tr><td>Claude</td><td>The 5-hour and weekly limits from the usage endpoint claude.ai's own usage page uses. No tab needs to be open.</td></tr>
   <tr><td>ChatGPT</td><td>What Settings &gt; Usage shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel (5-hour, weekly, or 30-day, depending on the account). Ordinary chat conversations are not counted there. No tab needs to be open.</td></tr>
-  <tr><td>Gemini</td><td>The current-usage and weekly cards on an open <code>gemini.google.com/usage</code> tab. Gemini has no usage API, so that page needs to be open; the popup's <strong>Gemini usage</strong> button opens it.</td></tr>
+  <tr><td>Gemini</td><td>The current-usage and weekly cards on an open <code>gemini.google.com/usage</code> tab. Gemini has no usage API, so that page needs to be open; the popup's <strong>Gemini usage</strong> button opens it, or switches to it if it is already open, and reads it once it has loaded.</td></tr>
 </table>
 <p class="note">These are not public, stable APIs and may change without notice.</p>
 
@@ -145,7 +145,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <h3>How do I see how much of my Claude usage limit is left?</h3>
 <p>Install Leeway from the Chrome Web Store, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows the remaining percentage of your 5-hour and weekly limits and when each resets, and the toolbar badge shows the lowest remaining value.</p>
 <h3>Does Leeway work with ChatGPT and Gemini too?</h3>
-<p>Yes. For ChatGPT it shows what ChatGPT's Settings &gt; Usage page shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Ordinary chat conversations are not counted there. For Gemini it reads the numbers on an open gemini.google.com/usage tab, so that page needs to be open.</p>
+<p>Yes. For ChatGPT it shows what ChatGPT's Settings &gt; Usage page shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Ordinary chat conversations are not counted there. For Gemini it reads the numbers on an open gemini.google.com/usage tab, so that page needs to be open. The popup's Gemini usage button opens that page, or switches to it if it is already open, and reads it once it has loaded.</p>
 <h3>Do I need to paste a cookie, password or API key?</h3>
 <p>No. Leeway uses the sessions you are already signed in to in Chrome. It never asks for a password, cookie or API key, and session tokens are never stored, logged or sent anywhere.</p>
 <h3>Does Leeway read my conversations?</h3>
