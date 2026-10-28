@@ -2,7 +2,7 @@ import { clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from './parser
 import { snapshotWrites, usageKey, lastOkKey } from './snapshot.js';
 import { whamPayload, whamPlan, whamWindows } from './chatgpt_api.js';
 import { geminiPayload } from './gemini.js';
-import { badgeView, formatAge, peerViews, providerView } from './view.js';
+import { badgeView } from './view.js';
 import { HELPER_HOST, PEER_PERMISSION, cleanLabel, newProfileId, peerRecord, sharedSnapshots } from './peers.js';
 import { viewLabels } from './i18n.js';
 
@@ -91,30 +91,6 @@ async function publish(payload) {
     return {ok: false, at: Date.now(), error: 'not-saved', status: payload?.status};
   }
   return {ok: true, at: Date.now(), status: payload?.status};
-}
-
-// What the floating overlay (overlay_window.js) renders: one providerView per
-// provider, built the same way the popup builds it, so the two always match.
-async function overlayData() {
-  const labels = viewLabels();
-  const enabled = await getEnabledProviders();
-  const now = Date.now();
-  const providers = [];
-  let newest = NaN; // the latest read of any service that is on, for the header
-  for (const provider of Object.keys(PROVIDER_HOSTS)) {
-    const on = enabled.has(provider);
-    const permitted = on && await hasHostPermission(provider);
-    const stored = await chrome.storage.local.get([usageKey(provider), lastOkKey(provider)]);
-    const readAt = Date.parse(stored[usageKey(provider)]?.collected_at);
-    if (permitted && Number.isFinite(readAt) && !(readAt <= newest)) newest = readAt;
-    const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels);
-    providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note, plan: view.plan, accounts: view.accounts});
-  }
-  const {peer_settings: settings, peer_profiles: record} = await chrome.storage.local.get(['peer_settings', 'peer_profiles']);
-  const peers = settings?.on ? peerViews(record, now, undefined, labels) : [];
-  const age = Number.isFinite(newest) ? formatAge(now - newest, labels) : '';
-  const checked = age ? String(labels.checked || '').replace('{age}', age) : '';
-  return {providers, peers, checked, now};
 }
 
 async function fetchClaudeJson(url) {
@@ -842,14 +818,10 @@ chrome.tabs.onRemoved.addListener(tabId => {
 // message from a web page is ignored. sender.url is the page that sent it.
 const EXTENSION_ORIGIN = chrome.runtime.getURL('');
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Extension pages (the popup) may send anything. Our injected overlay content
-  // script runs in the host page, so its sender.url is that page — allow it the
-  // read-only OVERLAY_DATA (sender.id proves it is ours); everything that
-  // changes state stays restricted to the extension's own pages.
-  const fromPage = String(sender?.url || '').startsWith(EXTENSION_ORIGIN);
-  if (!fromPage && !(message?.type === 'OVERLAY_DATA' && sender?.id === chrome.runtime.id)) return;
+  // The popup and the Leeway window. (The Leeway window reads its values from
+  // storage itself; no web page asks for anything.)
+  if (!String(sender?.url || '').startsWith(EXTENSION_ORIGIN)) return;
   if (message?.type === 'usage') { publish(message.payload).then(sendResponse); return true; }
-  if (message?.type === 'OVERLAY_DATA') { overlayData().then(sendResponse); return true; }
   if (message?.type === 'REFRESH_ALL') { refreshAll().then(() => sendResponse({ok:true})); return true; }
   if (message?.type === 'PROVIDER_ENABLED') {
     // Answer once it is on; the refresh needn't hold up the popup's toggle.

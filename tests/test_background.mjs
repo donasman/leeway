@@ -945,11 +945,6 @@ console.log('\nClaude plan and organizations — one sign-in, several organizati
   check('weekly 0 in another account stays 0', s?.accounts?.[1]?.limits.find(l => l.id === 'claude_weekly')?.remaining_percent, 80);
   await settle();
   check('badge follows the main organization', badge.text, '60');
-
-  const data = await send({type: 'OVERLAY_DATA'}, {id: 'test-extension-id', tab: {id: 9}, url: 'https://example.com/'});
-  const claude = data.providers.find(p => p.provider === 'claude');
-  check('overlay data carries the accounts', (claude?.accounts || []).map(a => [a.label, a.rows.find(r => r.primary)?.percent ?? '?']),
-    [['Max 20x', '60%'], ['Team', '10%'], ['Pro', '?']]);
 }
 
 console.log('\nother Chrome profiles — off by default, then through the Leeway helper');
@@ -974,9 +969,6 @@ console.log('\nother Chrome profiles — off by default, then through the Leeway
   check("sent: this profile's shown values, no detail text", [put?.type, put?.label, put?.snapshots.map(x => [x.provider, x.status]), put?.snapshots.some(x => 'detail' in x)], ['put', '업무용', [['claude', 'ok']], false]);
   check('sent: nothing else (no url, cookie or token fields)', Object.keys(put || {}).sort(), ['label', 'profile_id', 'snapshots', 'type']);
   check('kept: the other profile only, not this one', [on?.ok, get('peer_profiles')?.profiles.map(p => p.id)], [true, [OTHER]]);
-
-  const data = await send({type: 'OVERLAY_DATA'}, {id: 'test-extension-id', tab: {id: 9}, url: 'https://example.com/'});
-  check('overlay: the other profile, its plan and 0% as 0%', data.peers?.map(p => [p.label, p.providers[0].plan, p.providers[0].rows[0].percent]), [['개인', 'Pro', '0%']]);
 
   nativeCalls = [];
   await send({type: 'REFRESH_ALL'});
@@ -1008,22 +1000,18 @@ console.log('\nother Chrome profiles — off by default, then through the Leeway
   await settle();
 }
 
-console.log('\noverlay data — one providerView per provider, same as the popup');
+console.log('\na web page gets nothing — the overlay no longer runs in one');
 {
   reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
   claudeAccount({sessionUsed: 40, weeklyUsed: 100});
   await send({type: 'REFRESH_ALL'});
-  // The overlay runs as our injected content script: sender.url is the host
-  // page, sender.id is our extension. Read-only OVERLAY_DATA is allowed.
+  // A content script of ours in a web page: sender.id is this extension,
+  // sender.url the page. The Leeway window reads storage itself (its values
+  // are test_overlay_window.mjs), so nothing is answered to a page any more.
   const CONTENT = {id: 'test-extension-id', tab: {id: 9}, url: 'https://example.com/'};
-  const data = await send({type: 'OVERLAY_DATA'}, CONTENT);
-  check('content script may read overlay data', Array.isArray(data?.providers), true);
-  const claude = data.providers.find(p => p.provider === 'claude');
-  check('claude: enabled, ok, 5-hour primary 60%', [claude?.enabled, claude?.state, claude?.rows.find(r => r.primary)?.percent], [true, 'ok', '60%']);
-  check('header: when the newest value was read', data.checked, KO.checked.replace('{age}', KO.just_now));
-  const chatgpt = data.providers.find(p => p.provider === 'chatgpt');
-  check('chatgpt: not enabled → off, no rows', [chatgpt?.enabled, chatgpt?.state, chatgpt?.rows], [false, 'off', []]);
-  check('a content script still cannot trigger a refresh (state change stays page-only)', await send({type: 'REFRESH_ALL'}, CONTENT), undefined);
+  check('OVERLAY_DATA from a content script: no answer', await send({type: 'OVERLAY_DATA'}, CONTENT), undefined);
+  check('OVERLAY_DATA is gone for the popup too', await send({type: 'OVERLAY_DATA'}), undefined);
+  check('a content script cannot trigger a refresh', await send({type: 'REFRESH_ALL'}, CONTENT), undefined);
 }
 
 console.log('\nas shipped — no 127.0.0.1 permission: nothing goes to localhost, results unchanged');

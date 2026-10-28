@@ -6,9 +6,12 @@
 // pages), injects into no tab, and the PiP's title bar shows the extension's
 // name. The PiP lives as long as this window: closing the window closes it.
 // Once the PiP is open this window minimizes; closing the PiP brings it back.
-import { msg } from './i18n.js';
+import { usageKey, lastOkKey } from './snapshot.js';
+import { formatAge, peerViews, providerView } from './view.js';
+import { msg, viewLabels } from './i18n.js';
 import { CSS, openPip, render } from './overlay_view.js';
 
+const PROVIDER_HOSTS = {claude:'https://claude.ai/*', chatgpt:'https://chatgpt.com/*', gemini:'https://gemini.google.com/*'};
 const root = document.getElementById('ov');
 const pinButton = document.getElementById('pin');
 let lastData = { providers: [] };
@@ -21,13 +24,46 @@ function paint() {
   if (pip) pip.show(lastData);
 }
 
+async function hasHostPermission(provider) {
+  const host = PROVIDER_HOSTS[provider];
+  if (!host) return false;
+  try { return await chrome.permissions.contains({origins:[host]}); }
+  catch (_) { return false; }
+}
+
+// What the overlay draws: one providerView per provider, built the way the
+// popup builds it, so the two always match. Read from storage here, by this
+// extension page (no message to background); the clock is read at each call,
+// so a timer Chrome runs late shows the right age, only later.
+async function overlayData() {
+  const labels = viewLabels();
+  const enabled = new Set((await chrome.storage.local.get(['enabledProviders'])).enabledProviders || []);
+  const now = Date.now();
+  const providers = [];
+  let newest = NaN; // the latest read of any service that is on, for the header
+  for (const provider of Object.keys(PROVIDER_HOSTS)) {
+    const on = enabled.has(provider);
+    const permitted = on && await hasHostPermission(provider);
+    const stored = await chrome.storage.local.get([usageKey(provider), lastOkKey(provider)]);
+    const readAt = Date.parse(stored[usageKey(provider)]?.collected_at);
+    if (permitted && Number.isFinite(readAt) && !(readAt <= newest)) newest = readAt;
+    const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels);
+    providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note, plan: view.plan, accounts: view.accounts});
+  }
+  const {peer_settings: settings, peer_profiles: record} = await chrome.storage.local.get(['peer_settings', 'peer_profiles']);
+  const peers = settings?.on ? peerViews(record, now, undefined, labels) : [];
+  const age = Number.isFinite(newest) ? formatAge(now - newest, labels) : '';
+  const checked = age ? String(labels.checked || '').replace('{age}', age) : '';
+  return {providers, peers, checked, now};
+}
+
 // Storage changes and the clock tick can overlap; only the newest one paints.
 let refreshes = 0;
 async function refresh() {
   const current = ++refreshes;
   let data = null;
-  try { data = await chrome.runtime.sendMessage({ type: 'OVERLAY_DATA' }); }
-  catch (_) { /* background asleep between alarms; the next tick retries */ }
+  try { data = await overlayData(); }
+  catch (error) { console.warn('Leeway window: values not read:', String(error)); }
   if (current !== refreshes) return;
   lastData = data || lastData;
   paint();
