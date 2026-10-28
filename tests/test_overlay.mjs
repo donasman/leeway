@@ -57,6 +57,20 @@ const DATA = {
   ],
   peers: [],
 };
+const ORGS = {checked: '', providers: [
+  provider('claude', {rows: [row('5시간', '60%', '', true)], accounts: [
+    {label: 'Max 20x', state: 'ok', status: '정상', rows: [row('5시간', '60%', '', true), row('주간', '0%')]},
+    {label: 'Team', state: 'logged_out', status: '로그인 필요', rows: [row('5시간', '?', '', true)]},
+  ]}),
+  provider('chatgpt', {enabled: false, state: 'off', status: '꺼짐'}),
+  provider('gemini', {state: 'waiting', status: '대기 중', note: ''}),
+], peers: []};
+const PEERS = {checked: '', providers: [provider('claude', {rows: [row('5시간', '50%', '', true)]})], peers: [
+  {id: 'fedcba9876543210', label: '<img src=x onerror=alert(1)>', updated: '3분 전 갱신', providers: [
+    provider('claude', {plan: '<b>Pro</b>', rows: [row('5시간', '0%', '<i>soon</i>', true)]}),
+  ]},
+]};
+const NOTHING = {checked: '', providers: [provider('claude', {enabled: false, state: 'off'})], peers: []};
 
 console.log('\nexpanded — one block per service');
 {
@@ -80,14 +94,7 @@ console.log('\nexpanded — one block per service');
 
 console.log('\nexpanded — services that are off, waiting, several Claude organizations');
 {
-  const {root} = await openOverlay({checked: '', providers: [
-    provider('claude', {rows: [row('5시간', '60%', '', true)], accounts: [
-      {label: 'Max 20x', state: 'ok', status: '정상', rows: [row('5시간', '60%', '', true), row('주간', '0%')]},
-      {label: 'Team', state: 'logged_out', status: '로그인 필요', rows: [row('5시간', '?', '', true)]},
-    ]}),
-    provider('chatgpt', {enabled: false, state: 'off', status: '꺼짐'}),
-    provider('gemini', {state: 'waiting', status: '대기 중', note: ''}),
-  ], peers: []});
+  const {root} = await openOverlay(ORGS);
   const blocks = [...root.querySelectorAll('.prov')];
   check('organizations: one Claude block each, named by plan; off service left out', blocks.map(b => [text(b.querySelector('.name > span')), text(b.querySelector('.plan'))]),
     [['Claude', 'Max 20x'], ['Claude', 'Team'], ['Gemini', null]]);
@@ -98,11 +105,7 @@ console.log('\nexpanded — services that are off, waiting, several Claude organ
 
 console.log('\nexpanded — other Chrome profiles, and text is never markup');
 {
-  const {root} = await openOverlay({checked: '', providers: [provider('claude', {rows: [row('5시간', '50%', '', true)]})], peers: [
-    {id: 'fedcba9876543210', label: '<img src=x onerror=alert(1)>', updated: '3분 전 갱신', providers: [
-      provider('claude', {plan: '<b>Pro</b>', rows: [row('5시간', '0%', '<i>soon</i>', true)]}),
-    ]},
-  ]});
+  const {root} = await openOverlay(PEERS);
   const peer = root.querySelector('.peer');
   check('a section per profile: its name and when it sent', [text(peer?.querySelector('.peerh > span')), text(peer?.querySelector('.peerh .muted'))], ['<img src=x onerror=alert(1)>', '3분 전 갱신']);
   check('its services as blocks', [text(peer?.querySelector('.name > span')), text(peer?.querySelector('.big'))], ['Claude', '0%']);
@@ -111,7 +114,7 @@ console.log('\nexpanded — other Chrome profiles, and text is never markup');
 
 console.log('\nnothing on');
 {
-  const {root} = await openOverlay({checked: '', providers: [provider('claude', {enabled: false, state: 'off'})], peers: []});
+  const {root} = await openOverlay(NOTHING);
   check('says to turn a service on', text(root.querySelector('.empty')), KO.overlay_empty);
 }
 
@@ -136,6 +139,43 @@ console.log('\ncollapsed — a service with nothing read yet keeps its place');
   const {root, click} = await openOverlay({checked: '', providers: [provider('claude', {state: 'waiting', status: '대기 중'}), provider('chatgpt', {rows: [row('5시간', '61%', '', true)]})], peers: []});
   await click();
   check('"?" for it, and no full blocks in the strip (the old fallback)', [[...root.querySelectorAll('.ci b')].map(text), root.querySelectorAll('.prov').length], [['?', '61%'], 0]);
+}
+
+// What the overlay draws, character for character, pinned before it moved from
+// overlay_inject.js (injected into a web page) to the Leeway window
+// (2026-10-28, feat/overlay-window): the move changes where it runs, not what
+// it shows. tests/fixtures/overlay_markup.json was written from
+// overlay_inject.js at main 85867e0; regenerate it only for an intended change.
+const MARKUP = JSON.parse(readFileSync(new URL('./fixtures/overlay_markup.json', import.meta.url), 'utf8'));
+function same(label, got, expected) {
+  const ok = got === expected;
+  let at = 0;
+  while (!ok && at < Math.min(String(got).length, String(expected).length) && got[at] === expected[at]) at += 1;
+  console.log(`  [${ok ? PASS : FAIL}] ${label}${ok ? '' : `: differs at ${at}: got ${JSON.stringify(String(got).slice(at, at + 80))} expected ${JSON.stringify(String(expected).slice(at, at + 80))}`}`);
+  ok ? passed++ : failed++;
+}
+
+console.log('\npinned markup — the same HTML and style as before the move');
+{
+  const {pip, root, click} = await openOverlay(DATA);
+  same('style', pip.window.document.head.querySelector('style')?.textContent, MARKUP.css);
+  same('expanded: 72%, 0%, "?" and a stale service', root.innerHTML, MARKUP.expanded);
+  await click();
+  same('collapsed: rings, 0% and "?"', root.innerHTML, MARKUP.collapsed);
+}
+{
+  const {root} = await openOverlay(ORGS);
+  same('expanded: Claude organizations, an off and a waiting service', root.innerHTML, MARKUP.organizations);
+}
+{
+  const {root} = await openOverlay(PEERS);
+  same('expanded: another profile, markup from storage escaped', root.innerHTML, MARKUP.peers);
+}
+{
+  const {root, click} = await openOverlay(NOTHING);
+  same('expanded: nothing on', root.innerHTML, MARKUP.nothing);
+  await click();
+  same('collapsed: nothing on', root.innerHTML, MARKUP.nothingCollapsed);
 }
 
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);
