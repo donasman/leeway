@@ -4,7 +4,8 @@
 // button opens the Document Picture-in-Picture overlay from here. Being an
 // extension page, it works whatever tab is in front (the Web Store, chrome://
 // pages), injects into no tab, and the PiP's title bar shows the extension's
-// name. The PiP lives as long as this window: closing the window closes it.
+// name and address, not a site's. The PiP lives as long as this window:
+// closing the window closes it.
 // Once the PiP is open this window minimizes; closing the PiP brings it back.
 import { usageKey, lastOkKey } from './snapshot.js';
 import { formatAge, peerViews, providerView } from './view.js';

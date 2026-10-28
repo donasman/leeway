@@ -79,7 +79,7 @@ Click **Open overlay** in the popup — the same on any tab — to open the smal
 
 - Both refresh live, like the popup.
 - Click the always-on-top window to collapse it to a single line; click again to expand. The window resizes to match.
-- It stays on top of other windows while Chrome runs, and Chrome shows the extension's name in its title bar.
+- It stays on top of other windows while Chrome runs. Its title bar shows the extension's name and address (`chrome-extension://…`), not the site you are on.
 - It belongs to the Leeway window: closing the Leeway window closes it too. Closing the always-on-top window brings the Leeway window back.
 - **Open overlay** again brings the open Leeway window forward instead of opening another. It reopens where you last left it.
 
