@@ -3,8 +3,9 @@
 // The permissions extension/manifest.json asks for (CLAUDE.md §3). Required
 // permissions show their warnings at install, so the list is pinned: "tabs"
 // ("Read your browsing history") is not needed — tabs.query() sees a usage
-// tab's url through the site's host permission, the popup sees the active
-// tab's through activeTab. Site access stays optional, one host per service.
+// tab's url through the site's host permission. Nor "activeTab": the popup
+// looks at no tab, and the overlay opens from the Leeway window, an extension
+// page (2026-10-28). Site access stays optional, one host per service.
 import { readFileSync } from 'node:fs';
 
 const PASS = '\x1b[32mPASS\x1b[0m';
@@ -22,8 +23,9 @@ const manifest = JSON.parse(readFileSync(new URL('../extension/manifest.json', i
 console.log('\nmanifest — MV3 and its permissions');
 check('manifest_version', manifest.manifest_version, 3);
 check('name, version, service worker present', [typeof manifest.name, typeof manifest.version, manifest.background?.service_worker], ['string', 'string', 'background.js']);
-check('required permissions', manifest.permissions, ['storage', 'alarms', 'scripting', 'activeTab']);
+check('required permissions', manifest.permissions, ['storage', 'alarms', 'scripting']);
 check('no "tabs"', (manifest.permissions || []).includes('tabs'), false);
+check('no "activeTab"', (manifest.permissions || []).includes('activeTab'), false);
 check('optional permissions', manifest.optional_permissions, ['nativeMessaging']);
 check('no install-time host permissions', manifest.host_permissions, undefined);
 check('optional host permissions: one per service', manifest.optional_host_permissions, ['https://claude.ai/*', 'https://chatgpt.com/*', 'https://gemini.google.com/*']);
