@@ -2,7 +2,7 @@ import { clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from './parser
 import { snapshotWrites, usageKey, lastOkKey } from './snapshot.js';
 import { whamPayload, whamPlan, whamWindows } from './chatgpt_api.js';
 import { geminiPayload } from './gemini.js';
-import { badgeView, formatAge, peerViews, providerView } from './view.js';
+import { badgeView } from './view.js';
 import { HELPER_HOST, PEER_PERMISSION, cleanLabel, newProfileId, peerRecord, sharedSnapshots } from './peers.js';
 import { viewLabels } from './i18n.js';
 
@@ -91,30 +91,6 @@ async function publish(payload) {
     return {ok: false, at: Date.now(), error: 'not-saved', status: payload?.status};
   }
   return {ok: true, at: Date.now(), status: payload?.status};
-}
-
-// What the floating overlay (overlay_inject.js) renders: one providerView per
-// provider, built the same way the popup builds it, so the two always match.
-async function overlayData() {
-  const labels = viewLabels();
-  const enabled = await getEnabledProviders();
-  const now = Date.now();
-  const providers = [];
-  let newest = NaN; // the latest read of any service that is on, for the header
-  for (const provider of Object.keys(PROVIDER_HOSTS)) {
-    const on = enabled.has(provider);
-    const permitted = on && await hasHostPermission(provider);
-    const stored = await chrome.storage.local.get([usageKey(provider), lastOkKey(provider)]);
-    const readAt = Date.parse(stored[usageKey(provider)]?.collected_at);
-    if (permitted && Number.isFinite(readAt) && !(readAt <= newest)) newest = readAt;
-    const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels);
-    providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note, plan: view.plan, accounts: view.accounts});
-  }
-  const {peer_settings: settings, peer_profiles: record} = await chrome.storage.local.get(['peer_settings', 'peer_profiles']);
-  const peers = settings?.on ? peerViews(record, now, undefined, labels) : [];
-  const age = Number.isFinite(newest) ? formatAge(now - newest, labels) : '';
-  const checked = age ? String(labels.checked || '').replace('{age}', age) : '';
-  return {providers, peers, checked, now};
 }
 
 async function fetchClaudeJson(url) {
@@ -586,6 +562,83 @@ async function onGeminiTabRemoved(tabId) {
   if (wait?.tabId === tabId) await clearOpenWait(wait.id);
 }
 
+// ---- the Leeway window (CLAUDE.md §4) --------------------------------------
+// The popup's "Open overlay" opens this small extension window, or brings the
+// open one forward (restored if minimized); its own "Always on top" button
+// opens the PiP overlay. Nothing opens it without that click. Its id is kept
+// in storage.session and checked with windows.get before use; when that is
+// gone (a new browser session, a window Chrome restored) the window is found
+// again by its page, with runtime.getContexts (Chrome 116+). It reopens where
+// the user last left it (overlay_window.js saves that).
+const OVERLAY_WINDOW_PAGE = 'overlay_window.html';
+const OVERLAY_WINDOW_KEY = 'overlay_window_id';     // storage.session
+const OVERLAY_BOUNDS_KEY = 'overlay_window_bounds'; // storage.local
+const OVERLAY_WINDOW_SIZE = {width: 320, height: 480};
+
+async function rememberOverlayWindow(id) {
+  try {
+    if (id == null) await chrome.storage.session.remove(OVERLAY_WINDOW_KEY);
+    else await chrome.storage.session.set({[OVERLAY_WINDOW_KEY]: id});
+  } catch (_) {}
+}
+
+async function findOverlayWindow() {
+  let id = null;
+  try { id = (await chrome.storage.session.get(OVERLAY_WINDOW_KEY))[OVERLAY_WINDOW_KEY] ?? null; }
+  catch (_) {}
+  if (Number.isInteger(id)) {
+    try { await chrome.windows.get(id); return id; }
+    catch (_) {} // closed since
+  }
+  // The page's URL exactly as it was opened (getContexts compares whole URLs).
+  let contexts = [];
+  try { contexts = await chrome.runtime.getContexts({contextTypes: ['TAB'], documentUrls: [chrome.runtime.getURL(OVERLAY_WINDOW_PAGE)]}); }
+  catch (_) {} // no getContexts before Chrome 116
+  const found = contexts.find(c => Number.isInteger(c.windowId) && c.windowId >= 0)?.windowId ?? null;
+  if (found !== id) await rememberOverlayWindow(found);
+  return found;
+}
+
+// Where it was left: four whole numbers, or null.
+function savedBounds(value) {
+  const keys = ['left', 'top', 'width', 'height'];
+  if (!value || !keys.every(key => Number.isInteger(value[key])) || value.width <= 0 || value.height <= 0) return null;
+  return Object.fromEntries(keys.map(key => [key, value[key]]));
+}
+
+async function createOverlayWindow() {
+  const page = {url: chrome.runtime.getURL(OVERLAY_WINDOW_PAGE), type: 'popup', focused: true};
+  let bounds = null;
+  try { bounds = savedBounds((await chrome.storage.local.get(OVERLAY_BOUNDS_KEY))[OVERLAY_BOUNDS_KEY]); }
+  catch (_) {}
+  let win;
+  try { win = await chrome.windows.create({...page, ...(bounds || OVERLAY_WINDOW_SIZE)}); }
+  catch (error) {
+    if (!bounds) throw error;
+    // Chrome 102+ refuses a window less than half on screen (left on a
+    // monitor that is gone since): the default size, placed by Chrome.
+    win = await chrome.windows.create({...page, ...OVERLAY_WINDOW_SIZE});
+  }
+  await rememberOverlayWindow(win?.id ?? null);
+}
+
+// One at a time: a second click before the first window's page has loaded
+// would not find it yet and open another.
+let overlayWindowChanges = Promise.resolve();
+function openOverlayWindow() {
+  const run = overlayWindowChanges.then(async () => {
+    const id = await findOverlayWindow();
+    if (id != null) {
+      try { await chrome.windows.update(id, {focused: true, state: 'normal'}); return {ok: true}; }
+      catch (_) { await rememberOverlayWindow(null); } // closed in between
+    }
+    await createOverlayWindow();
+    return {ok: true};
+  });
+  overlayWindowChanges = run.catch(() => {});
+  return run;
+}
+
 // ---- toolbar badge (CLAUDE.md §4) ------------------------------------------
 
 const PROVIDER_NAMES = {claude:'Claude', chatgpt:'ChatGPT', gemini:'Gemini'};
@@ -765,14 +818,10 @@ chrome.tabs.onRemoved.addListener(tabId => {
 // message from a web page is ignored. sender.url is the page that sent it.
 const EXTENSION_ORIGIN = chrome.runtime.getURL('');
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Extension pages (the popup) may send anything. Our injected overlay content
-  // script runs in the host page, so its sender.url is that page — allow it the
-  // read-only OVERLAY_DATA (sender.id proves it is ours); everything that
-  // changes state stays restricted to the extension's own pages.
-  const fromPage = String(sender?.url || '').startsWith(EXTENSION_ORIGIN);
-  if (!fromPage && !(message?.type === 'OVERLAY_DATA' && sender?.id === chrome.runtime.id)) return;
+  // The popup and the Leeway window. (The Leeway window reads its values from
+  // storage itself; no web page asks for anything.)
+  if (!String(sender?.url || '').startsWith(EXTENSION_ORIGIN)) return;
   if (message?.type === 'usage') { publish(message.payload).then(sendResponse); return true; }
-  if (message?.type === 'OVERLAY_DATA') { overlayData().then(sendResponse); return true; }
   if (message?.type === 'REFRESH_ALL') { refreshAll().then(() => sendResponse({ok:true})); return true; }
   if (message?.type === 'PROVIDER_ENABLED') {
     // Answer once it is on; the refresh needn't hold up the popup's toggle.
@@ -791,6 +840,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === 'OPEN_CHATGPT_USAGE') { chrome.tabs.create({url:CHATGPT_USAGE_URL,active:true}); sendResponse({ok:true}); }
   // The popup closes as the tab opens; the read after it runs on here.
   if (message?.type === 'OPEN_GEMINI_USAGE') { openGeminiUsage().catch(error => console.warn('gemini usage tab:', String(error))); sendResponse({ok:true}); }
+  if (message?.type === 'OPEN_OVERLAY_WINDOW') {
+    openOverlayWindow().then(sendResponse, error => { console.warn('Leeway window:', String(error)); sendResponse({ok:false}); });
+    return true;
+  }
 });
 
 // Granted from the popup's toggle (or anywhere else): turn the provider on,

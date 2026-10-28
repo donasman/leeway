@@ -43,8 +43,8 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 
 | 경로 | 역할 |
 |---|---|
-| `extension/manifest.json` | MV3. 필수 권한 `storage alarms scripting activeTab`(`tests/test_manifest.mjs`가 고정), 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
-| `extension/background.js` | 서비스 워커. 2분 주기 수집(`POLL_MINUTES`), 저장(`publish`), 배지, 오버레이 데이터, helper 동기화, 메시지 처리 |
+| `extension/manifest.json` | MV3. 필수 권한 `storage alarms scripting activeTab`(`tests/test_manifest.mjs`가 고정. `activeTab`은 지금 쓰지 않음, §7), 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
+| `extension/background.js` | 서비스 워커. 2분 주기 수집(`POLL_MINUTES`), 저장(`publish`), 배지, Leeway 창 열기, helper 동기화, 메시지 처리 |
 | `extension/snapshot.js` | 수집 결과 → 저장할 `UsageSnapshot` 정규화(`toSnapshot`), 다른 프로필 값 재검증(`fromShared`) |
 | `extension/view.js` | 저장값 → 팝업·오버레이·배지가 보여줄 값(`providerView`, `badgeView`, `peerViews`) |
 | `extension/parsers.js` | 공용 파서, Claude 사용량 버킷, 요금제 라벨(`claudePlanLabel`, `chatgptPlanLabel`) |
@@ -54,7 +54,8 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `extension/peers.js` | helper로 보낼 값 만들기, helper 응답 해석 |
 | `extension/i18n.js` | `chrome.i18n` → view.js용 라벨 맵 |
 | `extension/popup.html`, `popup.js` | 팝업 |
-| `extension/overlay_inject.js` | 현재 탭에 주입되어 Document Picture-in-Picture 오버레이를 연다 |
+| `extension/overlay_window.html`, `overlay_window.js` | Leeway 창(§4). 펼친 오버레이를 보여주고 "항상 위로"로 Document Picture-in-Picture 오버레이를 연다. 값은 storage에서 직접 읽고, 자기 창 위치를 저장한다 |
+| `extension/overlay_view.js` | 오버레이 그리기(펼침·접힘, CSS, PiP 열기·크기 맞춤). 그리는 HTML과 스타일은 `tests/test_overlay.mjs`가 고정 |
 | `extension/_locales/{en,ko,es,ja,zh_CN,zh,zh_TW}` | UI 문자열 6개 언어. 간체 중국어는 `zh_CN`(스토어 표시)과 `zh`(대체용) 두 폴더, 내용은 같게 유지. 번체는 `zh_TW` |
 | `helper/` | Leeway helper (Go, 의존성 없음). Native Messaging 호스트, `install`/`uninstall` |
 | `tests/` | Node 테스트 (`npm test`), `tests/fixtures/` HTML 픽스처 |
@@ -67,7 +68,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 ### pure layer
 
 `snapshot.js`, `view.js`, `parsers.js`, `chatgpt_api.js`, `gemini.js`, `peers.js`는 순수 함수만 둔다(`chrome.*`, `fetch`, `document` 없음).
-그래야 Node 테스트가 실제 파일을 그대로 불러 쓸 수 있다. `chrome.*`이 필요한 일은 `background.js`·`popup.js`·`i18n.js`가 한다.
+그래야 Node 테스트가 실제 파일을 그대로 불러 쓸 수 있다. `chrome.*`이 필요한 일은 `background.js`·`popup.js`·`overlay_window.js`·`i18n.js`가 한다.
 
 ### 수집기 계약
 
@@ -99,6 +100,9 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `chatgpt_debug` | ChatGPT 진단(단계·상태 코드만, 토큰·본문 없음) |
 | `peer_settings` | `{on, id, label}` — 다른 프로필 기능. `id`는 무작위 16자리 hex |
 | `peer_profiles` | 마지막 helper 응답 중 **다른** 프로필들 `{at, ok, error, version, profiles[]}`. `error`는 `helper_missing`·`_forbidden`·`_blocked`·`_failed`, `version`은 `x.y.z`·`dev`·`null`(이 필드가 없는 예전 기록은 버전을 판단하지 않음) |
+| `overlay_window_bounds` | Leeway 창을 마지막에 둔 곳 `{left, top, width, height}`. 창(`overlay_window.js`)이 보통 상태일 때만 쓰고(최소화·최대화 제외), background가 창을 열 때 읽는다 |
+
+`chrome.storage.session`(브라우저를 닫으면 사라짐): `gemini_open_wait`(아래 Gemini), `overlay_window_id`(열린 Leeway 창 id. 쓰기 전에 `windows.get`으로 살아 있는지 확인하고, 없으면 `runtime.getContexts`로 다시 찾는다).
 
 더 이상 쓰지 않는 키(`background.js`의 `LEGACY_KEYS`, 없앤 127.0.0.1 bridge의 `bridge_token` 포함)는 설치·업데이트 때 `onInstalled`에서 지운다.
 
@@ -140,9 +144,11 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 ## 3. 보안·개인정보
 
 - 호스트 권한은 서비스별 **선택 권한**이다. 서비스를 켤 때 요청하고, 끄면 반납한다. `<all_urls>` 금지.
-- `tabs` 권한은 쓰지 않는다(설치 시 "방문 기록 읽기" 경고). 사용량 탭의 `url`은 승인된 호스트 권한으로, 팝업의 활성 탭 `url`은 `activeTab`으로 보인다.
+- `tabs` 권한은 쓰지 않는다(설치 시 "방문 기록 읽기" 경고). 사용량 탭의 `url`은 승인된 호스트 권한으로 보인다. 팝업은 활성 탭을 보지 않는다.
   권한이 없는 탭은 `url` 없이 오므로 `url`로 거르는 코드는 그 탭을 건너뛴다.
 - 콘텐츠 스크립트는 각 서비스의 **사용량 화면에만** 주입한다. 대화 탭에는 주입하지 않는다.
+  오버레이를 위해 현재 탭에 주입하지 않는다. 오버레이는 확장 페이지인 Leeway 창이 연다(§4).
+- background는 확장 페이지(팝업, Leeway 창)의 메시지에만 답한다. 웹페이지나 콘텐츠 스크립트가 보낸 메시지는 무시한다.
 - 토큰·쿠키는 함수 변수 안에서만 쓰고 저장·로그·진단·helper 어디에도 넣지 않는다. 오류 메시지도 헤더를 인용할 수 있으니 오류 이름만 남긴다.
 - `detail`이나 진단에 들어가는 URL은 origin만 남긴다(대화 ID 노출 방지).
 - 서버에서 온 문자열(라벨, 리셋 문구, 다른 프로필 이름)은 화면에 **텍스트로만** 넣는다. 오버레이는 `esc()`를 거친다.
@@ -156,8 +162,19 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 - 실패하면 마지막 정상값을 흐리게 보여주고 "마지막 정상값 · N분 전"을 단다.
 - 색 기준(팝업·배지·오버레이 공통): 50 이상 초록, 20~49 주황, 20 미만 빨강, `?`는 색 없음. 배지는 오래되면 회색.
 - 배지는 켠 서비스들의 대표값 중 **가장 낮은 값**(숫자만, `%` 없음). 툴팁에 서비스별 한 줄. 다른 프로필 값은 배지에 넣지 않는다.
-- 오버레이: 펼침은 서비스별 블록(이름·요금제·큰 숫자·막대·보조 줄), 접힘은 서비스별 링·이름·값 한 줄.
-  창 크기는 펼침 폭 280·높이 140~520(내용 맞춤), 접힘 360×44. Chrome PiP라서 **제목 표시줄(연 탭의 주소)과 사용자 크기 조절은 막을 수 없다.**
+- 오버레이는 **Leeway 창이 연다.** 팝업의 "오버레이 열기"는 어느 탭에서나(웹 스토어·`chrome://`·새 탭 포함) 같은 동작이다.
+  background가 Leeway 창(확장 페이지, `type: 'popup'` 창)을 열거나, 이미 열려 있으면 새로 만들지 않고 앞으로 가져온다(최소화돼 있으면 복원).
+  버튼을 누르지 않으면 창도 PiP도 열지 않는다(설치 직후 포함).
+  - Leeway 창은 펼친 오버레이를 보여준다(다른 창에 가려질 수 있는 일반 창. 클릭해도 접히지 않음). 위에 "항상 위로", 아래에 "이 창을 닫으면 항상 위 오버레이도 닫힙니다".
+  - "항상 위로" → Document PiP를 열고 Leeway 창을 최소화한다. PiP가 이미 열려 있으면 새로 열지 않고 창만 다시 최소화한다.
+  - PiP를 닫으면(X, "탭으로 돌아가기" 버튼, Chrome이 닫은 경우 모두) Leeway 창이 복원된다. **Leeway 창을 닫으면 PiP도 닫힌다.** `disallowReturnToOpener`는 기본값(돌아가기 버튼 보임)이다.
+  - Leeway 창은 마지막 위치·크기로 연다. Chrome이 거부하면(화면에 50% 미만, Chrome 102+) 위치 없이 기본 크기 320×480으로 한 번 더 연다.
+  - 오래됨과 "N분 전"은 그릴 때마다 시계로 계산한다. 창이 최소화돼 30초 타이머가 늦어져도 값은 맞고, 바뀌는 시점만 늦을 수 있다.
+- 오버레이(PiP): 펼침은 서비스별 블록(이름·요금제·큰 숫자·막대·보조 줄), 접힘은 서비스별 링·이름·값 한 줄. 클릭하면 바뀐다.
+  창 크기는 펼침 폭 280·높이 140~520(내용 맞춤), 접힘 360×44. 제목 표시줄에는 사이트 주소가 아니라 확장 이름과 확장 주소(`chrome-extension://<ID>`)가 보인다(좁으면 잘림). Chrome PiP라서 **제목 표시줄과 사용자 크기 조절은 막을 수 없다.**
+  처음 열 때부터 내용 높이로 연다. 여는 Leeway 창 페이지에 보이지 않는 복사본을 폭 280으로 그려 높이를 재고, 그 값을 `requestWindow` 높이로 넘긴다.
+  `requestWindow`가 클릭의 활성화를 써 버려서 열린 뒤의 `resizeTo`는 동작하지 않기 때문이다(실측). 클릭할 때의 크기 조절은 그대로다.
+  접힘은 Chrome의 PiP 최소 높이 때문에 내용 높이가 44가 아니라 약 58이다(실측, 그대로 둠).
 
 ---
 
@@ -191,6 +208,19 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 ---
 
 ## 7. 알려진 과제
+
+- activeTab 제거 필요 — feat/overlay-window 이후 미사용. 릴리스 전 별도 브랜치에서 manifest·tests/test_manifest.mjs 기대값·스토어 권한 사유를 함께 정리. 그 전에는 main을 push하지 않는다
+- Leeway 창·PiP(feat/overlay-window). 2026-10-28 Windows 11에서 자동화로 실측했다. 별도 프로필의 Chrome 156과 Chrome for Testing 156을 쓰고, CDP 클릭(사용자 활성화 있음)과 Windows API·UI Automation으로 확인했다.
+  확장은 claude.ai 권한을 manifest에 넣은 테스트 사본이고, 값은 storage에 넣었다.
+  - 확인됨: 설치 직후 창 없음. 웹 스토어·새 탭·`chrome://extensions`·일반 사이트·claude.ai에서 모두 그 탭 앞에 창이 뜸. 두 번 연속 눌러도 창 1개. 최소화 뒤 누르면 같은 창 복원.
+  - 확인됨: "항상 위로"로 PiP가 열림(topmost, 다른 앱 창 위). 창 최소화. PiP가 열린 채 다시 눌러도 같은 PiP. 최소화 상태에서 storage 변경이 둘 다에 1.5초 안에 반영.
+  - 확인됨: PiP "닫기"·"탭으로 돌아가기" → 창 복원. 창 "닫기" → PiP도 닫힘. 옮기기만 해도 위치 저장, 다시 열면 같은 위치·크기. 화면 밖 위치는 기본 크기로 다시 열림. popup 창 최소 178×95.
+  - 확인됨: 다른 페이지의 동영상 PiP와는 하나만 뜬다. "항상 위로"가 그것을 닫고, 그것이 열리면 우리 PiP가 닫히고 창이 복원된다.
+  - 확인됨: Chrome 재시작(이전 세션 계속)에서 Leeway 창은 복원되지 않음(Chrome for Testing). 저장된 id 없이도 `getContexts`가 popup 창 안 페이지를 `TAB`·그 창 id로 찾음.
+  - 확인됨: 창을 8분 넘게 최소화해도 30초 타이머 지연·freeze·discard 없음. 오래됨은 6분 뒤 첫 tick(6분 23초)에 둘 다 표시됐다. 단, CDP가 붙은 상태라 일반 Chrome도 같은지는 미확인.
+  - 150%는 `--force-device-scale-factor=1.5`로 흉내 내서만 봤고, 보조 모니터 분리는 화면 밖 좌표로만 흉내 냈다. 실제 계정 값과 사용 중인 Chrome 프로필에서는 미확인.
+  - 처음 여는 크기: 고치기 전에는 요청한 280×270 그대로 열렸다. 고친 뒤에는 서비스 3개일 때 280×202(내용 202, 스크롤 없음), 1개일 때 280×140(최소값)으로 열린다(Chrome for Testing 156).
+  - main(현재 탭 주입)과의 크기 비교는 자동화로 PiP가 열리지 않아 못 했다. 접힘 높이는 크기 코드가 같으니 전에도 같았을 것으로 보지만 미확인.
 
 - `tabs` 권한을 뺐다(0.6.3, 2026-10-28 스토어 게시). 실제 Chrome에서 권한, 세 서비스 새로고침, Gemini 버튼, 오버레이 열기를 확인했다(2026-10-27). ChatGPT 대체 경로(설정 > 사용량 탭 읽기)를 `tabs` 없이 실제로 탄 경우와, 0.6.2 → 0.6.3 업데이트 때 재승인 요청이 없었는지는 미확인.
 - ChatGPT 페이지 대체 경로: 5시간 카드에 %가 없으면 `findLimit()`이 주간 카드의 값을 5시간 값으로 가져간다(`tests/test_chatgpt_parser.mjs`의 known bug 3개). §4 "읽지 못한 값은 `?`"에 어긋나므로 고칠 대상. 기본 경로(사용량 엔드포인트)에는 해당 없음.

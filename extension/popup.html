@@ -80,8 +80,6 @@ h1 svg{width:18px;height:18px;display:block}
 button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px}
 #refresh{width:100%;font-weight:600;border-color:var(--accent);background:var(--accent);color:#fff;margin-top:2px}
 #openOverlay{width:100%;margin-top:6px;font-weight:600;border-color:var(--line);background:var(--card);color:var(--ink)}
-.ovmsg{margin:6px 2px 0;color:var(--bad);font-size:11px}
-.ovmsg:empty{display:none}
 .row{display:flex;gap:6px;margin-top:8px}
 .row button{flex:1;font-size:12px;padding:7px 4px}
 </style></head><body>
@@ -116,6 +114,5 @@ button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line
 <p class="hint" data-i18n="note_main">Numbers are the remaining percent. Gemini is read while its usage page (gemini.google.com/usage) tab is open.</p>
 <button id="refresh" data-i18n="refresh">Refresh</button>
 <button id="openOverlay" data-i18n="open_overlay">Open overlay</button>
-<p class="ovmsg" id="ovmsg"></p>
 <div class="row"><button id="openClaude" data-i18n="open_claude">Claude usage</button><button id="openChatGPT" data-i18n="open_chatgpt">ChatGPT usage</button><button id="openGemini" data-i18n="open_gemini">Gemini usage</button></div>
 <script type="module" src="popup.js"></script></body></html>

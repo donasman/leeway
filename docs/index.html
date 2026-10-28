@@ -59,7 +59,7 @@
     {"@type": "Question", "name": "Does Leeway read my conversations?",
      "acceptedAnswer": {"@type": "Answer", "text": "No. It reads only the usage limits. Its page script runs only on a service's usage screen, never on a conversation page."}},
     {"@type": "Question", "name": "Can I keep my remaining usage visible while I work?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Yes. Open overlay in the popup opens a small always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). Click it to collapse it to one line."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "Yes. Open overlay in the popup opens a small Leeway window, and its Always on top button opens a small always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). Click it to collapse it to one line."}},
     {"@type": "Question", "name": "Can I see several accounts at once?",
      "acceptedAnswer": {"@type": "Answer", "text": "If one claude.ai sign-in belongs to several organizations, such as a personal plan and a Team workspace, each is shown separately. For separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental Leeway helper lets every profile show the others' remaining usage."}},
     {"@type": "Question", "name": "Is Leeway free? Is it official?",
@@ -114,7 +114,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <ul>
   <li><strong>Remaining percentage and reset time</strong> of each limit — the same numbers your signed-in usage pages show, not a token-count estimate. A value that could not be read is shown as <code>?</code>, never as 0%.</li>
   <li><strong>Toolbar badge</strong> with the lowest remaining value among the services you turned on: green from 50, orange from 20 to 49, red below 20, grey when the value is old.</li>
-  <li><strong>Always-on-top overlay</strong> through Chrome's Document Picture-in-Picture (Chrome 116+). Click it to collapse it to one line.</li>
+  <li><strong>Always-on-top overlay</strong> through Chrome's Document Picture-in-Picture (Chrome 116+): Open overlay in the popup, then Always on top in the Leeway window. Click it to collapse it to one line.</li>
   <li><strong>Plan names</strong> such as Max 5x or Plus, when the service reports them.</li>
   <li><strong>Every Claude organization</strong> of your sign-in (for example a personal plan and a Team workspace), each with its own remaining usage.</li>
   <li>Values refresh every 2 minutes; <strong>Refresh</strong> in the popup reads them right away.</li>
@@ -152,7 +152,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <h3>Does Leeway read my conversations?</h3>
 <p>No. It reads only the usage limits. Its page script runs only on a service's usage screen, never on a conversation page.</p>
 <h3>Can I keep my remaining usage visible while I work?</h3>
-<p>Yes. Open overlay in the popup opens a small always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). Click it to collapse it to one line.</p>
+<p>Yes. Open overlay in the popup opens a small Leeway window, and its Always on top button opens a small always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). Click it to collapse it to one line.</p>
 <h3>Can I see several accounts at once?</h3>
 <p>If one claude.ai sign-in belongs to several organizations, such as a personal plan and a Team workspace, each is shown separately. For separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental Leeway helper lets every profile show the others' remaining usage.</p>
 <h3>Is Leeway free? Is it official?</h3>

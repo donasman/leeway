@@ -1,6 +1,6 @@
 # Privacy Policy — Leeway
 
-_Last updated: 2026-10-27_
+_Last updated: 2026-10-28_
 
 Leeway is a Chrome extension that shows how much of your **remaining** usage is
 left on Claude, ChatGPT and Gemini, in its popup, toolbar badge, and an optional
@@ -55,6 +55,8 @@ conversation page.
   reset times, the plan name, and for Claude one entry per organization), so the
   popup and badge can show it.
 - Which services you turned on.
+- Where you last left the Leeway window (its position and size on screen), so
+  it reopens there.
 
 All of this lives only in your browser profile, on your device. It is not sent
 anywhere. Removing the extension removes it.
@@ -72,14 +74,9 @@ anywhere. Removing the extension removes it.
 - **storage** — keep the latest usage on your device for the popup and badge.
 - **alarms** — refresh usage on a 2-minute schedule.
 - **scripting** — read the rendered numbers from a provider's already-open usage
-  tab (ChatGPT's page fallback, and Gemini), and open the floating overlay.
-  Leeway finds that tab through the site access below; it does not ask for the
-  "tabs" permission, so it sees the address of a tab only on the sites you turned
-  on, and of the tab you are viewing while the popup is open (to check that the
-  overlay can open there).
-- **activeTab** — when you click "Open overlay", Leeway runs on the tab you are
-  viewing just long enough to open the floating overlay window. It reads nothing
-  from that page.
+  tab (ChatGPT's page fallback, and Gemini). Leeway finds that tab through the
+  site access below; it does not ask for the "tabs" permission, so it sees the
+  address of a tab only on the sites you turned on.
 - **Site access** to `claude.ai`, `chatgpt.com`, `gemini.google.com` — these are
   **optional** and requested only when you turn that service on.
 - **nativeMessaging** — **optional**, requested only when you turn on "Other
@@ -88,9 +85,11 @@ anywhere. Removing the extension removes it.
 ## Floating overlay
 
 The floating overlay is a small always-on-top window drawn by Chrome itself
-(Document Picture-in-Picture) — there is no separate app to install. It shows
-the same on-device usage summary the popup shows, and reads nothing from the web
-page it is opened over.
+(Document Picture-in-Picture) — there is no separate app to install. "Open
+overlay" opens a small Leeway window, a page of the extension itself, and the
+overlay opens from there; nothing is injected into the tab you are viewing, and
+no web page is involved. It shows the same on-device usage summary the popup
+shows.
 
 ## Other Chrome profiles (optional, off by default)
 
