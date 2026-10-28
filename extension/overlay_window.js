@@ -85,7 +85,7 @@ async function setOwnState(state) {
 // this window just steps aside again.
 pinButton.addEventListener('click', async () => {
   if (!documentPictureInPicture.window) {
-    const opened = await openPip(documentPictureInPicture, lastData);
+    const opened = await openPip(documentPictureInPicture, lastData, document);
     if (!opened) return;
     pip = opened;
     // Closed with its X or its "back to tab" button — or by Chrome: this

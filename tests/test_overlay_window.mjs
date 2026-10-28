@@ -166,6 +166,20 @@ console.log('\n"Always on top" — one PiP, then this window steps aside');
   check('and the button opens a new one', [requests.length, calls.at(-1)], [2, ['windows.update', 42, {state: 'minimized'}]]);
 }
 
+console.log('\n"Always on top" — the PiP opens as tall as what this window shows');
+{
+  storeOnly(claudeOn(claudeOk(72)));
+  await openWindow('height');
+  // jsdom has no layout: a measured #ov is 30 + 60 per service block.
+  Object.defineProperty(globalThis.document.defaultView.HTMLElement.prototype, 'scrollHeight', {configurable: true, get() {
+    return this.id === 'ov' ? 30 + 60 * this.querySelectorAll('.prov').length : 0;
+  }});
+  await pinClick();
+  check('measured in this page before opening: one service, so the 140 minimum', requests, [{width: 280, height: 140, preferInitialWindowPlacement: true}]);
+  check('this window keeps one #ov, still showing the values', [globalThis.document.querySelectorAll('#ov').length, bigs(globalThis.document)], [1, ['72%']]);
+  await closePip();
+}
+
 console.log('\n"Always on top" — Chrome refuses, has no Document PiP, or this is a tab');
 {
   await openWindow('refused');

@@ -118,16 +118,52 @@ export function renderCompact(root, data) {
   }).join('');
 }
 
-// Opens the always-on-top window with `data` drawn in it, expanded. Call it
-// from a click: requestWindow() and resizeTo() need the user activation.
+// Click to collapse to one line / expand. The window follows:
+//   collapsed — a fixed strip, COMPACT_W wide and COMPACT_H of content;
+//   expanded  — EXPANDED_W wide, as tall as its content between
+//               EXPANDED_MIN_H and EXPANDED_MAX_H (more than that scrolls).
+// Heights are content heights; Chrome's title bar is added on top. Chrome
+// lets the user resize a PiP window at any time and offers no way to stop
+// it: these sizes are applied on open and on every click. resizeTo needs
+// the click's user activation and may be a no-op in some Chrome builds.
+const COMPACT_W = 360;
+const COMPACT_H = 44;
+const EXPANDED_W = 280;
+const EXPANDED_MIN_H = 140;
+const EXPANDED_MAX_H = 520;
+const OPEN_H = 270; // when the content could not be measured: three services fit
+
+// How tall the expanded overlay is for `data` at the width the PiP opens
+// with, measured in `doc` — the opener's own page, which has the same style
+// (CSS) — in a hidden copy that is removed again. The PiP then opens at that
+// height: once requestWindow() has spent the click's activation, resizeTo()
+// does nothing, so the window can't be fitted after it opens.
+function openingHeight(doc, data) {
+  if (!doc?.body) return OPEN_H;
+  const probe = doc.createElement('div');
+  probe.id = 'ov';
+  probe.style.cssText = `position:absolute;left:-10000px;top:0;visibility:hidden;width:${EXPANDED_W}px;box-sizing:border-box`;
+  doc.body.appendChild(probe);
+  try {
+    render(probe, data);
+    const content = probe.scrollHeight;
+    return content ? Math.min(EXPANDED_MAX_H, Math.max(EXPANDED_MIN_H, content)) : OPEN_H;
+  } finally {
+    probe.remove();
+  }
+}
+
+// Opens the always-on-top window with `data` drawn in it, expanded, as tall
+// as that content when `measureIn` (the opener's document) is given. Call it
+// from a click: requestWindow() needs the user activation.
 // Returns {window, show(data)}, or null when Chrome would not open it.
-export async function openPip(documentPictureInPicture, data) {
+export async function openPip(documentPictureInPicture, data, measureIn = null) {
   let pip;
   try {
-    // Three services fit. preferInitialWindowPlacement: open at this size every
-    // time — without it Chrome reopens at the size and place the window last
-    // had (e.g. one the user dragged bigger) and ignores width/height.
-    pip = await documentPictureInPicture.requestWindow({ width: 280, height: 270, preferInitialWindowPlacement: true });
+    // preferInitialWindowPlacement: open at this size every time — without it
+    // Chrome reopens at the size and place the window last had (e.g. one the
+    // user dragged bigger) and ignores width/height.
+    pip = await documentPictureInPicture.requestWindow({ width: EXPANDED_W, height: openingHeight(measureIn, data), preferInitialWindowPlacement: true });
   } catch (e) {
     console.warn('Leeway overlay: could not open PiP', e);
     return null;
@@ -139,19 +175,6 @@ export async function openPip(documentPictureInPicture, data) {
   let collapsed = false;
   let lastData = { providers: [] };
 
-  // Click to collapse to one line / expand. The window follows:
-  //   collapsed — a fixed strip, COMPACT_W wide and COMPACT_H of content;
-  //   expanded  — EXPANDED_W wide, as tall as its content between
-  //               EXPANDED_MIN_H and EXPANDED_MAX_H (more than that scrolls).
-  // Heights are content heights; Chrome's title bar is added on top. Chrome
-  // lets the user resize a PiP window at any time and offers no way to stop
-  // it: these sizes are applied on open and on every click. resizeTo needs
-  // the click's user activation and may be a no-op in some Chrome builds.
-  const COMPACT_W = 360;
-  const COMPACT_H = 44;
-  const EXPANDED_W = 280;
-  const EXPANDED_MIN_H = 140;
-  const EXPANDED_MAX_H = 520;
   function resizePip() {
     try {
       const frame = Math.max(0, (pip.outerHeight || 0) - (pip.innerHeight || 0));
@@ -164,8 +187,8 @@ export async function openPip(documentPictureInPicture, data) {
   root.addEventListener('click', () => { collapsed = !collapsed; paint(); resizePip(); });
 
   const show = (next) => { lastData = next || lastData; if (root.isConnected) paint(); };
-  // The values are already here: draw them and fit the window to them while
-  // the click that opened it still counts.
+  // Already opened at the content's height (openingHeight). Fitting it here as
+  // well only takes where a Chrome build still allows resizeTo.
   show(data);
   resizePip();
   return { window: pip, show };

@@ -137,6 +137,31 @@ console.log('\ncollapsed — a service with nothing read yet keeps its place');
   check('"?" for it, and no full blocks in the strip (the old fallback)', [[...root.querySelectorAll('.ci b')].map(text), root.querySelectorAll('.prov').length], [['?', '61%'], 0]);
 }
 
+console.log('\nopening height — measured in the opener first: requestWindow spends the click, and resizeTo after it does nothing');
+{
+  // jsdom has no layout: here a measured #ov is 30 + 60 per service block.
+  const measure = new JSDOM('<!doctype html><html><head></head><body><div id="ov"></div></body></html>');
+  const widths = [];
+  Object.defineProperty(measure.window.HTMLElement.prototype, 'scrollHeight', {configurable: true, get() {
+    if (this.id !== 'ov') return 0;
+    widths.push(this.style.width);
+    return 30 + 60 * this.querySelectorAll('.prov').length;
+  }});
+  const openWith = async data => {
+    const pip = new JSDOM('<!doctype html><html><head></head><body></body></html>');
+    Object.assign(pip.window, {outerHeight: 270, innerHeight: 240, resizeTo() {}});
+    const requests = [];
+    await openPip({window: null, requestWindow: async options => { requests.push(options); return pip.window; }}, structuredClone(data), measure.window.document);
+    return requests[0];
+  };
+  const MANY = {checked: '', providers: [provider('claude', {accounts: Array.from({length: 9}, (_, i) => ({label: `Org ${i}`, state: 'ok', status: '정상', rows: [row('5시간', '50%', '', true)]}))})], peers: []};
+  check('three services: opens as tall as they are', await openWith(DATA), {width: 280, height: 210, preferInitialWindowPlacement: true});
+  check('measured at the width it opens with', widths.at(-1), '280px');
+  check('nothing on: not lower than 140', (await openWith(NOTHING)).height, 140);
+  check('nine blocks: not higher than 520 (the rest scrolls)', (await openWith(MANY)).height, 520);
+  check("the hidden copy is gone again; the opener's own #ov untouched", [measure.window.document.querySelectorAll('#ov').length, measure.window.document.getElementById('ov').innerHTML], [1, '']);
+}
+
 // What the overlay draws, character for character, pinned before it moved from
 // overlay_inject.js (injected into a web page) to the Leeway window
 // (2026-10-28, feat/overlay-window): the move changes where it runs, not what
