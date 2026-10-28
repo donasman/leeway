@@ -183,7 +183,7 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 - **테스트는 실제 소스를 불러 실행한다. 소스를 테스트에 복사하지 않는다.** `chrome.*`은 테스트마다 메모리 스텁으로 대신한다.
 - 파서·수집 동작을 바꾸기 전에 현재 동작을 fixture나 테스트로 먼저 고정한다. `0%` 케이스와 값 없음 케이스는 따로 둔다.
 - 변경 후 매번:
-  1. `npm test` (전체 통과. `test_chatgpt_parser`의 "3 known bugs"는 원래 있던 표시)
+  1. `npm test` (전체 통과)
   2. `node --check extension/*.js`
   3. manifest JSON 파싱 + MV3 필수 필드
   4. helper를 고쳤으면 `cd helper && go vet ./... && go test ./...`
@@ -223,7 +223,9 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
   - main(현재 탭 주입)과의 크기 비교는 자동화로 PiP가 열리지 않아 못 했다. 접힘 높이는 크기 코드가 같으니 전에도 같았을 것으로 보지만 미확인.
 
 - `tabs` 권한을 뺐다(0.6.3, 2026-10-28 스토어 게시). 실제 Chrome에서 권한, 세 서비스 새로고침, Gemini 버튼, 오버레이 열기를 확인했다(2026-10-27). ChatGPT 대체 경로(설정 > 사용량 탭 읽기)를 `tabs` 없이 실제로 탄 경우와, 0.6.2 → 0.6.3 업데이트 때 재승인 요청이 없었는지는 미확인.
-- ChatGPT 페이지 대체 경로: 5시간 카드에 %가 없으면 `findLimit()`이 주간 카드의 값을 5시간 값으로 가져간다(`tests/test_chatgpt_parser.mjs`의 known bug 3개). §4 "읽지 못한 값은 `?`"에 어긋나므로 고칠 대상. 기본 경로(사용량 엔드포인트)에는 해당 없음.
+- ChatGPT 페이지 대체 경로(fix/chatgpt-five-hour, 2026-10-28): 한 카드의 %가 없을 때 두 한도가 함께 든 묶음까지 올라가 다른 한도의 값을 가져가던 것을 고쳤다.
+  다른 한도의 제목이 든 요소에서 멈추고, 5시간은 제목("5시간 한도"·"5-hour limit")을 먼저 찾는다(주간 카드의 "in 5 hours"를 5시간 제목으로 보지 않음).
+  fixture와 jsdom으로만 확인했다. 영어 화면의 실제 문구(예: "Weekly usage limit"면 지금 `WEEK_RE`로는 주간을 못 찾음)는 미확인.
 - 실계정으로 확인 못 한 것: ChatGPT 5시간·주간 한도 계정, Claude Pro·Team·Enterprise의 요금제 표기.
 - helper: 코드 서명 없음(SmartScreen 경고, Windows 11 Smart App Control은 차단). Microsoft Store(MSIX) 패키지에서 Native Messaging 등록이 Chrome에 보이는지 미확인.
 - v0.6.0 태그 때 `helper-release` 워크플로가 실행되지 않았다(원인 미확인). v0.6.1부터는 정상.

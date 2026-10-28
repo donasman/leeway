@@ -10,6 +10,11 @@
   const WEEK_RE = /(?:주간\s*한도|weekly\s+limit|week(?:ly)?\s+limit)/i;
   const PCT_RE = /(\d{1,3}(?:[.,]\d+)?)\s*%\s*(?:remaining|left|남음|잔여)/i;
   const PCT_REVERSE_RE = /(?:remaining|left|남음|잔여)\D{0,24}(\d{1,3}(?:[.,]\d+)?)\s*%/i;
+  // The two limits' titles, stricter than FIVE_RE ("resets in 5 hours" is not
+  // a title). An element holding the other limit's title is past this limit's
+  // card: its % may be the other limit's (CLAUDE.md §1).
+  const FIVE_TITLE_RE = /(?:5\s*시간\s*한도|5\s*[-–—]?\s*hours?\s+(?:usage\s+)?limit)/i;
+  const WEEK_TITLE_RE = /(?:주간\s*한도|week(?:ly)?\s+(?:usage\s+)?limit)/i;
 
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
   const clamp = value => Math.max(0, Math.min(100, Number(value)));
@@ -45,28 +50,32 @@
     });
   }
 
-  function cardCandidates(markerElement) {
+  function cardCandidates(markerElement, otherTitle) {
     const result = [];
     let node = markerElement;
     for (let depth = 0; node && node !== document.body && depth < 7; depth += 1, node = node.parentElement) {
       const text = visibleText(node);
+      if (otherTitle.test(text)) break;
       if (text && text.length <= 1600) result.push({text, depth});
     }
     const parent = markerElement.parentElement;
     if (parent) {
       for (const sibling of parent.children) {
         const text = visibleText(sibling);
-        if (text && text.length <= 1000) result.push({text, depth:8});
+        if (text && text.length <= 1000 && !otherTitle.test(text)) result.push({text, depth:8});
       }
     }
     return result;
   }
 
-  function findLimit(marker) {
-    const markers = markerElements(marker);
+  function findLimit(marker, otherTitle, title = marker) {
+    // A title comes first, so "resets in 5 hours" on the weekly card is not
+    // taken for the 5-hour limit while the page has a 5-hour title.
+    const titles = markerElements(title);
+    const markers = titles.length ? titles : markerElements(marker);
     const attempts = [];
     for (const markerElement of markers) {
-      for (const candidate of cardCandidates(markerElement)) {
+      for (const candidate of cardCandidates(markerElement, otherTitle)) {
         const remaining = percentage(candidate.text);
         attempts.push(short(candidate.text, 180));
         if (remaining !== null) {
@@ -91,8 +100,8 @@
   }
 
   function scan() {
-    const fiveHour = findLimit(FIVE_RE);
-    const weekly = findLimit(WEEK_RE);
+    const fiveHour = findLimit(FIVE_RE, WEEK_TITLE_RE, FIVE_TITLE_RE);
+    const weekly = findLimit(WEEK_RE, FIVE_TITLE_RE);
     const snippets = limitedUsageSnippets();
     const routeDetected = /(?:^|[#/?])settings(?:\/|%2F)?usage/i.test(location.href) ||
       /(?:사용량|usage)/i.test(document.querySelector('[role="dialog"]')?.innerText || '');
