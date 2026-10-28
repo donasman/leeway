@@ -32,7 +32,7 @@ The extension keeps the latest usage in its own storage and shows it in its popu
 3. In the extension popup, turn on Claude, ChatGPT and/or Gemini and allow the site permission it asks for. Gemini is read from an open gemini.google.com/usage tab — keep that page open (the **Gemini usage** button opens it) for its values to refresh.
 4. Keep the normal Chrome profile signed in to those services. Values refresh every 2 minutes; **Refresh** in the popup reads them again right away.
 
-The floating overlay is built into the extension (click **Open overlay** in the popup); it uses Chrome's Document Picture-in-Picture, so there is no separate app to install.
+The floating overlay is built into the extension (click **Open overlay** in the popup, then **Always on top**); it uses Chrome's Document Picture-in-Picture, so there is no separate app to install.
 
 ## Popup
 
@@ -75,11 +75,13 @@ If that endpoint fails (it is unofficial and may change), and a Settings > Usage
 
 ## Overlay
 
-Click **Open overlay** in the popup (on a normal http/https tab) to open a small always-on-top window through Chrome's Document Picture-in-Picture — no separate app to install (needs Chrome 116+).
+Click **Open overlay** in the popup — the same on any tab — to open the small Leeway window, which shows the same remaining-usage bars as the popup. Its **Always on top** button opens a small always-on-top window through Chrome's Document Picture-in-Picture — no separate app to install (needs Chrome 116+) — and then minimizes the Leeway window.
 
-- It shows the same remaining-usage bars as the popup and refreshes live.
-- Click the overlay to collapse it to a single line; click again to expand. The window resizes to match.
-- It stays on top of other windows while Chrome runs. It belongs to the tab you opened it from, so it closes when that tab closes, and Chrome shows that page's address in the overlay's title bar.
+- Both refresh live, like the popup.
+- Click the always-on-top window to collapse it to a single line; click again to expand. The window resizes to match.
+- It stays on top of other windows while Chrome runs, and Chrome shows the extension's name in its title bar.
+- It belongs to the Leeway window: closing the Leeway window closes it too. Closing the always-on-top window brings the Leeway window back.
+- **Open overlay** again brings the open Leeway window forward instead of opening another. It reopens where you last left it.
 
 ## Languages
 

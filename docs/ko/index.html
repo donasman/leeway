@@ -52,7 +52,7 @@
     {"@type": "Question", "name": "대화 내용을 읽나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "아니요. 사용량 한도만 읽습니다. 페이지 스크립트는 각 서비스의 사용량 화면에서만 실행되고 대화 페이지에서는 실행되지 않습니다."}},
     {"@type": "Question", "name": "작업하면서 남은 사용량을 계속 볼 수 있나요?",
-     "acceptedAnswer": {"@type": "Answer", "text": "네. 팝업의 오버레이 열기를 누르면 Chrome의 Document Picture-in-Picture로 항상 위에 뜨는 작은 창이 열립니다(Chrome 116 이상). 클릭하면 한 줄로 접힙니다."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "네. 팝업의 오버레이 열기를 누르면 작은 Leeway 창이 열리고, 그 창의 항상 위로 버튼을 누르면 Chrome의 Document Picture-in-Picture로 항상 위에 뜨는 작은 창이 열립니다(Chrome 116 이상). 클릭하면 한 줄로 접힙니다."}},
     {"@type": "Question", "name": "여러 계정을 한 번에 볼 수 있나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "claude.ai 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 조직별로 따로 보여줍니다. 다른 계정은 계정마다 Chrome 프로필을 따로 두고 로그인하세요. Windows에서는 선택 기능인 Leeway helper(실험 기능)로 각 프로필이 다른 프로필의 남은 사용량도 함께 보여줍니다."}},
     {"@type": "Question", "name": "무료인가요? 공식 프로그램인가요?",
@@ -107,7 +107,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <ul>
   <li><strong>남은 비율과 초기화 시각</strong> — 로그인된 사용량 화면이 보여주는 바로 그 숫자입니다. 토큰 수로 추정한 값이 아닙니다. 읽지 못한 값은 0%가 아니라 <code>?</code>로 표시합니다.</li>
   <li><strong>툴바 배지</strong> — 켜 둔 서비스 중 가장 낮은 남은 값. 50 이상 초록, 20~49 주황, 20 미만 빨강, 오래된 값은 회색.</li>
-  <li><strong>항상 위 오버레이</strong> — Chrome의 Document Picture-in-Picture(Chrome 116 이상). 클릭하면 한 줄로 접힙니다.</li>
+  <li><strong>항상 위 오버레이</strong> — Chrome의 Document Picture-in-Picture(Chrome 116 이상). 팝업의 오버레이 열기, 이어서 Leeway 창의 항상 위로를 누릅니다. 클릭하면 한 줄로 접힙니다.</li>
   <li><strong>요금제 이름</strong> — 서비스가 알려 주면 Max 5x, Plus처럼 표시합니다.</li>
   <li><strong>Claude 조직별 사용량</strong> — 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 각각 따로 보여줍니다.</li>
   <li>2분마다 새로 읽고, 팝업의 <strong>새로고침</strong>을 누르면 바로 읽습니다.</li>
@@ -145,7 +145,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <h3>대화 내용을 읽나요?</h3>
 <p>아니요. 사용량 한도만 읽습니다. 페이지 스크립트는 각 서비스의 사용량 화면에서만 실행되고 대화 페이지에서는 실행되지 않습니다.</p>
 <h3>작업하면서 남은 사용량을 계속 볼 수 있나요?</h3>
-<p>네. 팝업의 오버레이 열기를 누르면 Chrome의 Document Picture-in-Picture로 항상 위에 뜨는 작은 창이 열립니다(Chrome 116 이상). 클릭하면 한 줄로 접힙니다.</p>
+<p>네. 팝업의 오버레이 열기를 누르면 작은 Leeway 창이 열리고, 그 창의 항상 위로 버튼을 누르면 Chrome의 Document Picture-in-Picture로 항상 위에 뜨는 작은 창이 열립니다(Chrome 116 이상). 클릭하면 한 줄로 접힙니다.</p>
 <h3>여러 계정을 한 번에 볼 수 있나요?</h3>
 <p>claude.ai 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 조직별로 따로 보여줍니다. 다른 계정은 계정마다 Chrome 프로필을 따로 두고 로그인하세요. Windows에서는 선택 기능인 Leeway helper(실험 기능)로 각 프로필이 다른 프로필의 남은 사용량도 함께 보여줍니다.</p>
 <h3>무료인가요? 공식 프로그램인가요?</h3>
