@@ -44,7 +44,9 @@ For each service you turn on:
   shown on an open `gemini.google.com/usage` tab (the current-usage and weekly
   cards). It reads only those usage strings and the "updated N ago" text — not
   the rest of the page, your prompts, or your conversations — and it never opens
-  a tab on its own.
+  a tab on its own. If that tab sits in the background with numbers more than five minutes old, or
+  Chrome put it to sleep, Leeway reloads it (never while you are looking at it)
+  and keeps it from being unloaded.
 
 Leeway injects a content script **only on a service's usage screen**, never on a
 conversation page.
@@ -72,7 +74,7 @@ anywhere. Removing the extension removes it.
 ## Permissions, and why
 
 - **storage** — keep the latest usage on your device for the popup and badge.
-- **alarms** — refresh usage on a 2-minute schedule.
+- **alarms** — refresh usage on a 1-minute schedule.
 - **scripting** — read the rendered numbers from a provider's already-open usage
   tab (ChatGPT's page fallback, and Gemini). Leeway finds that tab through the
   site access below; it does not ask for the "tabs" permission, so it sees the

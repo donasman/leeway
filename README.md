@@ -30,7 +30,7 @@ The extension keeps the latest usage in its own storage and shows it in its popu
 1. Open chrome://extensions, enable Developer mode, and choose **Load unpacked**.
 2. Select this project's extension folder. If an older copy is loaded, remove or reload it.
 3. In the extension popup, turn on Claude, ChatGPT and/or Gemini and allow the site permission it asks for. Gemini is read from an open gemini.google.com/usage tab — keep that page open (the **Gemini usage** button opens it) for its values to refresh.
-4. Keep the normal Chrome profile signed in to those services. Values refresh every 2 minutes; **Refresh** in the popup reads them again right away.
+4. Keep the normal Chrome profile signed in to those services. Values refresh every minute, and again when you open the popup or the Leeway window (unless they were read in the last 30 seconds); **Refresh** in the popup reads them again right away.
 
 The floating overlay is built into the extension (click **Open overlay** in the popup, then **Float on top**, or just press Enter); it uses Chrome's Document Picture-in-Picture, so there is no separate app to install.
 

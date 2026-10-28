@@ -44,7 +44,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | 경로 | 역할 |
 |---|---|
 | `extension/manifest.json` | MV3. 필수 권한 `storage alarms scripting`(`tests/test_manifest.mjs`가 고정. `tabs`·`activeTab` 없음), 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
-| `extension/background.js` | 서비스 워커. 2분 주기 수집(`POLL_MINUTES`), 저장(`publish`), 배지, Leeway 창 열기, helper 동기화, 메시지 처리 |
+| `extension/background.js` | 서비스 워커. 1분 주기 수집(`POLL_MINUTES`)과 팝업·Leeway 창이 열릴 때의 수집(`REFRESH_IF_OLD`), 저장(`publish`), 배지, Leeway 창 열기, helper 동기화, 메시지 처리 |
 | `extension/snapshot.js` | 수집 결과 → 저장할 `UsageSnapshot` 정규화(`toSnapshot`), 다른 프로필 값 재검증(`fromShared`) |
 | `extension/view.js` | 저장값 → 팝업·오버레이·배지가 보여줄 값(`providerView`, `badgeView`, `peerViews`) |
 | `extension/parsers.js` | 공용 파서, Claude 사용량 버킷, 요금제 라벨(`claudePlanLabel`, `chatgptPlanLabel`) |
@@ -86,7 +86,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 - **Claude**: `claude.ai/api/organizations` → 채팅 조직마다 `/api/organizations/{id}/usage` (최대 4개). 브라우저 세션 쿠키로 요청한다.
 - **ChatGPT**: `chatgpt.com/api/auth/session`의 단기 토큰으로 `backend-api/wham/usage`. 토큰은 그 요청에만 쓰고 저장하지 않는다.
   실패하면 이미 열린 Settings > Usage 탭이 있을 때만 DOM에서 읽는다. 탭을 새로 열거나 대화 탭에 주입하지 않는다.
-- **Gemini**: 사용량 API가 없다. 이미 열린 `gemini.google.com/usage` 탭의 화면 숫자만 읽는다. "현재 사용량"이 `gemini_5h`(대표값), 주간이 `gemini_weekly`.
+- **Gemini**: 사용량 API가 없다. 이미 열린 `gemini.google.com/usage`(다른 Google 계정이면 `/u/1/usage`) 탭의 화면 숫자만 읽는다. "현재 사용량"이 `gemini_5h`(대표값), 주간이 `gemini_weekly`.
 
 ### 저장 키
 
@@ -102,7 +102,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `peer_profiles` | 마지막 helper 응답 중 **다른** 프로필들 `{at, ok, error, version, profiles[]}`. `error`는 `helper_missing`·`_forbidden`·`_blocked`·`_failed`, `version`은 `x.y.z`·`dev`·`null`(이 필드가 없는 예전 기록은 버전을 판단하지 않음) |
 | `overlay_window_bounds` | Leeway 창을 마지막에 둔 곳 `{left, top, width, height}`. 창(`overlay_window.js`)이 보통 상태일 때만 쓰고(최소화·최대화 제외), background가 창을 열 때 읽는다 |
 
-`chrome.storage.session`(브라우저를 닫으면 사라짐): `gemini_open_wait`(아래 Gemini), `overlay_window_id`(열린 Leeway 창 id. 쓰기 전에 `windows.get`으로 살아 있는지 확인하고, 없으면 `runtime.getContexts`로 다시 찾는다).
+`chrome.storage.session`(브라우저를 닫으면 사라짐): `gemini_open_wait`·`gemini_reloads`(아래 Gemini), `refresh_started_at`(마지막 수집 라운드 시작 시각, §4), `overlay_window_id`(열린 Leeway 창 id. 쓰기 전에 `windows.get`으로 살아 있는지 확인하고, 없으면 `runtime.getContexts`로 다시 찾는다).
 
 더 이상 쓰지 않는 키(`background.js`의 `LEGACY_KEYS`, 없앤 127.0.0.1 bridge의 `bridge_token` 포함)는 설치·업데이트 때 `onInstalled`에서 지운다.
 
@@ -117,12 +117,21 @@ UI 문자열은 `_locales/<lang>/messages.json`. 6개 언어가 **같은 키**�
 
 Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마지막 값이 오래됨으로 흐려지거나 `?`가 된다. 이건 버그가 아니라 설계다.
 
+열린 사용량 탭을 최신으로 두기(2026-10-28, 사용자 결정):
+- 페이지는 로드할 때 숫자를 그리고, 뒤에 있는 동안은 다시 받지 않는 것으로 보인다(사용자 제보, 실제 페이지로는 미확인). 숫자의 나이는 페이지의 "N분 전에 업데이트됨"(`gemini.js` `updatedAgoMs`)이고,
+  스냅샷의 `collected_at`은 읽은 시각이 아니라 이 나이를 뺀 시각이다(`publish(payload, collectedAt)`). 오래된 페이지는 오래됨으로 보인다.
+- 읽은 탭은 `tabs.update({autoDiscardable: false})`로 메모리 절약 모드가 내리지 않게 한다(`tabs` 권한 불필요, 실측).
+- 숫자가 5분(`GEMINI_RELOAD_AFTER_MS`) 넘게 오래됐거나 Chrome이 내리거나(`discarded`) 얼린(`frozen`) 사용량 탭은 **보이지 않을 때만** 새로고침한다.
+  보임 = 보이는(최소화 아닌) 창의 활성 탭. 탭마다 5분에 한 번까지(`gemini_reloads`). 새로고침 뒤에는 Gemini 버튼과 같은 대기로 로드 후 읽는다.
+  내리거나 얼린 탭을 새로고침할 수 없으면(5분 안에 이미 함) 상세에 "탭이 잠듦"을 남긴다("탭 없음"과 구분).
+- 사용량 탭이 여러 개면 현재 카드를 읽은 탭 중 가장 최근 페이지를 쓴다.
+
 팝업의 "Gemini 사용량" 버튼을 누르면 사용량 탭을 열거나 이미 열린 탭으로 이동하고, 로드 후 자동으로 읽는다(`openGeminiUsage`).
 - 이미 열린 사용량 탭은 Gemini가 켜져 있고 호스트 권한이 있을 때만 찾는다(여러 개면 `lastAccessed`가 가장 최근). 채팅 탭은 재사용하지 않는다.
   `tabs` 권한 없이 동작한다: 탭의 `url`은 gemini.google.com 호스트 권한으로 보이고, 다른 사이트로 간 탭은 `url`이 없어 "사용량 화면 아님"이 된다.
 - 대기 `{id, tabId, openedAt, phase}`는 `chrome.storage.session`의 `gemini_open_wait`에 하나만 둔다. `tabs.onUpdated`·`onRemoved`는 최상위에서 등록한다.
 - `complete` 뒤 2초에 `refreshGemini()`, 현재 카드가 없으면 5초·10초 뒤 다시. 연 지 30초가 지나면 새 읽기를 시작하지 않는다. `complete`가 30초 안에 안 오면 한 번만 읽는다.
-- 탭이 닫히거나 사용량 화면을 떠나면 대기를 지운다. Gemini 페이지를 reload하지 않는다. 버튼 없이 탭을 열지 않는다.
+- 탭이 닫히거나 사용량 화면을 떠나면 대기를 지운다. 새로고침은 위 규칙(보이지 않는 오래된 탭)으로만 한다. 버튼 없이 탭을 열지 않는다.
 
 ### Leeway helper
 
@@ -158,7 +167,9 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 
 ## 4. 표시 규칙
 
-- 갱신 주기 2분. 마지막 읽기가 **6분**(`STALE_MS`, 갱신 세 번 실패)보다 오래되면 오래됨으로 흐리게 표시한다.
+- 갱신 주기 1분(`POLL_MINUTES`, 1.0.0까지 2분). 팝업과 Leeway 창은 열릴 때(창이 앞으로 오거나 복원될 때 포함) `REFRESH_IF_OLD`를 보내고,
+  background는 마지막 라운드가 30초(`ROUND_FRESH_MS`)보다 오래됐으면 바로 한 라운드 읽는다.
+- 마지막 읽기가 **6분**(`STALE_MS`)보다 오래되면 오래됨으로 흐리게 표시한다. Gemini는 페이지가 말하는 숫자의 나이로 잰다.
 - 실패하면 마지막 정상값을 흐리게 보여주고 "마지막 정상값 · N분 전"을 단다.
 - 색 기준(팝업·배지·오버레이 공통): 50 이상 초록, 20~49 주황, 20 미만 빨강, `?`는 색 없음. 배지는 오래되면 회색.
 - 배지는 켠 서비스들의 대표값 중 **가장 낮은 값**(숫자만, `%` 없음). 툴팁에 서비스별 한 줄. 다른 프로필 값은 배지에 넣지 않는다.
@@ -229,6 +240,14 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
   - 확인됨: Enter → PiP 열림·창 최소화. PiP 닫기 → 창 복원·포커스 다시 버튼. Space도 열림. 자동 반복 keydown만으로는 안 열림.
     포커스를 버튼에서 뺀 뒤 "오버레이 열기"로 앞으로 가져와도 포커스가 버튼으로 돌아옴. 창은 1개.
   - 미확인: 실제 키보드(물리 키)와 사용 중인 Chrome 프로필. 다른 앱이 앞에 있을 때 Windows가 새 창에 키보드 포커스를 주는지.
+- 갱신 1분·열 때 읽기·Gemini 탭 최신 유지(fix/refresh-gemini, 2026-10-28). 계기: 다른 사용자 제보 "Gemini 탭이 열려 있는데 15시간 전", 사용량 페이지에 2분쯤 머물자 최신이 됨.
+  실제 Chrome 156에 이 브랜치의 테스트 사본(manifest에 gemini.google.com 권한)을 넣고, `--host-resolver-rules`로 gemini.google.com을
+  로컬 HTTPS(자체 서명)로 돌려 저장소 fixture에 "N분 전에 업데이트됨"을 바꿔 넣어 확인했다. 실제 Google 사이트에는 접속하지 않았다.
+  - 확인됨: 알람 주기 1분. 뒤에 있는 탭이 "9분 전" → 나이 9분으로 저장, `autoDiscardable` false, 한 번 새로고침, 로드 뒤 다시 읽어 나이 0.
+  - 확인됨: 보이는 탭(활성)은 "9분 전"이어도 새로고침하지 않고 나이 9분으로 보임. `tabs.discard`로 내린 탭은 새로고침 뒤 읽힘(내리면 탭 id가 바뀜).
+  - 확인됨: `REFRESH_IF_OLD`는 라운드 직후엔 읽지 않고, 31초 뒤엔 읽음.
+  - 미확인: 실제 gemini.google.com이 뒤에 있을 때 정말 다시 받지 않는지, 보이면 스스로 갱신하는지(제보와는 맞음). 영어 화면의 "업데이트됨" 문구.
+    메모리 절약 모드가 `autoDiscardable: false` 탭을 실제로 건너뛰는지, 얼린 탭의 새로고침. 제보 당시 원인(내려간 탭인지, 오래된 페이지인지).
 
 - `tabs` 권한을 뺐다(0.6.3, 2026-10-28 스토어 게시). 실제 Chrome에서 권한, 세 서비스 새로고침, Gemini 버튼, 오버레이 열기를 확인했다(2026-10-27). ChatGPT 대체 경로(설정 > 사용량 탭 읽기)를 `tabs` 없이 실제로 탄 경우와, 0.6.2 → 0.6.3 업데이트 때 재승인 요청이 없었는지는 미확인.
 - ChatGPT 페이지 대체 경로(fix/chatgpt-five-hour, 2026-10-28): 한 카드의 %가 없을 때 두 한도가 함께 든 묶음까지 올라가 다른 한도의 값을 가져가던 것을 고쳤다.
