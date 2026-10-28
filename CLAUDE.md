@@ -43,7 +43,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 
 | 경로 | 역할 |
 |---|---|
-| `extension/manifest.json` | MV3. 필수 권한 `storage alarms scripting activeTab`(`tests/test_manifest.mjs`가 고정. `activeTab`은 지금 쓰지 않음, §7), 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
+| `extension/manifest.json` | MV3. 필수 권한 `storage alarms scripting`(`tests/test_manifest.mjs`가 고정. `tabs`·`activeTab` 없음), 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
 | `extension/background.js` | 서비스 워커. 2분 주기 수집(`POLL_MINUTES`), 저장(`publish`), 배지, Leeway 창 열기, helper 동기화, 메시지 처리 |
 | `extension/snapshot.js` | 수집 결과 → 저장할 `UsageSnapshot` 정규화(`toSnapshot`), 다른 프로필 값 재검증(`fromShared`) |
 | `extension/view.js` | 저장값 → 팝업·오버레이·배지가 보여줄 값(`providerView`, `badgeView`, `peerViews`) |
@@ -209,7 +209,8 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 
 ## 7. 알려진 과제
 
-- activeTab 제거 필요 — feat/overlay-window 이후 미사용. 릴리스 전 별도 브랜치에서 manifest·tests/test_manifest.mjs 기대값·스토어 권한 사유를 함께 정리. 그 전에는 main을 push하지 않는다
+- `activeTab`을 뺐다(chore/drop-activetab, 2026-10-28). feat/overlay-window 이후로 쓰는 곳이 없었다. 다음 릴리스를 제출할 때 스토어 개인정보 탭에서 activeTab 사유를 지우고, `scripting` 사유에서 오버레이 문구를 지운다.
+  이 브랜치를 main에 합치기 전에는 main을 push하지 않는다(feat/overlay-window만 들어간 main은 개인정보처리방침과 manifest가 어긋남).
 - Leeway 창·PiP(feat/overlay-window). 2026-10-28 Windows 11에서 자동화로 실측했다. 별도 프로필의 Chrome 156과 Chrome for Testing 156을 쓰고, CDP 클릭(사용자 활성화 있음)과 Windows API·UI Automation으로 확인했다.
   확장은 claude.ai 권한을 manifest에 넣은 테스트 사본이고, 값은 storage에 넣었다.
   - 확인됨: 설치 직후 창 없음. 웹 스토어·새 탭·`chrome://extensions`·일반 사이트·claude.ai에서 모두 그 탭 앞에 창이 뜸. 두 번 연속 눌러도 창 1개. 최소화 뒤 누르면 같은 창 복원.
