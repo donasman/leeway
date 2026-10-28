@@ -192,7 +192,8 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 
 ## 7. 알려진 과제
 
-- `tabs` 권한을 뺐다(2026-10-27, 아직 스토어 미제출). 근거는 Chrome 문서이고 Node 테스트로만 확인했다. 실제 Chrome에서 설치 경고·Gemini 탭 읽기·ChatGPT 대체 경로·오버레이 열기, 0.6.2 → 새 버전 업데이트 때 재승인 여부는 미확인.
+- `tabs` 권한을 뺐다(0.6.3, 2026-10-28 스토어 게시). 실제 Chrome에서 권한, 세 서비스 새로고침, Gemini 버튼, 오버레이 열기를 확인했다(2026-10-27). ChatGPT 대체 경로(설정 > 사용량 탭 읽기)를 `tabs` 없이 실제로 탄 경우와, 0.6.2 → 0.6.3 업데이트 때 재승인 요청이 없었는지는 미확인.
+- ChatGPT 페이지 대체 경로: 5시간 카드에 %가 없으면 `findLimit()`이 주간 카드의 값을 5시간 값으로 가져간다(`tests/test_chatgpt_parser.mjs`의 known bug 3개). §4 "읽지 못한 값은 `?`"에 어긋나므로 고칠 대상. 기본 경로(사용량 엔드포인트)에는 해당 없음.
 - 실계정으로 확인 못 한 것: ChatGPT 5시간·주간 한도 계정, Claude Pro·Team·Enterprise의 요금제 표기.
 - helper: 코드 서명 없음(SmartScreen 경고, Windows 11 Smart App Control은 차단). Microsoft Store(MSIX) 패키지에서 Native Messaging 등록이 Chrome에 보이는지 미확인.
 - v0.6.0 태그 때 `helper-release` 워크플로가 실행되지 않았다(원인 미확인). v0.6.1부터는 정상.
