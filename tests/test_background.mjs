@@ -106,7 +106,7 @@ globalThis.chrome = {
       }, 0);
     },
   },
-  alarms: {create() {}, onAlarm: {addListener() {}}},
+  alarms: {create(name, info) { alarmsCreated.push([name, info]); }, onAlarm: {addListener() {}}},
   permissions: {
     async contains({origins = [], permissions = []}) { return [...origins, ...permissions].every(item => granted.has(item)); },
     async remove({origins = [], permissions = []}) {
@@ -181,6 +181,7 @@ globalThis.chrome = {
   }},
 };
 let nativeCalls = [];
+const alarmsCreated = [];
 const sessionStore = new Map();
 const openWindows = new Map();
 let nextWindowId = 100;
@@ -653,7 +654,7 @@ console.log('\nChatGPT — turned off while a read is running: no tab touched, n
 // gemini_scan.js is tested in test_gemini_scan.mjs; here a tab just answers with
 // the card text it would send. refreshGemini() opens no tab (CLAUDE.md §2).
 const geminiCards = (current = {used: '0% 사용됨', reset: '오후 10:19에 초기화'}, weekly = {used: '0% 사용됨', reset: '10월 16일 오후 4:19에 초기화'}) => ({current, weekly});
-const geminiAnswer = (cards = geminiCards()) => ({ok: true, cards, updated: '1시간 전에 업데이트됨', debug: {at: Date.now(), url: 'https://gemini.google.com/usage', failedStep: 'none'}});
+const geminiAnswer = (cards = geminiCards(), updated = '방금 업데이트됨') => ({ok: true, cards, updated, debug: {at: Date.now(), url: 'https://gemini.google.com/usage', failedStep: 'none'}});
 const geminiTab = (id = 5) => [{id, url: 'https://gemini.google.com/usage'}];
 
 console.log('\nGemini — read from an already-open usage tab (no tab opened)');
@@ -673,7 +674,7 @@ console.log('\nGemini — read from an already-open usage tab (no tab opened)');
   check('0% used → 100 remaining, both', s?.limits.map(l => [l.id, l.remaining_percent]), [['gemini_5h', 100], ['gemini_weekly', 100]]);
   check('primary: 현재 사용량 (gemini_5h)', s?.primary_limit_id, 'gemini_5h');
   check('resets computed from the wording (both ISO strings)', s?.limits.map(l => typeof l.resets_at === 'string'), [true, true]);
-  check('only the open usage tab read — none opened', tabCalls, [['query', {url: 'https://gemini.google.com/*'}], ['sendMessage', 5, 'SCAN_GEMINI']]);
+  check('only the open usage tab read, and kept loaded — none opened, none reloaded', tabCalls, [['query', {url: 'https://gemini.google.com/*'}], ['sendMessage', 5, 'SCAN_GEMINI'], ['update', 5, {autoDiscardable: false}]]);
   check('last ok saved', get('usage_last_ok_gemini')?.status, 'ok');
 }
 
@@ -899,6 +900,7 @@ for (const reason of ['update', 'install']) {
   check('old chatgpt_debug removed', get('chatgpt_debug'), undefined);
   check('usage_chatgpt kept', get('usage_chatgpt')?.status, 'ok');
   check('usage_last_ok_chatgpt kept', pct(get('usage_last_ok_chatgpt'), 'chatgpt_5h'), 61);
+  check('the refresh alarm: every minute', alarmsCreated.at(-1), ['llm-usage-refresh', {periodInMinutes: 1}]);
 }
 
 console.log('\nClaude plan and organizations — one sign-in, several organizations');
@@ -1107,6 +1109,7 @@ const USAGE = 'https://gemini.google.com/usage';
 const scans = () => tabCalls.filter(c => c[0] === 'sendMessage' && c[2] === 'SCAN_GEMINI').length;
 const openWait = () => sessionStore.get('gemini_open_wait') ?? null;
 const calls = name => tabCalls.filter(c => c[0] === name);
+const shown = () => calls('update').filter(c => 'active' in c[2]); // tabs brought forward
 const noCard = () => geminiAnswer(geminiCards(null)); // weekly only: parse_failed
 async function tabEvent(tabId, changeInfo, tab) { handlers.tabUpdated(tabId, changeInfo, tab); await settle(); }
 // The tab as Chrome now reports it, so refreshGemini() finds it.
@@ -1136,11 +1139,11 @@ console.log('\nGemini button — a usage tab already open and loaded: brought fo
   tabAnswers = {5: geminiAnswer()};
   await press();
   check('no new tab', calls('create'), []);
-  check('the tab made active, its window focused', [...calls('update'), ...calls('windows.update')], [['update', 5, {active: true}], ['windows.update', 2, {focused: true}]]);
+  check('the tab made active, its window focused', [...shown(), ...calls('windows.update')], [['update', 5, {active: true}], ['windows.update', 2, {focused: true}]]);
   check('read without waiting (the clock has not moved)', [clock.t, scans()], [0, 1]);
   check('value saved', [get('usage_gemini')?.status, pct(get('usage_gemini'), 'gemini_5h')], ['ok', 100]);
   check('read ok → no wait left', openWait(), null);
-  check('the Gemini page is never reloaded', calls('reload'), []);
+  check('a fresh page is not reloaded', calls('reload'), []);
 }
 
 console.log('\nGemini button — several usage tabs: the most recently used one (lastAccessed), chat tabs never');
@@ -1154,13 +1157,13 @@ console.log('\nGemini button — several usage tabs: the most recently used one 
   ];
   tabAnswers = {4: geminiAnswer(), 5: geminiAnswer(), 7: geminiAnswer()};
   await press();
-  check('tab 5 (lastAccessed 300) brought forward', [...calls('update'), ...calls('windows.update')], [['update', 5, {active: true}], ['windows.update', 2, {focused: true}]]);
+  check('tab 5 (lastAccessed 300) brought forward', [...shown(), ...calls('windows.update')], [['update', 5, {active: true}], ['windows.update', 2, {focused: true}]]);
 
   openReset();
   openTabs = [{id: 4, windowId: 1, url: USAGE, status: 'complete'}, {id: 5, windowId: 2, url: USAGE, status: 'complete', active: true}];
   tabAnswers = {4: geminiAnswer(), 5: geminiAnswer()};
   await press();
-  check('no lastAccessed (before Chrome 121): the active one', calls('update'), [['update', 5, {active: true}]]);
+  check('no lastAccessed (before Chrome 121): the active one', shown(), [['update', 5, {active: true}]]);
 }
 
 console.log('\nGemini button — the open usage tab is discarded or loading: it waits for complete like a new tab');
@@ -1169,7 +1172,7 @@ console.log('\nGemini button — the open usage tab is discarded or loading: it 
   openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'unloaded', discarded: true}];
   tabAnswers = {5: geminiAnswer()};
   await press();
-  check('brought forward, no new tab', [calls('create'), calls('update')], [[], [['update', 5, {active: true}]]]);
+  check('brought forward, no new tab', [calls('create'), shown()], [[], [['update', 5, {active: true}]]]);
   check('not read yet; a wait for tab 5', [scans(), openWait()?.tabId, openWait()?.phase], [0, 5, 'waiting']);
   // Activating a discarded tab makes Chrome load it again.
   tabIs(5, {discarded: false, status: 'complete'});
@@ -1189,7 +1192,7 @@ console.log('\nGemini button — the open usage tab is discarded or loading: it 
   openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete', frozen: true}];
   tabAnswers = {5: geminiAnswer()};
   await press();
-  check('frozen: thawed by activation, not read at once', [calls('update').length, scans()], [1, 0]);
+  check('frozen: thawed by activation, not read at once', [shown().length, scans()], [1, 0]);
   tabIs(5, {frozen: undefined});
   await clock.to(2000);
   check('frozen: read after the 2s pause (no complete comes for it)', [scans(), get('usage_gemini')?.status], [1, 'ok']);
@@ -1201,7 +1204,7 @@ console.log('\nGemini button — only a chat tab open: it is not reused, a usage
   openTabs = [{id: 6, windowId: 1, url: 'https://gemini.google.com/app', status: 'complete'}];
   newTab = loadingTab();
   await press();
-  check('a new usage tab, the chat tab not activated', [calls('create'), calls('update')], [[['create', USAGE]], []]);
+  check('a new usage tab, the chat tab not activated', [calls('create'), shown()], [[['create', USAGE]], []]);
   check('wait saved in storage.session', [openWait()?.tabId, openWait()?.openedAt, openWait()?.phase], [11, 0, 'waiting']);
   check('nothing injected yet (the chat tab never)', [scans(), calls('executeScript')], [0, []]);
 }
@@ -1322,7 +1325,7 @@ console.log('\nGemini button — Gemini off or without its permission: only the 
   openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete'}];
   newTab = loadingTab();
   await press();
-  check("off: a new tab (the open one isn't looked for), no wait, no read", [calls('create'), calls('update'), openWait(), scans()], [[['create', USAGE]], [], null, 0]);
+  check("off: a new tab (the open one isn't looked for), no wait, no read", [calls('create'), shown(), openWait(), scans()], [[['create', USAGE]], [], null, 0]);
 
   openReset({permissions: []});
   newTab = loadingTab();
@@ -1386,7 +1389,7 @@ console.log('\nGemini button — no "tabs" permission: the usage tab is found th
   tabCalls = [];
   tabAnswers = {5: geminiAnswer()};
   await press();
-  check('the Gemini usage tab is brought forward and read', [calls('update'), scans(), get('usage_gemini')?.status], [[['update', 5, {active: true}]], 1, 'ok']);
+  check('the Gemini usage tab is brought forward and read', [shown(), scans(), get('usage_gemini')?.status], [[['update', 5, {active: true}]], 1, 'ok']);
 
   openReset();
   newTab = loadingTab();
@@ -1396,7 +1399,95 @@ console.log('\nGemini button — no "tabs" permission: the usage tab is found th
   await clock.to(2000);
   check('...read 2s after complete', [scans(), get('usage_gemini')?.status, openWait()], [1, 'ok', null]);
 }
+console.log('\nGemini — an old page: its age is shown, and out of sight it is reloaded, then read');
+{
+  const MIN = 60 * 1000;
+  const age = () => Date.now() - Date.parse(get('usage_gemini')?.collected_at);
+  const near = (ms, want) => Math.abs(ms - want) < 5000;
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete'}]; // a background tab
+  tabAnswers = {5: geminiAnswer(geminiCards(), '7분 전에 업데이트됨')};
+  await send({type: 'REFRESH_ALL'});
+  check('saved with the page\'s own age (7 min), not as just read', [get('usage_gemini')?.status, near(age(), 7 * MIN)], ['ok', true]);
+  check('the tab is kept loaded, and reloaded (out of sight)', [calls('update'), calls('reload')], [[['update', 5, {autoDiscardable: false}]], [['reload', 5]]]);
+  check('a read waits for its load', openWait()?.tabId, 5);
+  tabAnswers = {5: geminiAnswer()}; // the reloaded page: "방금 업데이트됨"
+  await tabEvent(5, {status: 'complete'}, {id: 5, url: USAGE, status: 'complete'});
+  await clock.to(clock.t + 2000);
+  check('read 2s after the load: fresh now', [scans(), near(age(), 0), openWait()], [2, true, null]);
+
+  tabAnswers = {5: geminiAnswer(geminiCards(), '6분 전에 업데이트됨')};
+  tabCalls = [];
+  await send({type: 'REFRESH_ALL'});
+  check('old again within 5 minutes of the last reload: not reloaded again', calls('reload'), []);
+  clock.t += 5 * MIN;
+  await send({type: 'REFRESH_ALL'});
+  check('5 minutes on: reloaded again', calls('reload'), [['reload', 5]]);
+}
+{
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete', active: true, autoDiscardable: false}];
+  openWindows.set(2, {id: 2, type: 'normal', state: 'normal'});
+  tabAnswers = {5: geminiAnswer(geminiCards(), '15시간 전에 업데이트됨')};
+  await send({type: 'REFRESH_ALL'});
+  check('in sight (active in a window that shows): not reloaded, its age shown', [calls('reload'), Math.round((Date.now() - Date.parse(get('usage_gemini')?.collected_at)) / 3600000)], [[], 15]);
+  check('already kept loaded: not asked again', calls('update'), []);
+  openWindows.set(2, {id: 2, type: 'normal', state: 'minimized'});
+  await send({type: 'REFRESH_ALL'});
+  check('its window minimized: out of sight, reloaded', calls('reload'), [['reload', 5]]);
+}
+{
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete'}];
+  tabAnswers = {5: geminiAnswer(geminiCards(), null)}; // the page says nothing about its age
+  await send({type: 'REFRESH_ALL'});
+  check('no age on the page: saved as read now, not reloaded', [Date.now() - Date.parse(get('usage_gemini')?.collected_at) < 5000, calls('reload')], [true, []]);
+}
+
+console.log('\nGemini — the usage tab Chrome unloaded (Memory Saver) or froze: reloaded, then read');
+{
+  openReset();
+  store.set('usage_gemini', 'before');
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'unloaded', discarded: true}];
+  tabAnswers = {5: geminiAnswer()};
+  await send({type: 'REFRESH_ALL'});
+  check('not asked (it can\'t answer), reloaded, nothing saved yet', [scans(), calls('reload'), get('usage_gemini')], [0, [['reload', 5]], 'before']);
+  tabIs(5, {discarded: false, status: 'complete'});
+  await tabEvent(5, {status: 'complete'}, {id: 5, url: USAGE, status: 'complete'});
+  await clock.to(clock.t + 2000);
+  check('read after its load', [scans(), get('usage_gemini')?.status], [1, 'ok']);
+
+  openReset();
+  openTabs = [{id: 5, windowId: 2, url: USAGE, status: 'complete', frozen: true}];
+  sessionStore.set('gemini_reloads', {5: clock.t}); // reloaded a moment ago
+  await send({type: 'REFRESH_ALL'});
+  check('frozen, and reloaded a moment ago: the user is told, not "no tab"', [calls('reload'), get('usage_gemini')?.detail], [[], 'Gemini usage tab is asleep (Chrome unloaded or froze it); click the tab once']);
+}
+
+console.log('\nGemini — several usage tabs: the freshest page; another Google account\'s /u/1/usage counts');
+{
+  openReset();
+  openTabs = [{id: 4, windowId: 2, url: USAGE, status: 'complete'}, {id: 5, windowId: 2, url: 'https://gemini.google.com/u/1/usage', status: 'complete'}, {id: 6, windowId: 2, url: 'https://gemini.google.com/u/1/app', status: 'complete'}];
+  tabAnswers = {4: geminiAnswer(geminiCards({used: '50% 사용됨', reset: '오후 10:19에 초기화'}), '20분 전에 업데이트됨'), 5: geminiAnswer(), 6: geminiAnswer()};
+  await send({type: 'REFRESH_ALL'});
+  check('/u/1/usage read (the /u/1/app chat not), and its fresh page wins', [scans(), pct(get('usage_gemini'), 'gemini_5h'), Date.now() - Date.parse(get('usage_gemini')?.collected_at) < 5000], [2, 100, true]);
+}
 delete globalThis.__leewayGeminiOpenClock;
+
+console.log('\nREFRESH_IF_OLD — the popup and the Leeway window as they open: a round unless one started in the last 30s');
+{
+  reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
+  claudeAccount();
+  check('nothing read yet: a round', await send({type: 'REFRESH_IF_OLD'}), {ok: true, ran: true});
+  const first = claudeRequests.length;
+  check('...that read Claude', first > 0, true);
+  check('opened again at once: no second round', [await send({type: 'REFRESH_IF_OLD'}), claudeRequests.length], [{ok: true, ran: false}, first]);
+  sessionStore.set('refresh_started_at', Date.now() - 31 * 1000);
+  check('31s later: a round', await send({type: 'REFRESH_IF_OLD'}), {ok: true, ran: true});
+  await send({type: 'REFRESH_ALL'});
+  const after = claudeRequests.length;
+  check('right after the "Refresh" button: none', [await send({type: 'REFRESH_IF_OLD'}), claudeRequests.length], [{ok: true, ran: false}, after]);
+}
 
 // ---- the Leeway window (CLAUDE.md §4) ----------------------------------------
 const PAGE = 'chrome-extension://test-extension-id/overlay_window.html';

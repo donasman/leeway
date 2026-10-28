@@ -23,7 +23,8 @@
   const MENTION = {current: /현재 사용량|Current usage/i, weekly: /주간 한도|Weekly limit/i};
   const USED = /(\d{1,3}(?:[.,]\d+)?)\s*%\s*(?:사용됨|used)/i;
   const RESET = /(?:\d{1,2}월\s*\d{1,2}일\s*)?(?:오전|오후)\s*\d{1,2}:\d{2}\s*에\s*초기화/;
-  const UPDATED = /(?:방금|\d+\s*(?:분|시간|일)\s*전에)\s*업데이트됨/;
+  // How old the page's numbers are (gemini.js updatedAgoMs). English: a guess.
+  const UPDATED = /(?:방금|\d+\s*(?:분|시간|일)\s*전에)\s*업데이트됨|updated\s+(?:just\s+now|\d+\s*(?:min(?:ute)?|hour|day)s?\s+ago)/i;
   // How long to wait for the cards to render. A seam for tests only; never set
   // in the extension, so it stays 10s there.
   const TIMEOUT_MS = Number(globalThis.__llmGeminiScanTimeoutMs) || 10000;

@@ -5,7 +5,7 @@
 // `cards` is {current, weekly}, each null (card absent) or {used, reset} (the
 // raw strings; `used` null when the "% 사용됨" couldn't be read). The DOM
 // reading that produces `cards` is tested separately in test_gemini_scan.mjs.
-import { usedPercent, resetOf, geminiPayload } from '../extension/gemini.js';
+import { usedPercent, resetOf, geminiPayload, updatedAgoMs } from '../extension/gemini.js';
 import { toSnapshot } from '../extension/snapshot.js';
 
 const PASS = '\x1b[32mPASS\x1b[0m';
@@ -91,5 +91,16 @@ console.log('\nreset wording → time (Korean; read against when the page was re
 }
 
 // ---------------------------------------------------------------------------
+console.log('\n"N분 전에 업데이트됨" → how old the page\'s numbers are');
+{
+  const MIN = 60 * 1000;
+  check('방금 → 0', updatedAgoMs('방금 업데이트됨'), 0);
+  check('7분 전에', updatedAgoMs('7분 전에 업데이트됨'), 7 * MIN);
+  check('15시간 전에', updatedAgoMs('15시간 전에 업데이트됨'), 15 * 60 * MIN);
+  check('2일 전에', updatedAgoMs('2일 전에 업데이트됨'), 2 * 24 * 60 * MIN);
+  check('English (a guess, unverified): just now / 5 minutes / 1 hour', [updatedAgoMs('Updated just now'), updatedAgoMs('Updated 5 minutes ago'), updatedAgoMs('Updated 1 hour ago')], [0, 5 * MIN, 60 * MIN]);
+  check('no such wording, or none → null (never 0)', [updatedAgoMs('업데이트됨'), updatedAgoMs(''), updatedAgoMs(null)], [null, null, null]);
+}
+
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

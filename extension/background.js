@@ -1,7 +1,7 @@
 import { clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from './parsers.js';
 import { snapshotWrites, usageKey, lastOkKey } from './snapshot.js';
 import { whamPayload, whamPlan, whamWindows } from './chatgpt_api.js';
-import { geminiPayload } from './gemini.js';
+import { geminiPayload, updatedAgoMs } from './gemini.js';
 import { badgeView } from './view.js';
 import { HELPER_HOST, PEER_PERMISSION, cleanLabel, newProfileId, peerRecord, sharedSnapshots } from './peers.js';
 import { viewLabels } from './i18n.js';
@@ -10,7 +10,7 @@ const ALARM = 'llm-usage-refresh';
 const CHATGPT_USAGE_URL = 'https://chatgpt.com/settings/usage';
 const CHATGPT_SESSION_URL = 'https://chatgpt.com/api/auth/session';
 const CHATGPT_USAGE_API_URL = 'https://chatgpt.com/backend-api/wham/usage';
-const POLL_MINUTES = 2;
+const POLL_MINUTES = 1;
 const GEMINI_USAGE_URL = 'https://gemini.google.com/usage';
 const PROVIDER_HOSTS = {claude:'https://claude.ai/*', chatgpt:'https://chatgpt.com/*', gemini:'https://gemini.google.com/*'};
 
@@ -76,7 +76,9 @@ function disableProvider(provider) {
 // turned off, or a refresh that lands after it was turned off
 // (disableProvider() takes it out of enabledProviders before this).
 // 'disabled' is let through: it is the turning-off itself.
-async function publish(payload) {
+// collectedAt: when the numbers are from — now, or for Gemini the page's own
+// "N분 전에 업데이트됨", so an old page shows its age (CLAUDE.md §4).
+async function publish(payload, collectedAt = Date.now()) {
   try {
     if (payload?.status !== 'disabled') {
       const enabled = await getEnabledProviders();
@@ -84,7 +86,7 @@ async function publish(payload) {
         return {ok: false, at: Date.now(), error: 'provider-not-enabled', status: payload?.status};
       }
     }
-    const writes = snapshotWrites(payload, Date.now());
+    const writes = snapshotWrites(payload, collectedAt);
     if (writes) await chrome.storage.local.set(writes);
   } catch (error) {
     console.warn('usage snapshot not saved:', String(error));
@@ -350,11 +352,12 @@ async function refreshChatGPT() {
 // names are hashed, so gemini_scan.js reads the rendered DOM by label text.
 const GEMINI_SCAN_TIMEOUT_MS = 12000; // gemini_scan.js waits up to 10s for a late render
 
-// The usage screen only — gemini.google.com/usage — not a chat tab.
+// The usage screen only — gemini.google.com/usage, or /u/1/usage for another
+// signed-in Google account — not a chat tab.
 function isGeminiUsageUrl(url = '') {
   try {
     const {hostname, pathname} = new URL(url);
-    return hostname === 'gemini.google.com' && /^\/usage\/?$/i.test(pathname);
+    return hostname === 'gemini.google.com' && /^\/(?:u\/\d{1,2}\/)?usage\/?$/i.test(pathname);
   } catch (_) { return false; }
 }
 
@@ -383,26 +386,70 @@ async function scanGeminiTab(tab, attempts = 2) {
   throw new Error(injectError ? `${message} (inject: ${injectError})` : message);
 }
 
-// The scanned card text from an open usage tab, or null when none answered. No
-// tab is opened here: it reads only usage tabs the user opened (by hand or with
-// the popup's button, openGeminiUsage()), and chat tabs are never injected
-// into (CLAUDE.md §3). A tab
-// with a readable current card wins; otherwise the first tab that answered (so
-// a genuinely empty/signed-out page still becomes a parse_failed, not "no tab").
+// What the open usage tabs show: {read, asleep}. `read` is {cards, ageMs, tab}
+// from the tab with a readable current card and the freshest page (ageMs: the
+// page's "N분 전에 업데이트됨", null when it doesn't say), else the first tab
+// that answered (so a genuinely empty/signed-out page still becomes a
+// parse_failed, not "no tab"), else null. `asleep`: usage tabs Chrome unloaded
+// (Memory Saver) or froze — still in the tab strip, but they can't answer.
+// No tab is opened here: it reads only usage tabs the user opened (by hand or
+// with the popup's button, openGeminiUsage()), and chat tabs are never
+// injected into (CLAUDE.md §3).
 async function scanGeminiUsageTab() {
   let tabs = [];
   try { tabs = await chrome.tabs.query({url:'https://gemini.google.com/*'}); }
   catch (_) {}
-  const usageTabs = tabs.filter(tab => isGeminiUsageUrl(tab.url) && !tab.discarded && !tab.frozen);
+  const usageTabs = tabs.filter(tab => isGeminiUsageUrl(tab.url));
+  const asleep = usageTabs.filter(tab => tab.discarded || tab.frozen);
+  let best = null;
   let fallback = null;
   for (const tab of usageTabs) {
+    if (asleep.includes(tab)) continue;
     let response;
     try { response = await scanGeminiTab(tab); }
     catch (_) { continue; }
-    if (response.cards?.current?.used) return response.cards;
-    if (!fallback) fallback = response.cards;
+    const read = {cards: response.cards, ageMs: updatedAgoMs(response.updated), tab};
+    if (response.cards?.current?.used) {
+      if (!best || (read.ageMs ?? 0) < (best.ageMs ?? 0)) best = read;
+    } else if (!fallback) fallback = read;
   }
-  return fallback;
+  return {read: best || fallback, asleep};
+}
+
+// The page draws its numbers when it loads and, as a user found (2026-10-28),
+// doesn't refetch them while it sits in the background; Chrome's Memory Saver
+// also unloads a tab left there. So the usage tab Leeway
+// reads is kept loaded (autoDiscardable: false), and one out of sight whose
+// numbers are older than this (or that Chrome unloaded or froze) is reloaded
+// — at most once per tab in this time. Never the tab the user is looking at
+// (CLAUDE.md §2 Gemini).
+const GEMINI_RELOAD_AFTER_MS = 5 * 60 * 1000;
+const GEMINI_RELOADS_KEY = 'gemini_reloads'; // storage.session: {tabId: when it was last reloaded}
+
+function keepGeminiTabLoaded(tab) {
+  if (tab.autoDiscardable !== false) chrome.tabs.update(tab.id, {autoDiscardable: false}).catch(() => {});
+}
+
+// Out of sight: not the active tab of a window that is showing. true when it
+// was reloaded; the read after its load is the Gemini button's wait (below).
+async function reloadGeminiTabOutOfSight(tab) {
+  if (tab.active) {
+    let win = null;
+    try { win = await chrome.windows.get(tab.windowId); }
+    catch (_) {}
+    if (win?.state !== 'minimized') return false;
+  }
+  const now = openClock().now();
+  let reloads = {};
+  try { reloads = (await chrome.storage.session.get(GEMINI_RELOADS_KEY))[GEMINI_RELOADS_KEY] || {}; }
+  catch (_) {}
+  if (now - (reloads[tab.id] ?? -Infinity) < GEMINI_RELOAD_AFTER_MS) return false;
+  const recent = Object.entries(reloads).filter(([, at]) => now - at < GEMINI_RELOAD_AFTER_MS);
+  await chrome.storage.session.set({[GEMINI_RELOADS_KEY]: {...Object.fromEntries(recent), [tab.id]: now}}).catch(() => {});
+  try { await chrome.tabs.reload(tab.id); }
+  catch (_) { return false; }
+  await startOpenWait(tab.id, 'waiting');
+  return true;
 }
 
 async function refreshGemini() {
@@ -410,23 +457,34 @@ async function refreshGemini() {
   const stillOn = async () => (await getEnabledProviders()).has('gemini') && hasHostPermission('gemini');
   if (!(await stillOn())) return {ok:false, error:'provider-not-enabled'};
   let payload;
+  let collectedAt = Date.now();
   try {
-    const cards = await scanGeminiUsageTab();
-    payload = cards
-      ? geminiPayload(cards, Date.now())
-      : {provider:'gemini', value:'?', detail:'No open Gemini usage tab (open gemini.google.com/usage)', status:'parse_failed', limits:[]};
+    const {read, asleep} = await scanGeminiUsageTab();
+    if (read) {
+      payload = geminiPayload(read.cards, Date.now());
+      if (read.ageMs !== null) collectedAt -= read.ageMs;
+      keepGeminiTabLoaded(read.tab);
+      // Saved as it is (with its age), and reloaded for the next read.
+      if (read.ageMs >= GEMINI_RELOAD_AFTER_MS) await reloadGeminiTabOutOfSight(read.tab);
+    } else if (asleep.length) {
+      // Reloaded: the read after its load saves the value; nothing to save now.
+      for (const tab of asleep) if (await reloadGeminiTabOutOfSight(tab)) return {ok: true, at: Date.now(), reloading: true};
+      payload = {provider:'gemini', value:'?', detail:'Gemini usage tab is asleep (Chrome unloaded or froze it); click the tab once', status:'parse_failed', limits:[]};
+    } else {
+      payload = {provider:'gemini', value:'?', detail:'No open Gemini usage tab (open gemini.google.com/usage)', status:'parse_failed', limits:[]};
+    }
   } catch (error) {
     payload = {provider:'gemini', value:'?', detail:`Gemini usage unavailable: ${originsOnly(error.message || error)}`, status:'parse_failed', limits:[]};
   }
-  return publish(payload);
+  return publish(payload, collectedAt);
 }
 
 // ---- Gemini: the usage tab opened from the popup ---------------------------
 // The popup's button opens gemini.google.com/usage (or brings an open one
 // forward), and the popup closes with it. Background then reads the tab once
-// it has loaded, so the value shows without waiting for the next 2-minute
-// round (CLAUDE.md §2 Gemini). It only waits and calls refreshGemini(): the
-// Gemini page itself is never reloaded.
+// it has loaded, so the value shows without waiting for the next round
+// (CLAUDE.md §2 Gemini). The same wait follows a usage tab that
+// refreshGemini() reloaded out of sight.
 // The wait {id, tabId, openedAt, phase} lives in storage.session so a service
 // worker that went down in between picks it up from the next tab event. One
 // at a time: a new press replaces it, and a timer left from the old one sees a
@@ -669,7 +727,23 @@ async function updateBadge() {
   }
 }
 
+// When the last round started (storage.session), for REFRESH_IF_OLD: the
+// popup and the Leeway window ask for one as they open, and get one unless a
+// round started in the last ROUND_FRESH_MS (CLAUDE.md §4).
+const ROUND_STARTED_KEY = 'refresh_started_at';
+const ROUND_FRESH_MS = 30 * 1000;
+
+async function refreshAllIfOld() {
+  let last = 0;
+  try { last = (await chrome.storage.session.get(ROUND_STARTED_KEY))[ROUND_STARTED_KEY] || 0; }
+  catch (_) {}
+  if (Date.now() - last < ROUND_FRESH_MS) return false;
+  await refreshAll();
+  return true;
+}
+
 async function refreshAll() {
+  await chrome.storage.session.set({[ROUND_STARTED_KEY]: Date.now()}).catch(() => {});
   const enabled = await getEnabledProviders();
   const tasks = [];
   if (enabled.has('claude')) {
@@ -824,6 +898,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!String(sender?.url || '').startsWith(EXTENSION_ORIGIN)) return;
   if (message?.type === 'usage') { publish(message.payload).then(sendResponse); return true; }
   if (message?.type === 'REFRESH_ALL') { refreshAll().then(() => sendResponse({ok:true})); return true; }
+  if (message?.type === 'REFRESH_IF_OLD') { refreshAllIfOld().then(ran => sendResponse({ok:true, ran})); return true; }
   if (message?.type === 'PROVIDER_ENABLED') {
     // Answer once it is on; the refresh needn't hold up the popup's toggle.
     enableProvider(message.provider).catch(() => false)

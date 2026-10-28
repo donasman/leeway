@@ -307,3 +307,6 @@ linkGeminiUsage(document.querySelector('[data-i18n="note_main"]'));
 // "3분 전", staleness and the reset countdowns move with the clock, not only with storage.
 setInterval(render, 30 * 1000);
 render();
+// Opening the popup reads now unless a round started in the last 30 seconds;
+// new values come in through storage.onChanged (CLAUDE.md §4).
+chrome.runtime.sendMessage({type:'REFRESH_IF_OLD'}).catch(() => {});

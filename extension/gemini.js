@@ -66,6 +66,20 @@ export function resetOf(text, nowMs, timeZone) {
   return Number.isFinite(at) ? {iso: new Date(at).toISOString(), text: wording} : null;
 }
 
+// "방금 업데이트됨", "7분 전에 업데이트됨": how old the page's own numbers are,
+// in ms — the page draws them when it loads and, as far as a user saw, does
+// not refetch them while it sits in the background. null when it doesn't say.
+// The English wording is not seen yet.
+const AGO_UNIT_MS = {분: MINUTE_MS, 시간: 60 * MINUTE_MS, 일: DAY_MS, min: MINUTE_MS, minute: MINUTE_MS, hour: 60 * MINUTE_MS, day: DAY_MS};
+export function updatedAgoMs(text) {
+  if (typeof text !== 'string') return null;
+  if (/방금\s*업데이트됨|updated\s+just\s+now/i.test(text)) return 0;
+  const ko = text.match(/(\d{1,4})\s*(분|시간|일)\s*전에\s*업데이트됨/);
+  if (ko) return Number(ko[1]) * AGO_UNIT_MS[ko[2]];
+  const en = text.match(/updated\s+(\d{1,4})\s*(min(?:ute)?|hour|day)s?\s+ago/i);
+  return en ? Number(en[1]) * AGO_UNIT_MS[en[2].toLowerCase()] : null;
+}
+
 // One card's text → a Limit. `card` is {used, reset}: the raw strings the
 // content script pulled from that card, each null when it wasn't there.
 function limitOf(id, label, card, nowMs, timeZone) {
