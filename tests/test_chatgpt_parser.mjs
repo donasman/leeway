@@ -117,13 +117,61 @@ console.log('\nsynthetic: chatgpt-usage-zero-synthetic.html');
 // ---------------------------------------------------------------------------
 console.log('\nsynthetic: chatgpt-usage-missing-synthetic.html');
 {
-  const {payload: p} = await scan(fixture('chatgpt-usage-missing-synthetic.html'));
+  const r = await scan(fixture('chatgpt-usage-missing-synthetic.html'));
+  const p = r.payload;
   check('chatgpt_weekly still read', limit(p, 'chatgpt_weekly')?.remaining_percent, 60);
-  // findLimit() climbs from the 5-hour label up to the container shared with
-  // the weekly card and takes the weekly 60% as the 5-hour value.
-  knownBug('value is ? when 5-hour % is missing', p.value, '?');
-  knownBug('status is parse_failed', p.status, 'parse_failed');
-  knownBug('no chatgpt_5h limit', limit(p, 'chatgpt_5h'), undefined);
+  // Climbing from the 5-hour title stops below the container shared with the
+  // weekly card, so the weekly 60% is not taken as the 5-hour value.
+  check('value is ? when 5-hour % is missing', p.value, '?');
+  check('status is parse_failed', p.status, 'parse_failed');
+  check('no chatgpt_5h limit', limit(p, 'chatgpt_5h'), undefined);
+  check('debug.failedStep', r.debug.failedStep, '5-hour card found, but its remaining percentage was not found');
+}
+
+console.log('\nsynthetic: chatgpt-usage-weekly-missing-synthetic.html');
+{
+  const {payload: p} = await scan(fixture('chatgpt-usage-weekly-missing-synthetic.html'));
+  check('status', p.status, 'ok');
+  check('value = 5-hour remaining', p.value, '61%');
+  check('chatgpt_5h remaining_percent', limit(p, 'chatgpt_5h')?.remaining_percent, 61);
+  check('no chatgpt_weekly limit (the 5-hour 61% is not taken)', limit(p, 'chatgpt_weekly'), undefined);
+}
+
+// ---------------------------------------------------------------------------
+// English text in the same card layout (inline, not a capture: the English
+// screen's wording is unverified). Line breaks stand in for innerText's.
+// ---------------------------------------------------------------------------
+const englishCard = ({fiveHour, weekly, weeklyReset}) => `
+<div class="card">
+  <div class="block">
+    <div class="head">
+      <div>5-hour limit</div>
+      <div class="row"><span>Resets in 4 hours 20 minutes</span>
+        ${fiveHour === null ? '' : `<span>${fiveHour}% left</span>`}</div>
+    </div>
+    <div class="bar"></div>
+  </div>
+  <div class="block">
+    <div class="head">
+      <div>Weekly limit</div>
+      <div class="row"><span>Resets in <button>${weeklyReset}</button></span>
+        <span>${weekly}% left</span></div>
+    </div>
+    <div class="bar"></div>
+  </div>
+</div>`;
+
+console.log('\ninline: English card, weekly resets in 5 hours');
+{
+  const {payload: p} = await scan(englishCard({fiveHour: 61, weekly: 60, weeklyReset: '5 hours'}));
+  check('chatgpt_5h remaining_percent', limit(p, 'chatgpt_5h')?.remaining_percent, 61);
+  check('chatgpt_weekly remaining_percent ("5 hours" is not a 5-hour title)', limit(p, 'chatgpt_weekly')?.remaining_percent, 60);
+}
+{
+  const {payload: p} = await scan(englishCard({fiveHour: null, weekly: 60, weeklyReset: '5 hours'}));
+  check('5-hour % missing: value is ?', p.value, '?');
+  check('5-hour % missing: no chatgpt_5h limit', limit(p, 'chatgpt_5h'), undefined);
+  check('5-hour % missing: chatgpt_weekly still read', limit(p, 'chatgpt_weekly')?.remaining_percent, 60);
 }
 
 // ---------------------------------------------------------------------------
