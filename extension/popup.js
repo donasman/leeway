@@ -286,19 +286,13 @@ function linkGeminiUsage(el) {
   el.replaceChildren(text.slice(0, at), link, text.slice(at + GEMINI_USAGE_TEXT.length));
 }
 
-// Open the floating overlay: inject overlay_inject.js into the active tab (it
-// opens a Picture-in-Picture window). Needs a normal web page as the opener.
+// Open the floating overlay: background opens the Leeway window (or brings the
+// open one forward), and the always-on-top overlay opens from there — the same
+// on any tab, the Web Store and chrome:// pages included (CLAUDE.md §4).
 document.getElementById('openOverlay').addEventListener('click', async () => {
-  const ovmsg = document.getElementById('ovmsg');
-  ovmsg.textContent = '';
-  try {
-    const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-    if (!tab || !/^https?:\/\//.test(tab.url || '')) { ovmsg.textContent = msg('overlay_hint'); return; }
-    await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['overlay_inject.js']});
-    try { window.close(); } catch (_) {}
-  } catch (_) {
-    ovmsg.textContent = msg('overlay_hint');
-  }
+  try { await chrome.runtime.sendMessage({type:'OPEN_OVERLAY_WINDOW'}); }
+  catch (_) {}
+  try { window.close(); } catch (_) {}
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {

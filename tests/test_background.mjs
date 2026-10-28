@@ -82,6 +82,12 @@ globalThis.chrome = {
     onInstalled: {addListener(fn) { handlers.installed = fn; }},
     onStartup: {addListener(fn) { handlers.startup = fn; }},
     onMessage: {addListener(fn) { handlers.message = fn; }},
+    // Like Chromium: every given filter must match, documentUrls compared whole.
+    async getContexts(filter) {
+      tabCalls.push(['getContexts']);
+      return contexts.filter(c => (!filter.contextTypes || filter.contextTypes.includes(c.contextType))
+        && (!filter.documentUrls || filter.documentUrls.includes(c.documentUrl))).map(c => structuredClone(c));
+    },
     lastError: undefined,
     // The Leeway helper, as Chrome reaches it: callback style, errors through
     // runtime.lastError. Behaves like helper/store.go (keyed by profile_id).
@@ -151,7 +157,24 @@ globalThis.chrome = {
       throw new Error('Could not establish connection. Receiving end does not exist.');
     },
   },
-  windows: {async update(windowId, props) { tabCalls.push(['windows.update', windowId, props]); return {id: windowId}; }},
+  // The Leeway window: get() knows the ids in openWindows, create() makes one
+  // (or refuses, like Chrome's 50%-on-screen rule, when createRefuses says so).
+  // A new window's page is not in getContexts until a test puts it there.
+  windows: {
+    async get(windowId) {
+      tabCalls.push(['windows.get', windowId]);
+      if (!openWindows.has(windowId)) throw new Error(`No window with id: ${windowId}.`);
+      return structuredClone(openWindows.get(windowId));
+    },
+    async create(props) {
+      tabCalls.push(['windows.create', structuredClone(props)]);
+      if (createRefuses?.(props)) throw new Error('Invalid value for bounds. Bounds must be at least 50% within visible screen space.');
+      const win = {id: nextWindowId++, type: props.type, state: 'normal', focused: true};
+      openWindows.set(win.id, win);
+      return structuredClone(win);
+    },
+    async update(windowId, props) { tabCalls.push(['windows.update', windowId, props]); return {id: windowId}; },
+  },
   scripting: {async executeScript({target}) {
     tabCalls.push(['executeScript', target.tabId]);
     throw new Error('Cannot access contents of the page.');
@@ -159,6 +182,10 @@ globalThis.chrome = {
 };
 let nativeCalls = [];
 const sessionStore = new Map();
+const openWindows = new Map();
+let nextWindowId = 100;
+let createRefuses = null;
+let contexts = [];
 let newTab = null;
 const nativeHelper = {installed: true, profiles: new Map()};
 let openTabs = [];
@@ -234,6 +261,10 @@ function reset({enabled = [], permissions = []} = {}) {
   tabGate = null;
   newTab = null;
   sessionStore.clear();
+  openWindows.clear();
+  nextWindowId = 100;
+  createRefuses = null;
+  contexts = [];
   nativeCalls = [];
   nativeHelper.installed = true;
   nativeHelper.profiles = new Map();
@@ -1378,6 +1409,89 @@ console.log('\nGemini button — no "tabs" permission: the usage tab is found th
   check('...read 2s after complete', [scans(), get('usage_gemini')?.status, openWait()], [1, 'ok', null]);
 }
 delete globalThis.__leewayGeminiOpenClock;
+
+// ---- the Leeway window (CLAUDE.md §4) ----------------------------------------
+const PAGE = 'chrome-extension://test-extension-id/overlay_window.html';
+const NEW_WINDOW = {url: PAGE, type: 'popup', focused: true};
+const windowId = () => sessionStore.get('overlay_window_id') ?? null;
+const windowCalls = () => tabCalls.filter(c => c[0] === 'windows.create' || c[0] === 'windows.update').map(c => c.slice(1));
+
+console.log('\nLeeway window — "Open overlay" opens it once, then brings it forward');
+{
+  reset();
+  check('no window: one windows.create, a popup window at the default size', [await send({type: 'OPEN_OVERLAY_WINDOW'}), windowCalls()],
+    [{ok: true}, [[{...NEW_WINDOW, width: 320, height: 480}]]]);
+  check('its id kept in storage.session', windowId(), 100);
+  tabCalls = [];
+  check('open: no create — brought forward and restored', [await send({type: 'OPEN_OVERLAY_WINDOW'}), windowCalls()],
+    [{ok: true}, [[100, {focused: true, state: 'normal'}]]]);
+
+  reset();
+  await Promise.all([send({type: 'OPEN_OVERLAY_WINDOW'}), send({type: 'OPEN_OVERLAY_WINDOW'})]);
+  check('the button twice in a row, before the page has loaded: one window', [calls('windows.create').length, openWindows.size, windowCalls().at(-1)], [1, 1, [100, {focused: true, state: 'normal'}]]);
+
+  check('a content script cannot open it', [await send({type: 'OPEN_OVERLAY_WINDOW'}, CHATGPT_TAB), calls('windows.create').length], [undefined, 1]);
+}
+
+console.log('\nLeeway window — the kept id is checked; gone, the window is found by its page');
+{
+  reset();
+  // A new browser session (storage.session is empty) and Chrome restored the window.
+  openWindows.set(7, {id: 7, type: 'popup', state: 'minimized'});
+  contexts = [{contextType: 'TAB', documentUrl: PAGE, windowId: 7, tabId: 70}];
+  await send({type: 'OPEN_OVERLAY_WINDOW'});
+  check('found with getContexts: brought forward, no create, its id kept', [windowCalls(), windowId()], [[[7, {focused: true, state: 'normal'}]], 7]);
+
+  reset();
+  sessionStore.set('overlay_window_id', 7); // the window was closed since
+  contexts = [
+    {contextType: 'POPUP', documentUrl: PAGE, windowId: 3, tabId: -1},                  // not a tab
+    {contextType: 'TAB', documentUrl: `${PAGE}?other`, windowId: 4, tabId: 40},          // another URL
+    {contextType: 'TAB', documentUrl: 'chrome-extension://test-extension-id/popup.html', windowId: 5, tabId: 50},
+  ];
+  await send({type: 'OPEN_OVERLAY_WINDOW'});
+  check('kept id closed, no page of it open: a new window, its id kept', [tabCalls.filter(c => c[0] === 'windows.get').map(c => c[1]), calls('windows.create').length, windowId()], [[7], 1, 100]);
+
+  reset();
+  const getContexts = chrome.runtime.getContexts;
+  delete chrome.runtime.getContexts; // Chrome before 116
+  await send({type: 'OPEN_OVERLAY_WINDOW'});
+  await send({type: 'OPEN_OVERLAY_WINDOW'});
+  chrome.runtime.getContexts = getContexts;
+  check('without getContexts: the kept id still finds it', [calls('windows.create').length, windowCalls().at(-1)], [1, [100, {focused: true, state: 'normal'}]]);
+}
+
+console.log('\nLeeway window — where it was left, and a place that is off screen now');
+{
+  reset();
+  store.set('overlay_window_bounds', {left: 1700, top: 90, width: 300, height: 500});
+  await send({type: 'OPEN_OVERLAY_WINDOW'});
+  check('opens at the saved place and size', windowCalls(), [[{...NEW_WINDOW, left: 1700, top: 90, width: 300, height: 500}]]);
+
+  reset();
+  store.set('overlay_window_bounds', {left: 2500, top: 90, width: 300, height: 500}); // that monitor is gone
+  createRefuses = props => props.left !== undefined;
+  check('refused: once more without the place, at the default size', [await send({type: 'OPEN_OVERLAY_WINDOW'}), windowCalls(), windowId()],
+    [{ok: true}, [[{...NEW_WINDOW, left: 2500, top: 90, width: 300, height: 500}], [{...NEW_WINDOW, width: 320, height: 480}]], 100]);
+
+  reset();
+  store.set('overlay_window_bounds', {left: '10', top: 0, width: -5, height: 500});
+  await send({type: 'OPEN_OVERLAY_WINDOW'});
+  check('saved bounds that are not whole numbers: the default size', windowCalls(), [[{...NEW_WINDOW, width: 320, height: 480}]]);
+
+  reset();
+  createRefuses = () => true;
+  check('refused with no saved place: no retry, the popup hears it failed', [await send({type: 'OPEN_OVERLAY_WINDOW'}), calls('windows.create').length, windowId()], [{ok: false}, 1, null]);
+}
+
+console.log('\nLeeway window — never opened without the button');
+{
+  reset();
+  handlers.installed();
+  handlers.startup();
+  await settle();
+  check('install and browser start: no window', calls('windows.create'), []);
+}
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);

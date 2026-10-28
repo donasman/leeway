@@ -54,7 +54,8 @@
   "open_chatgpt": {"message": "ChatGPT 用量"},
   "open_gemini": {"message": "Gemini 用量"},
   "open_overlay": {"message": "開啟浮動視窗"},
-  "overlay_hint": {"message": "請在一般網頁分頁中開啟。"},
+  "overlay_pin": {"message": "置頂顯示"},
+  "overlay_window_note": {"message": "關閉此視窗後，置頂浮動視窗也會關閉。"},
   "overlay_empty": {"message": "請在彈出式視窗中開啟服務。"},
   "account_n": {"message": "帳戶 {n}"},
 

@@ -1,0 +1,17 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Leeway</title>
+<style>
+/* The overlay's own style (overlay_view.js CSS) goes in first; this is the window's frame around it. */
+body{cursor:default}
+.actions{padding:12px 14px 0}
+#pin{width:100%;padding:7px 10px;border:1px solid #283241;border-radius:8px;background:#1a222d;color:#e7ecf3;font:inherit;font-weight:600;cursor:pointer}
+#pin:hover{background:#222c39}
+#pin[hidden]{display:none}
+.note{margin:0;padding:0 14px 12px;color:#94a1b2;font-size:10.5px}
+</style>
+</head><body>
+<div class="actions"><button id="pin" data-i18n="overlay_pin">Always on top</button></div>
+<div id="ov"></div>
+<p class="note" data-i18n="overlay_window_note">Closing this window also closes the always-on-top overlay.</p>
+<script type="module" src="overlay_window.js"></script>
+</body></html>

@@ -1,11 +1,12 @@
 // Run with: node tests/test_overlay.mjs
 //
-// extension/overlay_inject.js, run the way the popup runs it: injected into a
-// web page, opening a Document Picture-in-Picture window. Here the page and the
-// PiP window are jsdom documents and OVERLAY_DATA is a fixed answer, so what is
-// checked is the rendering: expanded (one block per service) and collapsed
-// (one ring per service), 0% vs "?", stale, Claude organizations, other
-// profiles, and that text from storage is never markup.
+// extension/overlay_view.js — what the overlay draws — opening its Document
+// Picture-in-Picture window the way the Leeway window does (overlay_window.js,
+// tested in test_overlay_window.mjs). Here the PiP window is a jsdom document
+// and the values are fixed, so what is checked is the rendering: expanded (one
+// block per service) and collapsed (one ring per service), 0% vs "?", stale,
+// Claude organizations, other profiles, that text from storage is never
+// markup, and the window sizes.
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'node:fs';
 
@@ -19,29 +20,24 @@ function check(label, got, expected) {
   ok ? passed++ : failed++;
 }
 
-const SOURCE = readFileSync(new URL('../extension/overlay_inject.js', import.meta.url), 'utf8');
 const KO = Object.fromEntries(Object.entries(
   JSON.parse(readFileSync(new URL('../extension/_locales/ko/messages.json', import.meta.url), 'utf8')),
 ).map(([key, value]) => [key, value.message]));
 const settle = async () => { for (let i = 0; i < 10; i += 1) await new Promise(resolve => setImmediate(resolve)); };
 
-// Opens the overlay with `data` as background's OVERLAY_DATA answer.
+globalThis.chrome = {i18n: {getMessage: key => KO[key] ?? ''}};
+const { openPip } = await import('../extension/overlay_view.js');
+
+// Opens the overlay with `data` drawn in it, as the "Always on top" click does.
 async function openOverlay(data) {
-  const page = new JSDOM('<!doctype html><html><head></head><body></body></html>', {runScripts: 'outside-only', url: 'https://example.com/'});
   const pip = new JSDOM('<!doctype html><html><head></head><body></body></html>');
   const resizes = [];
   const requests = [];
   Object.assign(pip.window, {outerHeight: 270, innerHeight: 240, resizeTo: (w, h) => resizes.push([w, h])});
-  page.window.documentPictureInPicture = {window: null, requestWindow: async options => { requests.push(options); return pip.window; }};
-  page.window.chrome = {
-    runtime: {sendMessage: async message => (message.type === 'OVERLAY_DATA' ? structuredClone(data) : undefined)},
-    storage: {onChanged: {addListener() {}, removeListener() {}}},
-    i18n: {getMessage: key => KO[key] ?? ''},
-  };
-  page.window.eval(SOURCE);
+  await openPip({window: null, requestWindow: async options => { requests.push(options); return pip.window; }}, structuredClone(data));
   await settle();
   const root = pip.window.document.getElementById('ov');
-  return {page, pip, root, resizes, requests, click: async () => { root.dispatchEvent(new pip.window.MouseEvent('click', {bubbles: true})); await settle(); }};
+  return {pip, root, resizes, requests, click: async () => { root.dispatchEvent(new pip.window.MouseEvent('click', {bubbles: true})); await settle(); }};
 }
 
 const row = (label, percent, reset = '', primary = false) => ({label, percent, reset, primary});

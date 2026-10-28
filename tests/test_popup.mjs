@@ -54,7 +54,6 @@ let permissionAnswer = true;
 let requestGate = null;
 let refreshGate = null;
 let getGate = null;
-let activeTab = {id: 1, url: 'https://example.com/'};
 
 // Like Chrome: onChanged comes later, and only for values that changed.
 // (setImmediate, not setTimeout: Windows timers tick every ~15 ms.)
@@ -140,12 +139,8 @@ globalThis.chrome = {
       return true;
     },
   },
-  tabs: {
-    async query() { return [activeTab]; },
-  },
-  scripting: {
-    async executeScript(opts) { calls.push(['scripting.executeScript', opts.files]); return [{result: undefined}]; },
-  },
+  // No chrome.tabs or chrome.scripting: the popup looks at no tab and injects
+  // into none (the overlay opens from the Leeway window, CLAUDE.md §3).
 };
 
 // ---- helpers ---------------------------------------------------------------
@@ -510,19 +505,13 @@ console.log('\nGemini — turning on asks for the gemini.google.com permission')
   check('on, waiting for the first read', [$('toggle_gemini').checked, card('gemini').status, card('gemini').rows], [true, '대기 중', []]);
 }
 
-console.log('\noverlay button — injects overlay_inject.js into the active tab');
+console.log('\noverlay button — background opens the Leeway window, whatever tab is in front');
 {
-  activeTab = {id: 1, url: 'https://example.com/'};
+  // The same on a web page, the Web Store or a chrome:// page: the popup asks
+  // background and looks at no tab (the stub has no chrome.tabs to look with).
   await clickAndSettle('openOverlay');
-  check('normal web page: injects the overlay, no hint', [calls, $('ovmsg').textContent], [[['scripting.executeScript', ['overlay_inject.js']]], '']);
-  activeTab = {id: 2, url: 'chrome://extensions'};
-  await clickAndSettle('openOverlay');
-  check('chrome:// page: no inject, shows the hint', [calls, $('ovmsg').textContent], [[], KO.overlay_hint]);
-  // Without the "tabs" permission the url comes from activeTab (opening the
-  // popup grants it); a restricted page gets no grant, so no url at all.
-  activeTab = {id: 3};
-  await clickAndSettle('openOverlay');
-  check('no url (restricted page, no activeTab grant): no inject, shows the hint', [calls, $('ovmsg').textContent], [[], KO.overlay_hint]);
+  check('one OPEN_OVERLAY_WINDOW, nothing else', calls, [['runtime.sendMessage', 'OPEN_OVERLAY_WINDOW']]);
+  check('no "open it from a web page" line any more', [$('ovmsg'), 'overlay_hint' in KO], [null, false]);
 }
 
 // ---------------------------------------------------------------------------
