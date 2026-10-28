@@ -209,7 +209,7 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 
 ## 7. 알려진 과제
 
-- `activeTab`을 뺐다(0.6.4, chore/drop-activetab, 2026-10-28). feat/overlay-window 이후로 쓰는 곳이 없었다. 0.6.4를 제출할 때 스토어 개인정보 탭에서 activeTab 사유를 지우고, `scripting` 사유에서 오버레이 문구를 지운다.
+- `activeTab`을 뺐다(0.6.4, chore/drop-activetab, 2026-10-28). feat/overlay-window 이후로 쓰는 곳이 없었다. 0.6.4는 스토어에 올리지 않았으므로 1.0.0을 제출할 때 스토어 개인정보 탭에서 activeTab 사유를 지우고, `scripting` 사유에서 오버레이 문구를 지운다.
 - Leeway 창·PiP(feat/overlay-window). 2026-10-28 Windows 11에서 자동화로 실측했다. 별도 프로필의 Chrome 156과 Chrome for Testing 156을 쓰고, CDP 클릭(사용자 활성화 있음)과 Windows API·UI Automation으로 확인했다.
   확장은 claude.ai 권한을 manifest에 넣은 테스트 사본이고, 값은 storage에 넣었다.
   - 확인됨: 설치 직후 창 없음. 웹 스토어·새 탭·`chrome://extensions`·일반 사이트·claude.ai에서 모두 그 탭 앞에 창이 뜸. 두 번 연속 눌러도 창 1개. 최소화 뒤 누르면 같은 창 복원.
