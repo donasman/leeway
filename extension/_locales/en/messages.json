@@ -54,7 +54,7 @@
   "open_chatgpt": {"message": "ChatGPT usage"},
   "open_gemini": {"message": "Gemini usage"},
   "open_overlay": {"message": "Open overlay"},
-  "overlay_pin": {"message": "Always on top"},
+  "overlay_pin": {"message": "Float on top"},
   "overlay_window_note": {"message": "Closing this window also closes the always-on-top overlay."},
   "overlay_empty": {"message": "Turn on a service in the popup."},
   "account_n": {"message": "Account {n}", "description": "Name of a Claude organization whose plan is unknown. {n} is its position, e.g. 2."},

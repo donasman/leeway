@@ -28,7 +28,7 @@ const settle = async () => { for (let i = 0; i < 10; i += 1) await new Promise(r
 globalThis.chrome = {i18n: {getMessage: key => KO[key] ?? ''}};
 const { openPip } = await import('../extension/overlay_view.js');
 
-// Opens the overlay with `data` drawn in it, as the "Always on top" click does.
+// Opens the overlay with `data` drawn in it, as the "Float on top" click does.
 async function openOverlay(data) {
   const pip = new JSDOM('<!doctype html><html><head></head><body></body></html>');
   const resizes = [];

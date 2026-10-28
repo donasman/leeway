@@ -1,6 +1,6 @@
 // The Leeway window (CLAUDE.md §4). The popup's "Open overlay" has background
 // open it (or bring the open one forward). It shows the expanded overlay
-// itself, in an ordinary window that others can cover, and its "Always on top"
+// itself, in an ordinary window that others can cover, and its "Float on top"
 // button opens the Document Picture-in-Picture overlay from here. Being an
 // extension page, it works whatever tab is in front (the Web Store, chrome://
 // pages), injects into no tab, and the PiP's title bar shows the extension's
@@ -100,6 +100,15 @@ pinButton.addEventListener('click', async () => {
 // Chrome before 116 has no Document Picture-in-Picture: this window only.
 if (!('documentPictureInPicture' in window)) pinButton.hidden = true;
 
+// "Open overlay", then Enter (or Space): the button has the focus whenever this
+// window does — opened, brought forward or restored. The popup's click can't
+// open the PiP from here (requestWindow wants the user's action in this page);
+// a key press here is one, as a click is. A key held down since the popup
+// repeats into this window: only a fresh press counts.
+const focusPin = () => { if (!pinButton.hidden) pinButton.focus(); };
+window.addEventListener('focus', focusPin);
+pinButton.addEventListener('keydown', (event) => { if (event.repeat) event.preventDefault(); });
+
 // Where the user leaves this window, for the next time background opens it.
 // Only its normal state: minimized (while the PiP is up) or maximized bounds
 // are no place to reopen at.
@@ -125,3 +134,4 @@ for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = msg(
 const style = document.createElement('style'); style.textContent = CSS; document.head.prepend(style);
 paint();
 refresh();
+focusPin();
