@@ -564,8 +564,9 @@ async function onGeminiTabRemoved(tabId) {
 
 // ---- the Leeway window (CLAUDE.md §4) --------------------------------------
 // The popup's "Open overlay" opens this small extension window, or brings the
-// open one forward (restored if minimized); its own "Always on top" button
-// opens the PiP overlay. Nothing opens it without that click. Its id is kept
+// open one forward (restored if minimized); its own "Float on top" button
+// (focused, so Enter works too) opens the PiP overlay. Nothing opens it
+// without that click. Its id is kept
 // in storage.session and checked with windows.get before use; when that is
 // gone (a new browser session, a window Chrome restored) the window is found
 // again by its page, with runtime.getContexts (Chrome 116+). It reopens where

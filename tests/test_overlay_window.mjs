@@ -4,7 +4,8 @@
 // overlay_window.js (no copied source, CLAUDE.md §5) with an in-memory chrome.*
 // stub and a stand-in for Document Picture-in-Picture whose window is another
 // jsdom document. Covers the Leeway window (CLAUDE.md §4): what it shows, the
-// "Always on top" button (one PiP, this window minimized), closing the PiP
+// "Float on top" button (one PiP, this window minimized; focused, for Enter),
+// closing the PiP
 // (this window comes back), new values reaching both, and where the window is
 // left. What the overlay draws is test_overlay.mjs; opening the window is
 // test_background.mjs.
@@ -78,8 +79,12 @@ globalThis.chrome = {
     onBoundsChanged: {addListener: fn => boundsListeners.push(fn)},
   },
 };
-// The page's global is its window, as in Chrome.
+// The page's global is its window, as in Chrome. Its own events (focus) go to
+// a fresh target for each window opened.
 globalThis.window = globalThis;
+let windowEvents = new EventTarget();
+globalThis.addEventListener = (...args) => windowEvents.addEventListener(...args);
+globalThis.dispatchEvent = event => windowEvents.dispatchEvent(event);
 
 // Document Picture-in-Picture: requestWindow() hands back a jsdom window and
 // makes it documentPictureInPicture.window, as Chrome does, until it closes.
@@ -105,6 +110,7 @@ const closePip = async () => { const win = dpip.window; dpip.window = null; win.
 let tick = null;
 async function openWindow(tag, {pip = true} = {}) {
   globalThis.document = new JSDOM(html).window.document;
+  windowEvents = new EventTarget();
   changeListeners = [];
   boundsListeners = [];
   calls.length = 0;
@@ -148,7 +154,7 @@ console.log('\nthe window — the expanded overlay, the button above it, one lin
   check('nothing opened by itself, the window left as it is', [requests.length, calls.filter(c => c[0] === 'windows.update')], [0, []]);
 }
 
-console.log('\n"Always on top" — one PiP, then this window steps aside');
+console.log('\n"Float on top" — one PiP, then this window steps aside');
 {
   await openWindow('pin');
   await pinClick();
@@ -166,7 +172,7 @@ console.log('\n"Always on top" — one PiP, then this window steps aside');
   check('and the button opens a new one', [requests.length, calls.at(-1)], [2, ['windows.update', 42, {state: 'minimized'}]]);
 }
 
-console.log('\n"Always on top" — the PiP opens as tall as what this window shows');
+console.log('\n"Float on top" — the PiP opens as tall as what this window shows');
 {
   storeOnly(claudeOn(claudeOk(72)));
   await openWindow('height');
@@ -180,7 +186,7 @@ console.log('\n"Always on top" — the PiP opens as tall as what this window sho
   await closePip();
 }
 
-console.log('\n"Always on top" — Chrome refuses, has no Document PiP, or this is a tab');
+console.log('\n"Float on top" — Chrome refuses, has no Document PiP, or this is a tab');
 {
   await openWindow('refused');
   refuse = true;
@@ -198,6 +204,26 @@ console.log('\n"Always on top" — Chrome refuses, has no Document PiP, or this 
   await closePip();
   check('...nor brought back', calls, []);
   ownWindow = {id: 42, type: 'popup', state: 'normal'};
+}
+
+console.log('\nEnter — the button has the focus whenever this window does');
+{
+  await openWindow('focus');
+  const active = () => globalThis.document.activeElement?.id || globalThis.document.activeElement?.tagName;
+  check('opened: the button has the focus, so Enter (or Space) presses it', active(), 'pin');
+  $('pin').blur(); // e.g. a click on the values
+  globalThis.dispatchEvent(new Event('focus')); // brought forward by "Open overlay", or restored
+  check('focused again: the button has it again', active(), 'pin');
+  const keydown = repeat => {
+    const event = new globalThis.document.defaultView.KeyboardEvent('keydown', {key: 'Enter', repeat, bubbles: true, cancelable: true});
+    $('pin').dispatchEvent(event);
+    return event.defaultPrevented;
+  };
+  check('a fresh press is left to the button; a held key repeating since the popup is not', [keydown(false), keydown(true)], [false, true]);
+  check('the focus alone opens nothing', [requests.length, calls.filter(c => c[0] === 'windows.update')], [0, []]);
+
+  await openWindow('focus-no-pip', {pip: false});
+  check('no Document PiP: the hidden button takes no focus', active(), 'BODY');
 }
 
 console.log('\nnew values — the window and the PiP both');

@@ -54,7 +54,7 @@
   "open_chatgpt": {"message": "ChatGPT 사용량"},
   "open_gemini": {"message": "Gemini 사용량"},
   "open_overlay": {"message": "오버레이 열기"},
-  "overlay_pin": {"message": "항상 위로"},
+  "overlay_pin": {"message": "항상 위에 띄우기"},
   "overlay_window_note": {"message": "이 창을 닫으면 항상 위 오버레이도 닫힙니다."},
   "overlay_empty": {"message": "확장 팝업에서 서비스를 켜세요."},
   "account_n": {"message": "계정 {n}"},

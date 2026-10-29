@@ -54,7 +54,7 @@
   "open_chatgpt": {"message": "Uso de ChatGPT"},
   "open_gemini": {"message": "Uso de Gemini"},
   "open_overlay": {"message": "Abrir superposición"},
-  "overlay_pin": {"message": "Siempre visible"},
+  "overlay_pin": {"message": "Mostrar siempre encima"},
   "overlay_window_note": {"message": "Al cerrar esta ventana también se cierra la superposición siempre visible."},
   "overlay_empty": {"message": "Activa un servicio en la ventana emergente."},
   "account_n": {"message": "Cuenta {n}"},

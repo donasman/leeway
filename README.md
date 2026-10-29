@@ -32,7 +32,7 @@ The extension keeps the latest usage in its own storage and shows it in its popu
 3. In the extension popup, turn on Claude, ChatGPT and/or Gemini and allow the site permission it asks for. Gemini is read from an open gemini.google.com/usage tab — keep that page open (the **Gemini usage** button opens it) for its values to refresh.
 4. Keep the normal Chrome profile signed in to those services. Values refresh every 2 minutes; **Refresh** in the popup reads them again right away.
 
-The floating overlay is built into the extension (click **Open overlay** in the popup, then **Always on top**); it uses Chrome's Document Picture-in-Picture, so there is no separate app to install.
+The floating overlay is built into the extension (click **Open overlay** in the popup, then **Float on top**, or just press Enter); it uses Chrome's Document Picture-in-Picture, so there is no separate app to install.
 
 ## Popup
 
@@ -75,7 +75,7 @@ If that endpoint fails (it is unofficial and may change), and a Settings > Usage
 
 ## Overlay
 
-Click **Open overlay** in the popup — the same on any tab — to open the small Leeway window, which shows the same remaining-usage bars as the popup. Its **Always on top** button opens a small always-on-top window through Chrome's Document Picture-in-Picture — no separate app to install (needs Chrome 116+) — and then minimizes the Leeway window.
+Click **Open overlay** in the popup — the same on any tab — to open the small Leeway window, which shows the same remaining-usage bars as the popup. Its **Float on top** button opens a small always-on-top window through Chrome's Document Picture-in-Picture — no separate app to install (needs Chrome 116+) — and then minimizes the Leeway window. The button has the focus when the window opens, so **Open overlay** then Enter does it too. Chrome lets only a click or key press in the Leeway window itself open that window, so the popup's click can't do both.
 
 - Both refresh live, like the popup.
 - Click the always-on-top window to collapse it to a single line; click again to expand. The window resizes to match.

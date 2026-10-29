@@ -54,7 +54,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `extension/peers.js` | helper로 보낼 값 만들기, helper 응답 해석 |
 | `extension/i18n.js` | `chrome.i18n` → view.js용 라벨 맵 |
 | `extension/popup.html`, `popup.js` | 팝업 |
-| `extension/overlay_window.html`, `overlay_window.js` | Leeway 창(§4). 펼친 오버레이를 보여주고 "항상 위로"로 Document Picture-in-Picture 오버레이를 연다. 값은 storage에서 직접 읽고, 자기 창 위치를 저장한다 |
+| `extension/overlay_window.html`, `overlay_window.js` | Leeway 창(§4). 펼친 오버레이를 보여주고 "항상 위에 띄우기"(포커스가 있어 Enter로도)로 Document Picture-in-Picture 오버레이를 연다. 값은 storage에서 직접 읽고, 자기 창 위치를 저장한다 |
 | `extension/overlay_view.js` | 오버레이 그리기(펼침·접힘, CSS, PiP 열기·크기 맞춤). 그리는 HTML과 스타일은 `tests/test_overlay.mjs`가 고정 |
 | `extension/_locales/{en,ko,es,ja,zh_CN,zh,zh_TW}` | UI 문자열 6개 언어. 간체 중국어는 `zh_CN`(스토어 표시)과 `zh`(대체용) 두 폴더, 내용은 같게 유지. 번체는 `zh_TW` |
 | `helper/` | Leeway helper (Go, 의존성 없음). Native Messaging 호스트, `install`/`uninstall` |
@@ -165,8 +165,11 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 - 오버레이는 **Leeway 창이 연다.** 팝업의 "오버레이 열기"는 어느 탭에서나(웹 스토어·`chrome://`·새 탭 포함) 같은 동작이다.
   background가 Leeway 창(확장 페이지, `type: 'popup'` 창)을 열거나, 이미 열려 있으면 새로 만들지 않고 앞으로 가져온다(최소화돼 있으면 복원).
   버튼을 누르지 않으면 창도 PiP도 열지 않는다(설치 직후 포함).
-  - Leeway 창은 펼친 오버레이를 보여준다(다른 창에 가려질 수 있는 일반 창. 클릭해도 접히지 않음). 위에 "항상 위로", 아래에 "이 창을 닫으면 항상 위 오버레이도 닫힙니다".
-  - "항상 위로" → Document PiP를 열고 Leeway 창을 최소화한다. PiP가 이미 열려 있으면 새로 열지 않고 창만 다시 최소화한다.
+  - Leeway 창은 펼친 오버레이를 보여준다(다른 창에 가려질 수 있는 일반 창. 클릭해도 접히지 않음). 위에 "항상 위에 띄우기"(1.0.0까지는 "항상 위로"), 아래에 "이 창을 닫으면 항상 위 오버레이도 닫힙니다".
+  - "항상 위에 띄우기" → Document PiP를 열고 Leeway 창을 최소화한다. PiP가 이미 열려 있으면 새로 열지 않고 창만 다시 최소화한다.
+  - 창이 열리거나 앞으로 오거나 복원될 때마다(창 `focus`) 이 버튼에 포커스를 둔다. "오버레이 열기" 다음 Enter·Space로 PiP가 열린다.
+    팝업의 클릭으로 PiP까지 열 수는 없다: `requestWindow`는 그 페이지(Leeway 창) 안의 사용자 동작이 필요하고, 팝업의 클릭은 넘어오지 않는다.
+    팝업은 포커스를 잃으면 닫혀서 PiP를 여는 페이지가 될 수 없다. 키를 누른 채 창이 열리면 들어오는 자동 반복(`repeat`)은 무시한다.
   - PiP를 닫으면(X, "탭으로 돌아가기" 버튼, Chrome이 닫은 경우 모두) Leeway 창이 복원된다. **Leeway 창을 닫으면 PiP도 닫힌다.** `disallowReturnToOpener`는 기본값(돌아가기 버튼 보임)이다.
   - Leeway 창은 마지막 위치·크기로 연다. Chrome이 거부하면(화면에 50% 미만, Chrome 102+) 위치 없이 기본 크기 320×480으로 한 번 더 연다.
   - 오래됨과 "N분 전"은 그릴 때마다 시계로 계산한다. 창이 최소화돼 30초 타이머가 늦어져도 값은 맞고, 바뀌는 시점만 늦을 수 있다.
@@ -221,6 +224,11 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
   - 150%는 `--force-device-scale-factor=1.5`로 흉내 내서만 봤고, 보조 모니터 분리는 화면 밖 좌표로만 흉내 냈다. 실제 계정 값과 사용 중인 Chrome 프로필에서는 미확인.
   - 처음 여는 크기: 고치기 전에는 요청한 280×270 그대로 열렸다. 고친 뒤에는 서비스 3개일 때 280×202(내용 202, 스크롤 없음), 1개일 때 280×140(최소값)으로 열린다(Chrome for Testing 156).
   - main(현재 탭 주입)과의 크기 비교는 자동화로 PiP가 열리지 않아 못 했다. 접힘 높이는 크기 코드가 같으니 전에도 같았을 것으로 보지만 미확인.
+- Enter로 PiP 열기(feat/pin-enter, 2026-10-28, Chrome 156, 압축해제 로드한 이 브랜치, 키는 CDP `Input.dispatchKeyEvent`).
+  - 확인됨: 팝업의 "오버레이 열기"로 창이 뜨면 포커스가 버튼에 있고(`document.hasFocus()` true), 키를 누르지 않으면 2초 넘게 아무것도 열리지 않음.
+  - 확인됨: Enter → PiP 열림·창 최소화. PiP 닫기 → 창 복원·포커스 다시 버튼. Space도 열림. 자동 반복 keydown만으로는 안 열림.
+    포커스를 버튼에서 뺀 뒤 "오버레이 열기"로 앞으로 가져와도 포커스가 버튼으로 돌아옴. 창은 1개.
+  - 미확인: 실제 키보드(물리 키)와 사용 중인 Chrome 프로필. 다른 앱이 앞에 있을 때 Windows가 새 창에 키보드 포커스를 주는지.
 
 - `tabs` 권한을 뺐다(0.6.3, 2026-10-28 스토어 게시). 실제 Chrome에서 권한, 세 서비스 새로고침, Gemini 버튼, 오버레이 열기를 확인했다(2026-10-27). ChatGPT 대체 경로(설정 > 사용량 탭 읽기)를 `tabs` 없이 실제로 탄 경우와, 0.6.2 → 0.6.3 업데이트 때 재승인 요청이 없었는지는 미확인.
 - ChatGPT 페이지 대체 경로(fix/chatgpt-five-hour, 2026-10-28): 한 카드의 %가 없을 때 두 한도가 함께 든 묶음까지 올라가 다른 한도의 값을 가져가던 것을 고쳤다.

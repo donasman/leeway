@@ -5,7 +5,7 @@
 ## What it does
 - Shows the remaining percentage and reset time of each usage limit, as the signed-in usage pages show them (not a token-count estimate). A value that could not be read is shown as "?", never as 0%.
 - Toolbar badge with the lowest remaining value among the enabled services, color-coded (green from 50, orange 20–49, red below 20, grey when stale).
-- Always-on-top floating overlay through Chrome's Document Picture-in-Picture (Chrome 116+), opened from a small Leeway window (popup: Open overlay, then Always on top), collapsible to one line.
+- Always-on-top floating overlay through Chrome's Document Picture-in-Picture (Chrome 116+), opened from a small Leeway window (popup: Open overlay, then Float on top or Enter), collapsible to one line.
 - Plan names (e.g. Max 5x, Plus) when the service reports them; every Claude organization of one sign-in shown separately.
 - Refreshes every 2 minutes; UI in English, Korean, Spanish, Japanese, Chinese (Simplified and Traditional).
 
