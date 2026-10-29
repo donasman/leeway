@@ -1,6 +1,6 @@
 {
   "appName": {"message": "Leeway — AI 사용량·한도 미터"},
-  "appDesc": {"message": "Claude·ChatGPT·Gemini의 남은 사용량(5시간·주간 한도)을 팝업과 툴바 배지로. 본인 로그인 계정의 사용량 페이지만 읽습니다."},
+  "appDesc": {"message": "Claude·ChatGPT·Gemini 사용량(5시간·주간 한도)을 팝업과 툴바 배지로. 사용한 비율과 남은 비율 중 골라 봅니다. 본인 로그인 계정의 사용량 페이지만 읽습니다."},
 
   "status_ok": {"message": "정상"},
   "status_stale": {"message": "오래됨"},

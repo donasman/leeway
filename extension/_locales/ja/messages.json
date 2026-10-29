@@ -1,6 +1,6 @@
 {
   "appName": {"message": "Leeway — AI 使用量・利用上限メーター"},
-  "appDesc": {"message": "Claude・ChatGPT・Gemini の利用上限（5時間・週間）の残りを、ポップアップとツールバーのバッジに表示します。読み取るのはご自身のログイン中のセッションだけです。"},
+  "appDesc": {"message": "Claude・ChatGPT・Gemini の利用上限（5時間・週間）の使用済みまたは残りを、ポップアップとツールバーのバッジに表示します。読み取るのはご自身のログイン中のセッションだけです。"},
 
   "status_ok": {"message": "正常"},
   "status_stale": {"message": "古いデータ"},

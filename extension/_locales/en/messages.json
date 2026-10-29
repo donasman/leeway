@@ -1,6 +1,6 @@
 {
   "appName": {"message": "Leeway — AI usage & limits meter"},
-  "appDesc": {"message": "Remaining Claude, ChatGPT & Gemini usage — 5-hour & weekly limits — in a popup and toolbar badge. Reads only your own usage pages."},
+  "appDesc": {"message": "Claude, ChatGPT & Gemini usage — 5-hour & weekly limits, used or left — in a popup and toolbar badge. Reads only your usage pages."},
 
   "status_ok": {"message": "OK"},
   "status_stale": {"message": "Outdated"},

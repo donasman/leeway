@@ -1,6 +1,6 @@
 {
   "appName": {"message": "Leeway — medidor de uso y límites de IA"},
-  "appDesc": {"message": "Uso restante de Claude, ChatGPT y Gemini (límites de 5 horas y semanales) en ventana emergente e insignia. Solo lee tus sesiones."},
+  "appDesc": {"message": "Uso de Claude, ChatGPT y Gemini (5 horas y semanal), usado o restante, en ventana emergente e insignia. Solo lee tus sesiones."},
 
   "status_ok": {"message": "OK"},
   "status_stale": {"message": "Desactualizado"},

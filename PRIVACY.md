@@ -1,10 +1,10 @@
 # Privacy Policy — Leeway
 
-_Last updated: 2026-10-28_
+_Last updated: 2026-10-29_
 
-Leeway is a Chrome extension that shows how much of your **remaining** usage is
-left on Claude, ChatGPT and Gemini, in its popup, toolbar badge, and an optional
-floating overlay. This policy explains exactly what it reads, where that stays,
+Leeway is a Chrome extension that shows how much of your Claude, ChatGPT and
+Gemini usage limits you have used (or, if you switch it, what is left), in its
+popup, toolbar badge, and an optional floating overlay. This policy explains exactly what it reads, where that stays,
 and what it never does.
 
 **Unofficial project.** Leeway is not affiliated with, endorsed by, or
@@ -59,6 +59,7 @@ conversation page.
 - Which services you turned on.
 - Where you last left the Leeway window (its position and size on screen), so
   it reopens there.
+- Whether numbers are shown as used or as left (the popup's switch).
 
 All of this lives only in your browser profile, on your device. It is not sent
 anywhere. Removing the extension removes it.
@@ -99,8 +100,8 @@ If you use several Chrome profiles (for example one per Claude account), you can
 see all of their usage in one popup and overlay. This needs the Leeway helper, a
 small program you install yourself on Windows (`leeway-helper.exe`).
 
-- **What each profile sends to the helper**: the same values its popup shows —
-  remaining percentages, reset times, the plan name — plus the name you give
+- **What each profile sends to the helper**: the usage values its popup shows —
+  stored as remaining percentages — reset times, the plan name — plus the name you give
   the profile (e.g. "Work") and a random id Leeway made for that profile.
 - **What it never sends**: cookies, passwords, session or access tokens, email
   addresses, organization names, page text or conversations.

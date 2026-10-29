@@ -1,6 +1,6 @@
 {
-  "appName": {"message": "Leeway — AI 剩余用量与限额监控"},
-  "appDesc": {"message": "在弹出窗口和工具栏徽章中显示 Claude、ChatGPT 和 Gemini 的剩余用量（5小时和每周限额）。仅读取你本人已登录账号的用量页面。"},
+  "appName": {"message": "Leeway — AI 用量与限额监控"},
+  "appDesc": {"message": "在弹出窗口和工具栏徽章中显示 Claude、ChatGPT 和 Gemini 的用量（5小时和每周限额，可切换已用或剩余）。仅读取你本人已登录账号的用量页面。"},
 
   "status_ok": {"message": "正常"},
   "status_stale": {"message": "已过时"},
