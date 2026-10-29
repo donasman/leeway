@@ -7,12 +7,12 @@
 - Toolbar badge with the lowest remaining value among the enabled services, color-coded (green from 50, orange 20–49, red below 20, grey when stale).
 - Always-on-top floating overlay through Chrome's Document Picture-in-Picture (Chrome 116+), opened from a small Leeway window (popup: Open overlay, then Float on top or Enter), collapsible to one line.
 - Plan names (e.g. Max 5x, Plus) when the service reports them; every Claude organization of one sign-in shown separately.
-- Refreshes every 2 minutes; UI in English, Korean, Spanish, Japanese, Chinese (Simplified and Traditional).
+- Refreshes every minute and when the popup opens; UI in English, Korean, Spanish, Japanese, Chinese (Simplified and Traditional).
 
 ## Supported services
 - Claude (claude.ai): 5-hour and weekly limits, read in the background from the usage endpoint claude.ai's usage page uses.
 - ChatGPT (chatgpt.com): what Settings > Usage shows — the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel (5-hour, weekly or 30-day depending on the account). Ordinary chat conversations are not counted there.
-- Gemini (gemini.google.com): read from an open gemini.google.com/usage tab; that page must be open. The popup's "Gemini usage" button opens that page, or switches to it if it is already open, and reads it once it has loaded.
+- Gemini (gemini.google.com): read from an open gemini.google.com/usage tab; that page must be open. The popup's "Gemini usage" button opens that page, or switches to it if it is already open, and reads it once it has loaded. Leeway keeps that tab loaded and reloads it in the background when its numbers are more than five minutes old (never while it is in view).
 
 ## Privacy
 - Uses the sessions already signed in to in Chrome. No sign-in, and no cookie, password or API key to paste.

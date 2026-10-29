@@ -209,6 +209,7 @@ const timers = await openPopup('first');
 console.log('\nopened — values from storage, no desktop app running');
 {
   check('version from manifest', $('version').textContent, `v${manifest.version}`);
+  check('opening it asks background for a round if the last is old (no button pressed)', calls.filter(c => c[0] === 'runtime.sendMessage'), [['runtime.sendMessage', 'REFRESH_IF_OLD']]);
   check('static lang matches the manifest default_locale', new JSDOM(html).window.document.documentElement.lang, manifest.default_locale);
   check('lang set from the UI language on load', document.documentElement.lang, 'ko');
   const enMessages = JSON.parse(readFileSync(new URL('../extension/_locales/en/messages.json', import.meta.url), 'utf8'));

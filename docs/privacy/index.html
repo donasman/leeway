@@ -53,7 +53,7 @@ footer{border-top:1px solid var(--line);margin-top:44px;padding-top:18px;color:v
 <ul>
   <li><strong>Claude / ChatGPT</strong> — Leeway calls the same authenticated usage endpoint the service's own usage page uses, with your browser's existing session, and reads only the usage limits (remaining percentage and reset time) and which plan the account is on, shown as a fixed product name such as "Max 5x" or "Plus". For ChatGPT it also needs a short-lived access token from your signed-in session to make that one request; the token is used for that request only and is <strong>never stored, logged, or sent anywhere</strong>. Email and account identifiers in the response are ignored.</li>
   <li><strong>Claude organizations</strong> — one claude.ai sign-in can belong to several organizations (for example a personal plan and a Team workspace). Leeway reads the usage of each organization that has chat limits, so you can see how much is left in each. An organization's id is used only to request its usage and is not stored; organization names (which can contain your email address) are not read.</li>
-  <li><strong>Gemini</strong> — Gemini has no usage API, so Leeway reads the numbers already shown on an open <code>gemini.google.com/usage</code> tab (the current-usage and weekly cards). It reads only those usage strings and the "updated N ago" text — not the rest of the page, your prompts, or your conversations — and it never opens a tab on its own.</li>
+  <li><strong>Gemini</strong> — Gemini has no usage API, so Leeway reads the numbers already shown on an open <code>gemini.google.com/usage</code> tab (the current-usage and weekly cards). It reads only those usage strings and the "updated N ago" text — not the rest of the page, your prompts, or your conversations — and it never opens a tab on its own. If that tab sits in the background with numbers more than five minutes old, or Chrome put it to sleep, Leeway reloads it (never while you are looking at it) and keeps it from being unloaded.</li>
 </ul>
 <p>Leeway injects a content script <strong>only on a service's usage screen</strong>, never on a conversation page.</p>
 
@@ -77,7 +77,7 @@ footer{border-top:1px solid var(--line);margin-top:44px;padding-top:18px;color:v
 <h2>Permissions, and why</h2>
 <ul>
   <li><strong>storage</strong> — keep the latest usage on your device for the popup and badge.</li>
-  <li><strong>alarms</strong> — refresh usage on a 2-minute schedule.</li>
+  <li><strong>alarms</strong> — refresh usage on a 1-minute schedule.</li>
   <li><strong>scripting</strong> — read the rendered numbers from a provider's already-open usage tab (ChatGPT's page fallback, and Gemini). Leeway finds that tab through the site access below; it does not ask for the "tabs" permission, so it sees the address of a tab only on the sites you turned on.</li>
   <li><strong>Site access</strong> to <code>claude.ai</code>, <code>chatgpt.com</code>, <code>gemini.google.com</code> — these are <strong>optional</strong> and requested only when you turn that service on.</li>
   <li><strong>nativeMessaging</strong> — <strong>optional</strong>, requested only when you turn on "Other Chrome profiles". It lets Leeway talk to the Leeway helper on your computer.</li>

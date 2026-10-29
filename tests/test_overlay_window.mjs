@@ -63,7 +63,7 @@ function storeOnly(items) { store.clear(); for (const [key, value] of Object.ent
 
 globalThis.chrome = {
   i18n: {getMessage: key => KO[key] ?? '', getUILanguage: () => 'ko'},
-  // The window asks background for nothing; a call would show up here.
+  // The window asks background only for a fresh round (REFRESH_IF_OLD).
   runtime: {async sendMessage(message) { calls.push(['runtime.sendMessage', message?.type]); }},
   permissions: {async contains({origins = []}) { return origins.every(origin => granted.has(origin)); }},
   storage: {
@@ -144,7 +144,7 @@ console.log('\nthe window — the expanded overlay, the button above it, one lin
   granted.add(CLAUDE);
   check('a 30-second timer keeps "N min ago" current', await openWindow('shows'), [30 * 1000]);
   check('texts in the UI language', [$('pin').textContent, text(globalThis.document.querySelector('.note')), globalThis.document.documentElement.lang], [KO.overlay_pin, KO.overlay_window_note, 'ko']);
-  check('values read from storage here: nothing asked of background', calls.filter(c => c[0] === 'runtime.sendMessage'), []);
+  check('values read from storage here; background only asked for a round if the last is old', calls.filter(c => c[0] === 'runtime.sendMessage'), [['runtime.sendMessage', 'REFRESH_IF_OLD']]);
   check('expanded: header and one block per service, 0% stays 0%', [text($('ov').querySelector('.brand')), text($('ov').querySelector('.name > span')), bigs(globalThis.document), text($('ov').querySelector('.sub b'))], ['Leeway', 'Claude', ['72%'], '0%']);
   check('header: when the newest value was read', text($('ov').querySelector('.hd .muted')), checkedAgo(2));
   check("the overlay's own style comes first, the window's after it", [...globalThis.document.head.querySelectorAll('style')].map(s => s.textContent.includes('#ov .prov{')), [true, false]);
@@ -212,8 +212,10 @@ console.log('\nEnter — the button has the focus whenever this window does');
   const active = () => globalThis.document.activeElement?.id || globalThis.document.activeElement?.tagName;
   check('opened: the button has the focus, so Enter (or Space) presses it', active(), 'pin');
   $('pin').blur(); // e.g. a click on the values
+  calls.length = 0;
   globalThis.dispatchEvent(new Event('focus')); // brought forward by "Open overlay", or restored
   check('focused again: the button has it again', active(), 'pin');
+  check('...and background is asked for a round if the last is old', calls, [['runtime.sendMessage', 'REFRESH_IF_OLD']]);
   const keydown = repeat => {
     const event = new globalThis.document.defaultView.KeyboardEvent('keydown', {key: 'Enter', repeat, bubbles: true, cancelable: true});
     $('pin').dispatchEvent(event);
@@ -246,7 +248,7 @@ console.log('\nnew values — the window and the PiP both');
   store.set('usage_last_ok_claude', zero);
   await tick();
   check('the clock tick reads too, and both follow; 0% stays 0%', [bigs(globalThis.document), text(pipDoc().querySelector('.ci b'))], [['0%'], '0%']);
-  check('nothing asked of background', calls.filter(c => c[0] === 'runtime.sendMessage'), []);
+  check('new values: nothing more asked of background', calls.filter(c => c[0] === 'runtime.sendMessage'), []);
 }
 
 console.log('\nstale (CLAUDE.md §4) — the age comes from the clock at each paint, not from counting ticks');

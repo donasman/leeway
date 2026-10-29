@@ -46,7 +46,7 @@
     {"@type": "Question", "name": "Claude 사용량이 얼마나 남았는지 어떻게 확인하나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "Chrome 웹 스토어에서 Leeway를 설치하고 팝업에서 Claude를 켜세요. Chrome에서 claude.ai에 로그인되어 있으면 팝업에 5시간·주간 한도의 남은 비율과 초기화 시각이 나오고, 툴바 배지에는 가장 낮은 남은 값이 표시됩니다."}},
     {"@type": "Question", "name": "ChatGPT와 Gemini도 되나요?",
-     "acceptedAnswer": {"@type": "Answer", "text": "네. ChatGPT는 설정 > 사용량 화면에 나오는 값, 즉 Codex, Work, 워크스페이스 에이전트, ChatGPT for Excel이 함께 쓰는 요금제 한도를 보여줍니다. 일반 채팅 대화는 그 화면에서 집계되지 않습니다. Gemini는 열려 있는 gemini.google.com/usage 탭의 숫자를 읽으므로 그 페이지가 열려 있어야 합니다. 팝업의 Gemini 사용량 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "네. ChatGPT는 설정 > 사용량 화면에 나오는 값, 즉 Codex, Work, 워크스페이스 에이전트, ChatGPT for Excel이 함께 쓰는 요금제 한도를 보여줍니다. 일반 채팅 대화는 그 화면에서 집계되지 않습니다. Gemini는 열려 있는 gemini.google.com/usage 탭의 숫자를 읽으므로 그 페이지가 열려 있어야 합니다. 팝업의 Gemini 사용량 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다. Leeway는 그 탭이 메모리에서 내려가지 않게 하고, 뒤에 있는 탭의 숫자가 5분보다 오래됐거나 Chrome이 탭을 재웠으면 그 탭을 새로고침합니다. 보고 있는 탭은 건드리지 않습니다."}},
     {"@type": "Question", "name": "쿠키, 비밀번호, API 키를 넣어야 하나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "아니요. Leeway는 Chrome에 이미 로그인된 세션을 그대로 씁니다. 비밀번호, 쿠키, API 키를 요구하지 않고, 세션 토큰은 저장·기록·전송하지 않습니다."}},
     {"@type": "Question", "name": "대화 내용을 읽나요?",
@@ -110,7 +110,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
   <li><strong>항상 위 오버레이</strong> — Chrome의 Document Picture-in-Picture(Chrome 116 이상). 팝업의 오버레이 열기, 이어서 Leeway 창의 항상 위에 띄우기(또는 Enter)를 누릅니다. 클릭하면 한 줄로 접힙니다.</li>
   <li><strong>요금제 이름</strong> — 서비스가 알려 주면 Max 5x, Plus처럼 표시합니다.</li>
   <li><strong>Claude 조직별 사용량</strong> — 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 각각 따로 보여줍니다.</li>
-  <li>2분마다 새로 읽고, 팝업의 <strong>새로고침</strong>을 누르면 바로 읽습니다.</li>
+  <li>1분마다, 그리고 팝업을 열 때 새로 읽고, <strong>새로고침</strong>을 누르면 바로 읽습니다.</li>
   <li>한국어, 영어, 스페인어, 일본어, 중국어(간체·번체) 지원.</li>
 </ul>
 
@@ -119,7 +119,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
   <tr><th>서비스</th><th>Leeway가 읽는 것</th></tr>
   <tr><td>Claude</td><td>claude.ai 사용량 화면이 쓰는 사용량 엔드포인트의 5시간·주간 한도. 탭을 열어 둘 필요가 없습니다.</td></tr>
   <tr><td>ChatGPT</td><td>설정 &gt; 사용량 화면의 값: Codex, Work, 워크스페이스 에이전트, ChatGPT for Excel이 함께 쓰는 요금제 한도(계정에 따라 5시간, 주간, 30일). 일반 채팅 대화는 그 화면에서 집계되지 않습니다. 탭을 열어 둘 필요가 없습니다.</td></tr>
-  <tr><td>Gemini</td><td>열려 있는 <code>gemini.google.com/usage</code> 탭의 현재 사용량·주간 카드. Gemini에는 사용량 API가 없어 그 페이지가 열려 있어야 합니다. 팝업의 <strong>Gemini 사용량</strong> 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다.</td></tr>
+  <tr><td>Gemini</td><td>열려 있는 <code>gemini.google.com/usage</code> 탭의 현재 사용량·주간 카드. Gemini에는 사용량 API가 없어 그 페이지가 열려 있어야 합니다. 팝업의 <strong>Gemini 사용량</strong> 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다. Leeway는 그 탭이 메모리에서 내려가지 않게 하고, 뒤에 있는 탭의 숫자가 5분보다 오래됐거나 Chrome이 탭을 재웠으면 그 탭을 새로고침합니다. 보고 있는 탭은 건드리지 않습니다.</td></tr>
 </table>
 <p class="note">공개된 안정 API가 아니어서 예고 없이 바뀔 수 있습니다.</p>
 
@@ -139,7 +139,7 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <h3>Claude 사용량이 얼마나 남았는지 어떻게 확인하나요?</h3>
 <p>Chrome 웹 스토어에서 Leeway를 설치하고 팝업에서 Claude를 켜세요. Chrome에서 claude.ai에 로그인되어 있으면 팝업에 5시간·주간 한도의 남은 비율과 초기화 시각이 나오고, 툴바 배지에는 가장 낮은 남은 값이 표시됩니다.</p>
 <h3>ChatGPT와 Gemini도 되나요?</h3>
-<p>네. ChatGPT는 설정 &gt; 사용량 화면에 나오는 값, 즉 Codex, Work, 워크스페이스 에이전트, ChatGPT for Excel이 함께 쓰는 요금제 한도를 보여줍니다. 일반 채팅 대화는 그 화면에서 집계되지 않습니다. Gemini는 열려 있는 gemini.google.com/usage 탭의 숫자를 읽으므로 그 페이지가 열려 있어야 합니다. 팝업의 Gemini 사용량 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다.</p>
+<p>네. ChatGPT는 설정 &gt; 사용량 화면에 나오는 값, 즉 Codex, Work, 워크스페이스 에이전트, ChatGPT for Excel이 함께 쓰는 요금제 한도를 보여줍니다. 일반 채팅 대화는 그 화면에서 집계되지 않습니다. Gemini는 열려 있는 gemini.google.com/usage 탭의 숫자를 읽으므로 그 페이지가 열려 있어야 합니다. 팝업의 Gemini 사용량 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다. Leeway는 그 탭이 메모리에서 내려가지 않게 하고, 뒤에 있는 탭의 숫자가 5분보다 오래됐거나 Chrome이 탭을 재웠으면 그 탭을 새로고침합니다. 보고 있는 탭은 건드리지 않습니다.</p>
 <h3>쿠키, 비밀번호, API 키를 넣어야 하나요?</h3>
 <p>아니요. Leeway는 Chrome에 이미 로그인된 세션을 그대로 씁니다. 비밀번호, 쿠키, API 키를 요구하지 않고, 세션 토큰은 저장·기록·전송하지 않습니다.</p>
 <h3>대화 내용을 읽나요?</h3>

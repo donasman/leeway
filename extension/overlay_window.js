@@ -106,7 +106,11 @@ if (!('documentPictureInPicture' in window)) pinButton.hidden = true;
 // a key press here is one, as a click is. A key held down since the popup
 // repeats into this window: only a fresh press counts.
 const focusPin = () => { if (!pinButton.hidden) pinButton.focus(); };
-window.addEventListener('focus', focusPin);
+// Opened, brought forward or restored: background reads now unless a round
+// started in the last 30 seconds (CLAUDE.md §4). The values themselves come
+// from storage, as always.
+const askForFresh = () => { chrome.runtime.sendMessage({type: 'REFRESH_IF_OLD'}).catch(() => {}); };
+window.addEventListener('focus', () => { focusPin(); askForFresh(); });
 pinButton.addEventListener('keydown', (event) => { if (event.repeat) event.preventDefault(); });
 
 // Where the user leaves this window, for the next time background opens it.
@@ -135,3 +139,4 @@ const style = document.createElement('style'); style.textContent = CSS; document
 paint();
 refresh();
 focusPin();
+askForFresh();
