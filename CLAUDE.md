@@ -1,6 +1,6 @@
 # Leeway
 
-Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한도)을 Chrome 팝업, 툴바 배지,
+Claude · ChatGPT · Gemini의 사용량(5시간·주간·월간 한도. 기본은 사용한 비율, 전환하면 남은 비율)을 Chrome 팝업, 툴바 배지,
 항상 위에 뜨는 오버레이로 보여주는 Chrome 확장. 선택 기능은 Windows용 Leeway helper가 맡는다.
 
 - 저장소: https://github.com/donasman/leeway · 사이트: https://donasman.github.io/leeway/ · 개인정보처리방침: https://donasman.github.io/leeway/privacy/
@@ -27,7 +27,8 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 - 쿠키·비밀번호·세션 토큰을 저장하거나, 기록하거나, 확장 밖으로 보내지 않는다. helper에도 보내지 않는다.
   - Anthropic은 외부 개발자가 Claude.ai 자격증명이나 세션 토큰을 수집·저장·중개하는 것을 허용하지 않는다
     ([Claude Code 법률·규정](https://code.claude.com/docs/en/legal-and-compliance)). Claude Code의 OAuth 토큰을 읽어 쓰는 방식도 같은 이유로 쓰지 않는다.
-- 모든 숫자는 **남은 비율**이다. "사용한 비율"로 뒤집지 않는다.
+- 저장·계산·helper로 보내는 숫자는 모두 **남은 비율**이다. 수집이나 저장 단계에서 "사용한 비율"로 뒤집지 않는다.
+  화면(팝업·Leeway 창·PiP·배지)만 사용자 설정에 따라 사용한 비율로 그린다(§4. 2026-10-29 사용자 결정으로 이 원칙을 이렇게 고침).
 - `0%`는 정상 값이다. 값 없음은 `null`이고 화면에는 `?`로 보인다. 둘을 절대 섞지 않는다
   (`Number('')`처럼 빈 값이 0이 되는 변환 금지).
 - 대표값은 **5시간 한도**다. 5시간 한도가 아예 없는 계정(예: ChatGPT Pro)만 주간, 그것도 없으면 월간이 대표값이 된다.
@@ -46,7 +47,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `extension/manifest.json` | MV3. 필수 권한 `storage alarms scripting`(`tests/test_manifest.mjs`가 고정. `tabs`·`activeTab` 없음), 선택 권한 `nativeMessaging`, 선택 호스트 권한 claude.ai·chatgpt.com·gemini.google.com |
 | `extension/background.js` | 서비스 워커. 1분 주기 수집(`POLL_MINUTES`)과 팝업·Leeway 창이 열릴 때의 수집(`REFRESH_IF_OLD`), 저장(`publish`), 배지, Leeway 창 열기, helper 동기화, 메시지 처리 |
 | `extension/snapshot.js` | 수집 결과 → 저장할 `UsageSnapshot` 정규화(`toSnapshot`), 다른 프로필 값 재검증(`fromShared`) |
-| `extension/view.js` | 저장값 → 팝업·오버레이·배지가 보여줄 값(`providerView`, `badgeView`, `peerViews`) |
+| `extension/view.js` | 저장값 → 팝업·오버레이·배지가 보여줄 값(`providerView`, `badgeView`, `peerViews`). 사용/남은 표시(`percentMode`, `shownPercent`)와 색(`toneOf`)도 여기서만 정한다 |
 | `extension/parsers.js` | 공용 파서, Claude 사용량 버킷, 요금제 라벨(`claudePlanLabel`, `chatgptPlanLabel`) |
 | `extension/chatgpt_api.js` | ChatGPT `wham/usage` 응답 → 수집 결과 |
 | `extension/chatgpt.js` | ChatGPT Settings > Usage 탭 DOM 파서(API 실패 시 대체 경로) |
@@ -101,6 +102,7 @@ Claude · ChatGPT · Gemini의 **남은** 사용량(5시간·주간·월간 한�
 | `peer_settings` | `{on, id, label}` — 다른 프로필 기능. `id`는 무작위 16자리 hex |
 | `peer_profiles` | 마지막 helper 응답 중 **다른** 프로필들 `{at, ok, error, version, profiles[]}`. `error`는 `helper_missing`·`_forbidden`·`_blocked`·`_failed`, `version`은 `x.y.z`·`dev`·`null`(이 필드가 없는 예전 기록은 버전을 판단하지 않음) |
 | `overlay_window_bounds` | Leeway 창을 마지막에 둔 곳 `{left, top, width, height}`. 창(`overlay_window.js`)이 보통 상태일 때만 쓰고(최소화·최대화 제외), background가 창을 열 때 읽는다 |
+| `percent_mode` | 숫자 표시 방향 `'used'` 또는 `'remaining'`(§4). 없거나 다른 값이면 `'used'`(`view.js` `percentMode`). 팝업의 전환 버튼이 직접 쓰고, 팝업·Leeway 창·background(배지)가 `onChanged`로 따라간다 |
 
 `chrome.storage.session`(브라우저를 닫으면 사라짐): `gemini_open_wait`·`gemini_reloads`(아래 Gemini), `refresh_started_at`(마지막 수집 라운드 시작 시각, §4), `overlay_window_id`(열린 Leeway 창 id. 쓰기 전에 `windows.get`으로 살아 있는지 확인하고, 없으면 `runtime.getContexts`로 다시 찾는다).
 
@@ -171,8 +173,12 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
   background는 마지막 라운드가 30초(`ROUND_FRESH_MS`)보다 오래됐으면 바로 한 라운드 읽는다.
 - 마지막 읽기가 **6분**(`STALE_MS`)보다 오래되면 오래됨으로 흐리게 표시한다. Gemini는 페이지가 말하는 숫자의 나이로 잰다.
 - 실패하면 마지막 정상값을 흐리게 보여주고 "마지막 정상값 · N분 전"을 단다.
-- 색 기준(팝업·배지·오버레이 공통): 50 이상 초록, 20~49 주황, 20 미만 빨강, `?`는 색 없음. 배지는 오래되면 회색.
-- 배지는 켠 서비스들의 대표값 중 **가장 낮은 값**(숫자만, `%` 없음). 툴팁에 서비스별 한 줄. 다른 프로필 값은 배지에 넣지 않는다.
+- 숫자 표시(2026-10-29 사용자 결정): 팝업 머리글의 `사용 | 남음` 전환. **기본은 사용**(`percent_mode`, §2). 한 설정이 팝업·Leeway 창·PiP·배지·툴팁·다른 프로필 값에 모두 적용된다.
+  - 사용 = `100 - 반올림한 남은 비율`(`shownPercent`). 두 값의 합은 늘 100이고, 남은 0은 사용 100%, `?`는 그대로 `?`.
+  - 막대·링 길이는 보이는 숫자를 따른다(사용이면 쓸수록 차오름). 색은 어느 쪽이든 **남은 비율**로 정한다(`toneOf`).
+  - 어느 쪽인지 화면에 적는다: 팝업 안내문(`note_main_used`/`note_main`), 툴팁(`badge_pct_used`/`badge_pct`), 펼친 오버레이 머리글의 작은 글자(`mode_used`/`mode_left`). 접힌 PiP에는 자리가 없어 적지 않는다.
+- 색 기준(팝업·배지·오버레이 공통, 남은 비율 기준): 50 이상 초록, 20~49 주황, 20 미만 빨강, `?`는 색 없음. 사용으로 보이면 50 이하 초록, 51~80 주황, 81 이상 빨강. 배지는 오래되면 회색.
+- 배지는 켠 서비스들의 대표값 중 **남은 값이 가장 낮은 것**(숫자만, `%` 없음). 사용 표시면 그 서비스의 사용한 비율(가장 많이 쓴 값)이다. 툴팁에 서비스별 한 줄. 다른 프로필 값은 배지에 넣지 않는다.
 - 오버레이는 **Leeway 창이 연다.** 팝업의 "오버레이 열기"는 어느 탭에서나(웹 스토어·`chrome://`·새 탭 포함) 같은 동작이다.
   background가 Leeway 창(확장 페이지, `type: 'popup'` 창)을 열거나, 이미 열려 있으면 새로 만들지 않고 앞으로 가져온다(최소화돼 있으면 복원).
   버튼을 누르지 않으면 창도 PiP도 열지 않는다(설치 직후 포함).
@@ -248,6 +254,10 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
   - 확인됨: `REFRESH_IF_OLD`는 라운드 직후엔 읽지 않고, 31초 뒤엔 읽음.
   - 미확인: 실제 gemini.google.com이 뒤에 있을 때 정말 다시 받지 않는지, 보이면 스스로 갱신하는지(제보와는 맞음). 영어 화면의 "업데이트됨" 문구.
     메모리 절약 모드가 `autoDiscardable: false` 탭을 실제로 건너뛰는지, 얼린 탭의 새로고침. 제보 당시 원인(내려간 탭인지, 오래된 페이지인지).
+- 사용/남은 전환(feat/used-percent, 2026-10-29). Node·jsdom 테스트로만 확인했다(기본 사용, 전환·유지, 색과 막대, 배지·툴팁, Leeway 창·PiP가 바로 따라감).
+  - 미확인: 실제 Chrome에서 팝업 머리글 배치(6개 언어, 특히 긴 es "Restante"), 다크 모드, 배지가 바로 바뀌는지, 펼친 오버레이 머리글의 작은 글자 모양.
+  - 새 문구 5개 키(`mode_used`·`mode_left`·`mode_aria`·`note_main_used`·`badge_pct_used`)는 6개 언어 모두 원어민 검토 전.
+  - 1.0.0 이하에서 올라오는 사용자도 키가 없어 **사용**으로 바뀐다(숫자가 뒤집혀 보임). 안내문과 머리글 전환으로만 알린다.
 
 - `tabs` 권한을 뺐다(0.6.3, 2026-10-28 스토어 게시). 실제 Chrome에서 권한, 세 서비스 새로고침, Gemini 버튼, 오버레이 열기를 확인했다(2026-10-27). ChatGPT 대체 경로(설정 > 사용량 탭 읽기)를 `tabs` 없이 실제로 탄 경우와, 0.6.2 → 0.6.3 업데이트 때 재승인 요청이 없었는지는 미확인.
 - ChatGPT 페이지 대체 경로(fix/chatgpt-five-hour, 2026-10-28): 한 카드의 %가 없을 때 두 한도가 함께 든 묶음까지 올라가 다른 한도의 값을 가져가던 것을 고쳤다.
