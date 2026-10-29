@@ -15,7 +15,7 @@ const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
 // Older than this is stale: six missed 1-minute polls (CLAUDE.md §4). Kept at
-// 6 minutes when the poll went from 2 minutes to 1 (1.0.1), so a Gemini page
+// 6 minutes when the poll went from 2 minutes to 1 (1.1.0), so a Gemini page
 // reloaded at 5 minutes old doesn't flicker to stale.
 export const STALE_MS = 6 * MINUTE_MS;
 
