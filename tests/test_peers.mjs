@@ -117,12 +117,15 @@ console.log('\nhow the other profiles show');
     {id: 'aaaaaaaaaaaaaaaa', label: '<img src=x>', updated_at: iso(NOW - 20 * MIN), snapshots: [claudeOk(20 * MIN, 55, 80)]},
     {id: 'bbbbbbbbbbbbbbbb', label: '빈 프로필', updated_at: iso(NOW), snapshots: []},
   ]};
-  const views = peerViews(record, NOW, 'Asia/Seoul', KO);
+  // Written in remaining percentages; the used default has its own check below.
+  const views = peerViews(record, NOW, 'Asia/Seoul', KO, 'remaining');
   check('profiles with something to show', views.map(v => v.label), ['개인', '<img src=x>']);
   check('when each last sent', views.map(v => v.updated), ['3분 전 갱신', '20분 전 갱신']);
   const first = views[0].providers[0];
   check('same view as the own profile: 0% stays 0%, plan kept', [first.provider, first.state, first.plan, first.rows.find(r => r.primary)?.percent], ['claude', 'ok', 'Max 5x', '0%']);
   check('an old value is stale and dimmed', [views[1].providers[0].state, views[1].providers[0].dim], ['stale', true]);
+  const used = peerViews(record, NOW, 'Asia/Seoul', KO);
+  check('used (the default): another profile turns the same way, 0 left is 100% used', used[0].providers[0].rows.map(r => r.percent), ['100%', '59%']);
 
   const bad = peerViews({profiles: [{id: ID_OTHER, label: '', updated_at: iso(NOW), snapshots: [
     {provider: 'claude', status: 'ok', collected_at: 'yesterday', limits: limits(50, 50)},
@@ -130,7 +133,7 @@ console.log('\nhow the other profiles show');
     {provider: 'evil', status: 'ok', collected_at: iso(NOW), limits: [{id: 'evil_5h', remaining_percent: 50}]},
     {provider: 'chatgpt', status: 'ok', collected_at: iso(NOW), limits: [{id: 'chatgpt_5h', remaining_percent: '50'}]},
     {provider: 'gemini', status: 'ok', collected_at: iso(NOW), plan: '<b>x</b>', limits: [{id: 'gemini_5h', remaining_percent: 140}]},
-  ]}]}, NOW, 'Asia/Seoul', KO);
+  ]}]}, NOW, 'Asia/Seoul', KO, 'remaining');
   check('checked again: bad time, not ok, unknown provider, a string percent are dropped', bad[0]?.providers.map(p => p.provider), ['gemini']);
   check('out-of-range clamped, a plan that is not a name dropped, empty label named Chrome', [bad[0]?.label, bad[0]?.providers[0].rows[0].percent, bad[0]?.providers[0].plan], ['Chrome', '100%', null]);
   check('fromShared keeps the time it was read', fromShared(claudeOk(7 * MIN))?.collected_at, iso(NOW - 7 * MIN));

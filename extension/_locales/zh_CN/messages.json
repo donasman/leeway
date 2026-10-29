@@ -35,6 +35,7 @@
   "note_unread": {"message": "无法读取数值"},
   "badge_none": {"message": "未开启任何服务"},
   "badge_pct": {"message": "剩余{pct}", "description": "{pct} 为剩余百分比，例如 '50%'。显示在工具栏提示中。"},
+  "badge_pct_used": {"message": "已用{pct}"},
   "badge_sep": {"message": " · ", "description": "在工具栏提示中连接数值与重置时间的分隔符。"},
   "badge_note_fmt": {"message": "（{note}）", "description": "包裹工具栏提示行末尾的简短状态说明。"},
 
@@ -50,6 +51,10 @@
   "checking": {"message": "检查中…"},
   "refused_note": {"message": "需要授予网站权限才能开启。"},
   "note_main": {"message": "数字表示剩余百分比。Gemini 需在其用量页面（gemini.google.com/usage）标签页打开时才能读取。"},
+  "note_main_used": {"message": "数字表示已用百分比。Gemini 需在其用量页面（gemini.google.com/usage）标签页打开时才能读取。"},
+  "mode_used": {"message": "已用"},
+  "mode_left": {"message": "剩余"},
+  "mode_aria": {"message": "百分比显示方式"},
   "open_claude": {"message": "Claude 用量"},
   "open_chatgpt": {"message": "ChatGPT 用量"},
   "open_gemini": {"message": "Gemini 用量"},

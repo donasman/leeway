@@ -43,10 +43,14 @@ const NAMES = { claude: 'Claude', chatgpt: 'ChatGPT', gemini: 'Gemini' };
 const TONE_HEX = { good: '#3fca82', warn: '#ecb23f', bad: '#ff6168' };
 const RING = 2 * Math.PI * 10; // the collapsed ring's circumference (r = 10)
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-// "0%" is a value (red), "?" is none (no colour) — same thresholds as the popup and badge.
+// "0%" is a value, "?" is none. Bars and rings are as long as the number shown
+// (used or left); the colour is the row's tone (view.js toneOf), from what is
+// left either way — the same as the popup and the badge. "?" has no tone.
 const pctOf = (text) => { const n = parseInt(text, 10); return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null; };
-const tone = (text) => { const n = pctOf(text); return n === null ? '' : n < 20 ? 'bad' : n < 50 ? 'warn' : 'good'; };
+const toneOfRow = (r) => (r && TONE_HEX[r.tone] ? r.tone : '');
 const msg = (key, fallback) => { try { return chrome.i18n.getMessage(key) || fallback; } catch (_) { return fallback; } };
+// Which way the numbers read, beside the brand when the data says (CLAUDE.md §4).
+const MODE_KEYS = { used: 'mode_used', remaining: 'mode_left' };
 let collapsed = false;
 let lastData = { providers: [] };
 
@@ -60,11 +64,11 @@ function block(v) {
   const name = `<span class="name"><span>${esc(v.name)}</span>${plan}${chip}</span>`;
   const note = v.note && (!main || v.dim) ? `<div class="muted">${esc(v.note)}</div>` : '';
   if (!main) return `<div class="prov${v.dim ? ' dim' : ''}"><div class="top">${name}</div>${note}</div>`;
-  const t = tone(main.percent);
+  const t = toneOfRow(main);
   const width = pctOf(main.percent) ?? 0;
   const left = [main.label, main.reset].filter(Boolean).map(esc).join(' · ');
   const right = rows.filter((r) => r !== main).slice(0, 2)
-    .map((r) => `${esc(r.label)} <b class="${tone(r.percent)}">${esc(r.percent)}</b>`).join(' · ');
+    .map((r) => `${esc(r.label)} <b class="${toneOfRow(r)}">${esc(r.percent)}</b>`).join(' · ');
   return `<div class="prov${v.dim ? ' dim' : ''}">`
     + `<div class="top">${name}<span class="big ${t}">${esc(main.percent)}</span></div>`
     + `<div class="bar"><i class="${t}" style="width:${width}%"></i></div>`
@@ -85,7 +89,9 @@ export function render(root, data) {
   const provs = (data && data.providers || []).filter((p) => p.enabled);
   const peers = (data && Array.isArray(data.peers) ? data.peers : []).map((peer) => `<div class="peer"><div class="peerh"><span>${esc(peer.label)}</span>`
     + `<span class="muted">${esc(peer.updated)}</span></div>${(peer.providers || []).map(serviceBlocks).join('')}</div>`).join('');
-  const head = `<div class="hd"><span class="brand">Leeway</span><span class="muted">${esc(data && data.checked)}</span></div>`;
+  const modeKey = data && MODE_KEYS[data.mode];
+  const mode = modeKey ? ` <span class="plan">${esc(msg(modeKey, ''))}</span>` : '';
+  const head = `<div class="hd"><span class="brand">Leeway${mode}</span><span class="muted">${esc(data && data.checked)}</span></div>`;
   if (!provs.length && !peers) {
     root.innerHTML = head + `<div class="empty">${esc(msg('overlay_empty', 'Turn on a service in the popup.'))}</div>`;
     return;
@@ -93,9 +99,9 @@ export function render(root, data) {
   root.innerHTML = head + provs.map(serviceBlocks).join('') + peers;
 }
 
-function ring(text) {
+function ring(text, t) {
   const n = pctOf(text);
-  const arc = n === null ? '' : `<circle cx="12" cy="12" r="10" fill="none" stroke="${TONE_HEX[tone(text)]}" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(RING * n / 100).toFixed(1)} ${RING.toFixed(1)}" transform="rotate(-90 12 12)"></circle>`;
+  const arc = n === null || !t ? '' : `<circle cx="12" cy="12" r="10" fill="none" stroke="${TONE_HEX[t]}" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(RING * n / 100).toFixed(1)} ${RING.toFixed(1)}" transform="rotate(-90 12 12)"></circle>`;
   return `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3.5"></circle>${arc}</svg>`;
 }
 
@@ -112,8 +118,8 @@ export function renderCompact(root, data) {
     const rows = Array.isArray(p.rows) ? p.rows : [];
     const main = rows.find((r) => r.primary) || rows[0];
     const pct = main ? main.percent : '?';
-    const t = tone(pct);
-    return `<span class="ci${p.dim ? ' dim' : ''}">${ring(pct)}<span>${esc(NAMES[p.provider] || p.provider)}</span>`
+    const t = toneOfRow(main);
+    return `<span class="ci${p.dim ? ' dim' : ''}">${ring(pct, t)}<span>${esc(NAMES[p.provider] || p.provider)}</span>`
       + `<b class="${t === 'good' ? '' : t}">${esc(pct)}</b></span>`;
   }).join('');
 }

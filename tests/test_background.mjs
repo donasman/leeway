@@ -741,24 +741,34 @@ console.log('\nGemini — turned off while a read is running: the late result is
   check('stays disabled: the late ok is dropped', get('usage_gemini')?.status, 'disabled');
 }
 
+// The badge shows what is used unless the popup's switch says left
+// (percent_mode, CLAUDE.md §4); either way it is the service with least left,
+// coloured by what is left.
 console.log('\ntoolbar badge — follows what is stored (CLAUDE.md §4)');
 {
   reset({enabled: ['claude'], permissions: [CLAUDE_HOST]});
   claudeAccount({sessionUsed: 40, weeklyUsed: 100});
   await send({type: 'REFRESH_ALL'});
   await settle();
-  check('Claude 5-hour 60 → "60", green', [badge.text, badge.color], ['60', '#1e8e3e']);
-  check('tooltip: service, limit, value', [badge.title.split('\n')[0], badge.title.split('\n')[1]?.startsWith('Claude: 5시간 60% 남음 · ')], ['Leeway', true]);
+  check('Claude 5-hour 40 used (60 left) → "40", green', [badge.text, badge.color], ['40', '#1e8e3e']);
+  check('tooltip: service, limit, value', [badge.title.split('\n')[0], badge.title.split('\n')[1]?.startsWith('Claude: 5시간 40% 사용 · ')], ['Leeway', true]);
   granted.add(CHATGPT_HOST);
   store.set('enabledProviders', ['claude', 'chatgpt']);
   chatgptAccount({primary: windowOf(18000, 85, RESET_5H), secondary: windowOf(604800, 60, RESET_WEEK)});
   await send({type: 'REFRESH_ALL'});
   await settle();
-  check('ChatGPT on too, lower: its 15, red', [badge.text, badge.color], ['15', '#d93025']);
+  check('ChatGPT on too, less left: its 85 used, red', [badge.text, badge.color], ['85', '#d93025']);
   check('no token, account id or email in the badge', leaked(JSON.stringify(badge)), []);
+  await chrome.storage.local.set({percent_mode: 'remaining'});
+  await settle();
+  check('switched to left: 15 left, same red, at once', [badge.text, badge.color], ['15', '#d93025']);
+  check('tooltip says left', badge.title.split('\n')[2]?.startsWith('ChatGPT: 5시간 15% 남음 · '), true);
+  await chrome.storage.local.set({percent_mode: 'used'});
+  await settle();
+  check('and back to used', badge.text, '85');
   await send({type: 'PROVIDER_DISABLED', provider: 'chatgpt'});
   await settle();
-  check('ChatGPT off → Claude\'s value again', badge.text, '60');
+  check('ChatGPT off → Claude\'s value again', badge.text, '40');
   await send({type: 'PROVIDER_DISABLED', provider: 'claude'});
   await settle();
   check('nothing on → empty', badge.text, '');
@@ -781,7 +791,7 @@ console.log('\ntoolbar badge — follows what is stored (CLAUDE.md §4)');
   old.collected_at = new Date(Date.now() - 7 * 60 * 1000).toISOString();
   await chrome.storage.local.set({usage_claude: old, usage_last_ok_claude: old});
   await settle();
-  check('a value older than 6 minutes → grey', [badge.text, badge.color], ['60', '#80868b']);
+  check('a value older than 6 minutes → grey', [badge.text, badge.color], ['40', '#80868b']);
   // The site permission is revoked in chrome://extensions, the value still stored.
   granted.delete(CLAUDE_HOST);
   await chrome.storage.local.set({usage_claude: get('usage_claude')});
@@ -802,7 +812,7 @@ console.log('\ntoolbar badge — follows what is stored (CLAUDE.md §4)');
   check('just turned on, refresh still running → "?"', badge.text, '?');
   release();
   await settle();
-  check('then its value', badge.text, '60');
+  check('then its value', badge.text, '40');
 }
 
 console.log('\ntoolbar badge — Gemini counts too (read from its open usage tab)');
@@ -812,8 +822,8 @@ console.log('\ntoolbar badge — Gemini counts too (read from its open usage tab
   tabAnswers = {5: geminiAnswer(geminiCards({used: '82% 사용됨', reset: '오후 10:19에 초기화'}))};
   await send({type: 'REFRESH_ALL'});
   await settle();
-  check('Gemini 현재 사용량 18 left → "18", red', [badge.text, badge.color], ['18', '#d93025']);
-  check('tooltip names Gemini and its 5-hour value', badge.title.split('\n')[1]?.startsWith('Gemini: 5시간 18% 남음 · '), true);
+  check('Gemini 현재 사용량 82 used (18 left) → "82", red', [badge.text, badge.color], ['82', '#d93025']);
+  check('tooltip names Gemini and its 5-hour value', badge.title.split('\n')[1]?.startsWith('Gemini: 5시간 82% 사용 · '), true);
 }
 
 console.log('\nREFRESH_ALL — Claude: used → remaining, 0 stays 0');
@@ -946,7 +956,7 @@ console.log('\nClaude plan and organizations — one sign-in, several organizati
     [['Max 20x', 'ok', 60], ['Team', 'ok', 10], ['Pro', 'logged_out', null]]);
   check('weekly 0 in another account stays 0', s?.accounts?.[1]?.limits.find(l => l.id === 'claude_weekly')?.remaining_percent, 80);
   await settle();
-  check('badge follows the main organization', badge.text, '60');
+  check('badge follows the main organization (40 used)', badge.text, '40');
 }
 
 console.log('\nother Chrome profiles — off by default, then through the Leeway helper');

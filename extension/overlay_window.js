@@ -8,7 +8,7 @@
 // closing the window closes it.
 // Once the PiP is open this window minimizes; closing the PiP brings it back.
 import { usageKey, lastOkKey } from './snapshot.js';
-import { formatAge, peerViews, providerView } from './view.js';
+import { PERCENT_MODE_KEY, formatAge, peerViews, percentMode, providerView } from './view.js';
 import { msg, viewLabels } from './i18n.js';
 import { CSS, openPip, render } from './overlay_view.js';
 
@@ -38,7 +38,9 @@ async function hasHostPermission(provider) {
 // so a timer Chrome runs late shows the right age, only later.
 async function overlayData() {
   const labels = viewLabels();
-  const enabled = new Set((await chrome.storage.local.get(['enabledProviders'])).enabledProviders || []);
+  const settings = await chrome.storage.local.get(['enabledProviders', PERCENT_MODE_KEY]);
+  const enabled = new Set(settings.enabledProviders || []);
+  const mode = percentMode(settings[PERCENT_MODE_KEY]); // used or left, as the popup set it
   const now = Date.now();
   const providers = [];
   let newest = NaN; // the latest read of any service that is on, for the header
@@ -48,14 +50,14 @@ async function overlayData() {
     const stored = await chrome.storage.local.get([usageKey(provider), lastOkKey(provider)]);
     const readAt = Date.parse(stored[usageKey(provider)]?.collected_at);
     if (permitted && Number.isFinite(readAt) && !(readAt <= newest)) newest = readAt;
-    const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels);
+    const view = providerView({enabled: on, permitted, latest: stored[usageKey(provider)], lastOk: stored[lastOkKey(provider)]}, now, undefined, labels, mode);
     providers.push({provider, enabled: on, state: view.state, status: view.status, rows: view.rows, dim: view.dim, note: view.note, plan: view.plan, accounts: view.accounts});
   }
-  const {peer_settings: settings, peer_profiles: record} = await chrome.storage.local.get(['peer_settings', 'peer_profiles']);
-  const peers = settings?.on ? peerViews(record, now, undefined, labels) : [];
+  const {peer_settings: peerSettings, peer_profiles: record} = await chrome.storage.local.get(['peer_settings', 'peer_profiles']);
+  const peers = peerSettings?.on ? peerViews(record, now, undefined, labels, mode) : [];
   const age = Number.isFinite(newest) ? formatAge(now - newest, labels) : '';
   const checked = age ? String(labels.checked || '').replace('{age}', age) : '';
-  return {providers, peers, checked, now};
+  return {providers, peers, checked, now, mode};
 }
 
 // Storage changes and the clock tick can overlap; only the newest one paints.
@@ -126,7 +128,7 @@ chrome.windows.onBoundsChanged.addListener(async (win) => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && Object.keys(changes).some((k) => k === 'enabledProviders' || k.startsWith('usage_') || k.startsWith('peer_'))) refresh();
+  if (area === 'local' && Object.keys(changes).some((k) => k === 'enabledProviders' || k === PERCENT_MODE_KEY || k.startsWith('usage_') || k.startsWith('peer_'))) refresh();
 });
 // "3분 전", staleness and the reset countdowns move with the clock, not only
 // with storage. While the PiP is up this page is minimized, and Chrome may run

@@ -35,6 +35,7 @@
   "note_unread": {"message": "値を読み取れませんでした"},
   "badge_none": {"message": "有効なサービスなし"},
   "badge_pct": {"message": "残り{pct}", "description": "{pct} は残りの割合（例: '50%'）。ツールバーのツールチップに表示。"},
+  "badge_pct_used": {"message": "使用済み{pct}"},
   "badge_sep": {"message": "、", "description": "ツールバーのツールチップで値とリセット時刻をつなぐ区切り。"},
   "badge_note_fmt": {"message": "（{note}）", "description": "ツールチップ行末の短い状態メモを囲む書式。"},
 
@@ -50,6 +51,10 @@
   "checking": {"message": "確認中…"},
   "refused_note": {"message": "オンにするには、サイトへのアクセスを許可してください。"},
   "note_main": {"message": "数値は残りの割合です。Gemini は使用量ページ（gemini.google.com/usage）のタブが開いているときに読み取ります。"},
+  "note_main_used": {"message": "数値は使用済みの割合です。Gemini は使用量ページ（gemini.google.com/usage）のタブが開いているときに読み取ります。"},
+  "mode_used": {"message": "使用"},
+  "mode_left": {"message": "残り"},
+  "mode_aria": {"message": "割合の表示"},
   "open_claude": {"message": "Claude の使用量"},
   "open_chatgpt": {"message": "ChatGPT の使用量"},
   "open_gemini": {"message": "Gemini の使用量"},

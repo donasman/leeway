@@ -59,7 +59,9 @@ function write(items) {
   }
   if (Object.keys(changes).length) setImmediate(() => changeListeners.forEach(fn => fn(changes, 'local')));
 }
-function storeOnly(items) { store.clear(); for (const [key, value] of Object.entries(items)) store.set(key, structuredClone(value)); }
+// The checks are written in left percentages, so storeOnly keeps the popup's
+// switch at left; the used default has its own section.
+function storeOnly(items) { store.clear(); for (const [key, value] of Object.entries({percent_mode: 'remaining', ...items})) store.set(key, structuredClone(value)); }
 
 globalThis.chrome = {
   i18n: {getMessage: key => KO[key] ?? '', getUILanguage: () => 'ko'},
@@ -145,7 +147,7 @@ console.log('\nthe window — the expanded overlay, the button above it, one lin
   check('a 30-second timer keeps "N min ago" current', await openWindow('shows'), [30 * 1000]);
   check('texts in the UI language', [$('pin').textContent, text(globalThis.document.querySelector('.note')), globalThis.document.documentElement.lang], [KO.overlay_pin, KO.overlay_window_note, 'ko']);
   check('values read from storage here; background only asked for a round if the last is old', calls.filter(c => c[0] === 'runtime.sendMessage'), [['runtime.sendMessage', 'REFRESH_IF_OLD']]);
-  check('expanded: header and one block per service, 0% stays 0%', [text($('ov').querySelector('.brand')), text($('ov').querySelector('.name > span')), bigs(globalThis.document), text($('ov').querySelector('.sub b'))], ['Leeway', 'Claude', ['72%'], '0%']);
+  check('expanded: header and one block per service, 0% stays 0%', [text($('ov').querySelector('.brand')), text($('ov').querySelector('.name > span')), bigs(globalThis.document), text($('ov').querySelector('.sub b'))], [`Leeway ${KO.mode_left}`, 'Claude', ['72%'], '0%']);
   check('header: when the newest value was read', text($('ov').querySelector('.hd .muted')), checkedAgo(2));
   check("the overlay's own style comes first, the window's after it", [...globalThis.document.head.querySelectorAll('style')].map(s => s.textContent.includes('#ov .prov{')), [true, false]);
   $('ov').dispatchEvent(new globalThis.document.defaultView.MouseEvent('click', {bubbles: true}));
@@ -296,6 +298,21 @@ console.log('\nvalues — built the way the popup builds them');
   await openWindow('no-grant');
   check('Claude on without the claude.ai grant: says so, no number', [text($('ov').querySelector('.chip')), bigs(globalThis.document)], [KO.status_needs_permission, []]);
   granted.add(CLAUDE);
+}
+
+console.log("\nused or left — the popup's switch (CLAUDE.md §4); the window and the PiP follow at once");
+{
+  storeOnly(claudeOn(claudeOk(72)));
+  store.delete('percent_mode'); // never switched: used, the default
+  await openWindow('used');
+  check('never switched: used — 72 left is 28%, still green, 0 left is 100%; tagged as used',
+    [text($('ov').querySelector('.brand')), bigs(globalThis.document), $('ov').querySelector('.big').className, text($('ov').querySelector('.sub b'))],
+    [`Leeway ${KO.mode_used}`, ['28%'], 'big good', '100%']);
+  await pinClick();
+  write({percent_mode: 'remaining'}); // the popup's switch
+  await settle();
+  check('switched to left: the window and the PiP both', [bigs(globalThis.document), bigs(pipDoc()), text(pipDoc().querySelector('.brand'))], [['72%'], ['72%'], `Leeway ${KO.mode_left}`]);
+  await closePip();
 }
 
 console.log('\nwhere the window is left — saved for the next time it opens');

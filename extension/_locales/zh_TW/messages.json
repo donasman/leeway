@@ -35,6 +35,7 @@
   "note_unread": {"message": "無法讀取數值"},
   "badge_none": {"message": "未開啟任何服務"},
   "badge_pct": {"message": "剩餘{pct}", "description": "{pct} 為剩餘百分比，例如 '50%'。顯示於工具列提示中。"},
+  "badge_pct_used": {"message": "已用{pct}"},
   "badge_sep": {"message": " · ", "description": "在工具列提示中連接數值與重設時間的分隔符號。"},
   "badge_note_fmt": {"message": "（{note}）", "description": "包住工具列提示列尾端的簡短狀態說明。"},
 
@@ -50,6 +51,10 @@
   "checking": {"message": "檢查中…"},
   "refused_note": {"message": "必須授予網站權限，才能開啟此功能。"},
   "note_main": {"message": "數字代表剩餘百分比。必須開著 Gemini 用量頁面（gemini.google.com/usage）的分頁，才能讀取 Gemini 用量。"},
+  "note_main_used": {"message": "數字代表已用百分比。必須開著 Gemini 用量頁面（gemini.google.com/usage）的分頁，才能讀取 Gemini 用量。"},
+  "mode_used": {"message": "已用"},
+  "mode_left": {"message": "剩餘"},
+  "mode_aria": {"message": "百分比顯示方式"},
   "open_claude": {"message": "Claude 用量"},
   "open_chatgpt": {"message": "ChatGPT 用量"},
   "open_gemini": {"message": "Gemini 用量"},

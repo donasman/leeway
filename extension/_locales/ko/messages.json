@@ -35,6 +35,7 @@
   "note_unread": {"message": "값을 읽지 못했습니다"},
   "badge_none": {"message": "켜진 서비스가 없습니다"},
   "badge_pct": {"message": "{pct} 남음", "description": "{pct}는 남은 비율, 예: '50%'. 툴바 툴팁에 표시"},
+  "badge_pct_used": {"message": "{pct} 사용"},
   "badge_sep": {"message": " · ", "description": "툴바 툴팁에서 값과 초기화 시각을 잇는 구분자"},
   "badge_note_fmt": {"message": " ({note})", "description": "툴바 툴팁 줄 끝의 짧은 상태 설명을 감싸는 형식"},
 
@@ -50,6 +51,10 @@
   "checking": {"message": "확인 중…"},
   "refused_note": {"message": "사이트 권한을 허용해야 켤 수 있습니다."},
   "note_main": {"message": "숫자는 남은 비율입니다. Gemini는 사용량 페이지(gemini.google.com/usage) 탭이 열려 있을 때 읽습니다."},
+  "note_main_used": {"message": "숫자는 사용한 비율입니다. Gemini는 사용량 페이지(gemini.google.com/usage) 탭이 열려 있을 때 읽습니다."},
+  "mode_used": {"message": "사용"},
+  "mode_left": {"message": "남음"},
+  "mode_aria": {"message": "비율 표시 기준"},
   "open_claude": {"message": "Claude 사용량"},
   "open_chatgpt": {"message": "ChatGPT 사용량"},
   "open_gemini": {"message": "Gemini 사용량"},

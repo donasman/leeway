@@ -35,6 +35,7 @@
   "note_unread": {"message": "no se ha podido leer el valor"},
   "badge_none": {"message": "Sin servicios activos"},
   "badge_pct": {"message": "{pct} restante", "description": "{pct} es el porcentaje restante, p. ej. '50%'. Se muestra en el tooltip de la barra."},
+  "badge_pct_used": {"message": "{pct} usado"},
   "badge_sep": {"message": " · ", "description": "Une el valor y la hora de restablecimiento en el tooltip de la barra."},
   "badge_note_fmt": {"message": " ({note})", "description": "Envuelve una nota de estado breve al final de una línea del tooltip."},
 
@@ -50,6 +51,10 @@
   "checking": {"message": "Comprobando…"},
   "refused_note": {"message": "Debes conceder el permiso del sitio para activarlo."},
   "note_main": {"message": "Los números indican el porcentaje restante. El uso de Gemini se lee mientras su página de uso (gemini.google.com/usage) esté abierta en una pestaña."},
+  "note_main_used": {"message": "Los números indican el porcentaje usado. El uso de Gemini se lee mientras su página de uso (gemini.google.com/usage) esté abierta en una pestaña."},
+  "mode_used": {"message": "Usado"},
+  "mode_left": {"message": "Restante"},
+  "mode_aria": {"message": "Mostrar porcentajes como"},
   "open_claude": {"message": "Uso de Claude"},
   "open_chatgpt": {"message": "Uso de ChatGPT"},
   "open_gemini": {"message": "Uso de Gemini"},
