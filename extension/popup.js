@@ -1,5 +1,5 @@
 import { usageKey, lastOkKey } from './snapshot.js';
-import { peerViews, providerView } from './view.js';
+import { PERCENT_MODE_KEY, peerViews, percentMode, providerView } from './view.js';
 import { viewLabels, msg } from './i18n.js';
 import { helperNote } from './peers.js';
 
@@ -27,13 +27,12 @@ async function hasHostPermission(provider) {
 function limitRow(row) {
   const line = document.createElement('div');
   line.className = row.primary ? 'limit primary' : 'limit';
-  // Bar width and colour come from the remaining percent; "?" (no value) leaves
-  // --pct unset (fill 0, no tone). Thresholds match the toolbar badge colours.
-  const remaining = parseInt(row.percent, 10);
-  if (Number.isFinite(remaining)) {
-    line.style.setProperty('--pct', String(Math.max(0, Math.min(100, remaining))));
-    line.classList.add(remaining < 20 ? 'bad' : remaining < 50 ? 'warn' : 'good');
-  }
+  // The bar is as long as the number shown (used or left); its colour is the
+  // row's tone, from what is left either way — the badge's colours (view.js
+  // toneOf). "?" (no value) leaves --pct unset (fill 0) and has no tone.
+  const shown = parseInt(row.percent, 10);
+  if (Number.isFinite(shown)) line.style.setProperty('--pct', String(Math.max(0, Math.min(100, shown))));
+  if (row.tone) line.classList.add(row.tone);
   for (const [name, text] of [['label', row.label], ['pct', row.percent], ['reset', row.reset]]) {
     const cell = document.createElement('span');
     cell.className = name;
@@ -113,13 +112,13 @@ function peerBlock(peer) {
   return block;
 }
 
-function showPeers(settings, record, now) {
+function showPeers(settings, record, now, mode) {
   const on = Boolean(settings?.on);
   if (!toggling.has('peers')) document.getElementById('toggle_peers').checked = on;
   document.getElementById('peer_setup').hidden = !on;
   const input = document.getElementById('peer_label');
   if (document.activeElement !== input) input.value = on && typeof settings.label === 'string' ? settings.label : '';
-  const peers = on ? peerViews(record, now, undefined, LABELS) : [];
+  const peers = on ? peerViews(record, now, undefined, LABELS, mode) : [];
   document.getElementById('peers_list').replaceChildren(...peers.map(peerBlock));
   const status = document.getElementById('status_peers');
   let note = '';
@@ -148,17 +147,33 @@ function showPeers(settings, record, now) {
   document.getElementById('peer_links').hidden = on && helper.state === 'ok';
 }
 
+// Used or left (CLAUDE.md §4): which switch button is down, and the hint
+// saying which it is. The hint is rebuilt (with its Gemini link) only when
+// the mode changes.
+let hintMode = null;
+function showMode(mode) {
+  document.getElementById('mode_used').setAttribute('aria-pressed', String(mode === 'used'));
+  document.getElementById('mode_left').setAttribute('aria-pressed', String(mode === 'remaining'));
+  if (mode === hintMode) return;
+  hintMode = mode;
+  const hint = document.getElementById('note_main');
+  hint.textContent = msg(mode === 'used' ? 'note_main_used' : 'note_main');
+  linkGeminiUsage(hint);
+}
+
 // Storage changes, the clock tick and toggles can overlap; only the newest
 // render writes to the page.
 let renders = 0;
 async function render() {
   const current = ++renders;
-  const keys = ['enabledProviders', 'peer_settings', 'peer_profiles', ...POPUP_PROVIDERS.flatMap(p => [usageKey(p), lastOkKey(p)])];
+  const keys = ['enabledProviders', PERCENT_MODE_KEY, 'peer_settings', 'peer_profiles', ...POPUP_PROVIDERS.flatMap(p => [usageKey(p), lastOkKey(p)])];
   const data = await chrome.storage.local.get(keys);
   const enabled = new Set(Array.isArray(data.enabledProviders) ? data.enabledProviders : []);
   const permitted = await Promise.all(POPUP_PROVIDERS.map(p => enabled.has(p) && hasHostPermission(p)));
   if (current !== renders) return;
   const now = Date.now();
+  const mode = percentMode(data[PERCENT_MODE_KEY]);
+  showMode(mode);
   POPUP_PROVIDERS.forEach((provider, i) => {
     // One provider's odd stored data must not keep the others from showing.
     try {
@@ -167,13 +182,13 @@ async function render() {
       const view = providerView({
         enabled: on, permitted: permitted[i],
         latest: data[usageKey(provider)], lastOk: data[lastOkKey(provider)],
-      }, now, undefined, LABELS);
+      }, now, undefined, LABELS, mode);
       showProvider(provider, !on && refused.has(provider) ? {...view, note: REFUSED_NOTE} : view);
     } catch (error) {
       console.warn(`popup: ${provider} not shown:`, String(error));
     }
   });
-  try { showPeers(data.peer_settings, data.peer_profiles, now); }
+  try { showPeers(data.peer_settings, data.peer_profiles, now, mode); }
   catch (error) { console.warn('popup: other profiles not shown:', String(error)); }
 }
 
@@ -250,6 +265,15 @@ document.getElementById('peer_label').addEventListener('change', async event => 
 });
 document.getElementById('peer_label').placeholder = msg('peers_label_placeholder');
 
+// A display setting, saved here (not through background); this popup, the
+// Leeway window, the PiP and the badge follow it through storage.onChanged.
+document.getElementById('mode').setAttribute('aria-label', msg('mode_aria'));
+for (const [id, mode] of [['mode_used', 'used'], ['mode_left', 'remaining']]) {
+  document.getElementById(id).addEventListener('click', () => {
+    chrome.storage.local.set({[PERCENT_MODE_KEY]: mode}).catch(() => {});
+  });
+}
+
 document.getElementById('toggle_claude').addEventListener('change', event => handleToggle('claude', event));
 document.getElementById('toggle_chatgpt').addEventListener('change', event => handleToggle('chatgpt', event));
 document.getElementById('toggle_gemini').addEventListener('change', event => handleToggle('gemini', event));
@@ -297,13 +321,14 @@ document.getElementById('openOverlay').addEventListener('click', async () => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
-  if (Object.keys(changes).some(key => key === 'enabledProviders' || key.startsWith('usage_') || key.startsWith('peer_'))) render();
+  if (Object.keys(changes).some(key => key === 'enabledProviders' || key === PERCENT_MODE_KEY || key.startsWith('usage_') || key.startsWith('peer_'))) render();
 });
 
 document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
 document.documentElement.lang = chrome.i18n.getUILanguage();
 for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = chrome.i18n.getMessage(el.dataset.i18n);
-linkGeminiUsage(document.querySelector('[data-i18n="note_main"]'));
+// The hint's text and link follow the mode (showMode); used is the default.
+linkGeminiUsage(document.getElementById('note_main'));
 // "3분 전", staleness and the reset countdowns move with the clock, not only with storage.
 setInterval(render, 30 * 1000);
 render();

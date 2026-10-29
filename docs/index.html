@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Leeway — remaining Claude, ChatGPT & Gemini usage in Chrome</title>
-<meta name="description" content="Leeway is a free, open-source Chrome extension that shows how much of your Claude, ChatGPT and Gemini usage limits is left — 5-hour and weekly — in a popup, the toolbar badge and an always-on-top overlay.">
+<title>Leeway — Claude, ChatGPT & Gemini usage limits in Chrome</title>
+<meta name="description" content="Leeway is a free, open-source Chrome extension that shows how much of your Claude, ChatGPT and Gemini usage limits you have used, or what is left — 5-hour and weekly — in a popup, the toolbar badge and an always-on-top overlay.">
 <meta name="google-site-verification" content="3_v0gmq59-syXX8tBQA9s7fN2uq2MabuLaJn7PKj5qA">
 <link rel="canonical" href="https://donasman.github.io/leeway/">
 <link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/">
 <link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/">
 <link rel="alternate" hreflang="x-default" href="https://donasman.github.io/leeway/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Leeway — remaining Claude, ChatGPT & Gemini usage in Chrome">
-<meta property="og:description" content="See how much of your 5-hour and weekly AI usage limits is left, in Chrome's toolbar. Free, open source, nothing leaves your device.">
+<meta property="og:title" content="Leeway — Claude, ChatGPT & Gemini usage limits in Chrome">
+<meta property="og:description" content="See how much of your 5-hour and weekly AI usage limits you have used, or what is left, in Chrome's toolbar. Free, open source, nothing leaves your device.">
 <meta property="og:url" content="https://donasman.github.io/leeway/">
 <meta property="og:image" content="https://donasman.github.io/leeway/img/popup.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -22,7 +22,7 @@
   "@type": "SoftwareApplication",
   "name": "Leeway — AI usage & limits meter",
   "alternateName": "Leeway",
-  "description": "Chrome extension that shows the remaining Claude, ChatGPT and Gemini usage limits (5-hour and weekly) in a popup, the toolbar badge and an always-on-top overlay.",
+  "description": "Chrome extension that shows Claude, ChatGPT and Gemini usage limits (5-hour and weekly), used or left, in a popup, the toolbar badge and an always-on-top overlay.",
   "applicationCategory": "BrowserApplication",
   "operatingSystem": "Google Chrome on Windows, macOS, Linux and ChromeOS",
   "url": "https://donasman.github.io/leeway/",
@@ -34,11 +34,12 @@
   "license": "https://opensource.org/licenses/MIT",
   "inLanguage": ["en", "ko", "es", "ja", "zh-CN", "zh-TW"],
   "featureList": [
-    "Remaining percentage and reset time of the Claude, ChatGPT and Gemini 5-hour and weekly limits",
-    "Toolbar badge with the lowest remaining value, color-coded",
+    "Used percentage and reset time of the Claude, ChatGPT and Gemini 5-hour and weekly limits",
+    "Used | Left switch: every number shows what is used or what is left",
+    "Toolbar badge for the service closest to its limit, color-coded",
     "Always-on-top floating overlay (Chrome Document Picture-in-Picture)",
     "Plan names such as Max 5x or Plus",
-    "Every Claude organization of one sign-in, each with its own remaining usage",
+    "Every Claude organization of one sign-in, each with its own usage",
     "No sign-in, no cookie or API key to paste, no server, no analytics"
   ],
   "author": {"@type": "Person", "name": "Jeong GeonHui", "url": "https://github.com/donasman"},
@@ -51,17 +52,19 @@
   "@type": "FAQPage",
   "mainEntity": [
     {"@type": "Question", "name": "How do I see how much of my Claude usage limit is left?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Install Leeway from the Chrome Web Store, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows the remaining percentage of your 5-hour and weekly limits and when each resets, and the toolbar badge shows the lowest remaining value."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "Install Leeway from the Chrome Web Store, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows how much of your 5-hour and weekly limits you have used and when each resets, and the toolbar badge shows the service closest to its limit. To see what is left instead, switch the popup to Left."}},
+    {"@type": "Question", "name": "Can it show what is left instead of what is used?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Yes. The Used | Left switch at the top of the popup turns every number — popup, overlay and toolbar badge — into the remaining percentage, and back. Leeway remembers the choice; Used is the default. Colors follow what is left either way, so 85% used is red."}},
     {"@type": "Question", "name": "Does Leeway work with ChatGPT and Gemini too?",
      "acceptedAnswer": {"@type": "Answer", "text": "Yes. For ChatGPT it shows what ChatGPT's Settings > Usage page shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Ordinary chat conversations are not counted there. For Gemini it reads the numbers on an open gemini.google.com/usage tab, so that page needs to be open. The popup's Gemini usage button opens that page, or switches to it if it is already open, and reads it once it has loaded. Leeway keeps that tab from being unloaded, and when it sits in the background with numbers more than five minutes old (or Chrome put it to sleep) Leeway reloads it, never while you are looking at it."}},
     {"@type": "Question", "name": "Do I need to paste a cookie, password or API key?",
      "acceptedAnswer": {"@type": "Answer", "text": "No. Leeway uses the sessions you are already signed in to in Chrome. It never asks for a password, cookie or API key, and session tokens are never stored, logged or sent anywhere."}},
     {"@type": "Question", "name": "Does Leeway read my conversations?",
      "acceptedAnswer": {"@type": "Answer", "text": "No. It reads only the usage limits. Its page script runs only on a service's usage screen, never on a conversation page."}},
-    {"@type": "Question", "name": "Can I keep my remaining usage visible while I work?",
+    {"@type": "Question", "name": "Can I keep my usage visible while I work?",
      "acceptedAnswer": {"@type": "Answer", "text": "Yes. Open overlay in the popup opens a small Leeway window, and its Float on top button (or Enter, right after) opens a small always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). Click it to collapse it to one line."}},
     {"@type": "Question", "name": "Can I see several accounts at once?",
-     "acceptedAnswer": {"@type": "Answer", "text": "If one claude.ai sign-in belongs to several organizations, such as a personal plan and a Team workspace, each is shown separately. For separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental Leeway helper lets every profile show the others' remaining usage."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "If one claude.ai sign-in belongs to several organizations, such as a personal plan and a Team workspace, each is shown separately. For separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental Leeway helper lets every profile show the others' usage."}},
     {"@type": "Question", "name": "Is Leeway free? Is it official?",
      "acceptedAnswer": {"@type": "Answer", "text": "Leeway is free and open source under the MIT license. It is an independent project, not affiliated with Anthropic, OpenAI or Google."}}
   ]
@@ -102,21 +105,22 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <div class="wrap">
 <nav><strong>Leeway</strong><span><a href="ko/">한국어</a><a href="privacy/">Privacy</a><a href="https://github.com/donasman/leeway">GitHub</a></span></nav>
 
-<h1>Remaining Claude, ChatGPT &amp; Gemini usage, right in Chrome</h1>
-<p class="lead">Leeway is a free, open-source Chrome extension that shows how much of your AI usage limits is left — the 5-hour and weekly limits — in a popup, the toolbar badge and an always-on-top overlay.</p>
+<h1>Claude, ChatGPT &amp; Gemini usage limits, right in Chrome</h1>
+<p class="lead">Leeway is a free, open-source Chrome extension that shows how much of your AI usage limits you have used, or what is left — the 5-hour and weekly limits — in a popup, the toolbar badge and an always-on-top overlay.</p>
 <div class="cta">
   <a class="btn primary" href="https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga">Add to Chrome — free</a>
   <a class="btn" href="https://github.com/donasman/leeway">Source on GitHub</a>
 </div>
-<img class="shot" src="img/popup.png" width="1280" height="800" alt="Leeway popup showing the remaining 5-hour and weekly usage for Claude, ChatGPT and Gemini as color-coded percentages with reset times">
+<img class="shot" src="img/popup.png" width="1280" height="800" alt="Leeway popup showing the 5-hour and weekly usage for Claude, ChatGPT and Gemini as color-coded percentages with reset times">
 
 <h2>What it shows</h2>
 <ul>
-  <li><strong>Remaining percentage and reset time</strong> of each limit — the same numbers your signed-in usage pages show, not a token-count estimate. A value that could not be read is shown as <code>?</code>, never as 0%.</li>
-  <li><strong>Toolbar badge</strong> with the lowest remaining value among the services you turned on: green from 50, orange from 20 to 49, red below 20, grey when the value is old.</li>
+  <li><strong>Used percentage and reset time</strong> of each limit — the same numbers your signed-in usage pages show, not a token-count estimate. A value that could not be read is shown as <code>?</code>, never as 0%.</li>
+  <li><strong>Used or left</strong>: the switch at the top of the popup turns every number — popup, overlay and badge — into what is left, and back. Colors follow what is left either way.</li>
+  <li><strong>Toolbar badge</strong> for the service closest to its limit among those you turned on: green with 50% or more left, orange from 20 to 49% left, red below 20% left, grey when the value is old.</li>
   <li><strong>Always-on-top overlay</strong> through Chrome's Document Picture-in-Picture (Chrome 116+): Open overlay in the popup, then Float on top in the Leeway window (or press Enter). Click it to collapse it to one line.</li>
   <li><strong>Plan names</strong> such as Max 5x or Plus, when the service reports them.</li>
-  <li><strong>Every Claude organization</strong> of your sign-in (for example a personal plan and a Team workspace), each with its own remaining usage.</li>
+  <li><strong>Every Claude organization</strong> of your sign-in (for example a personal plan and a Team workspace), each with its own usage.</li>
   <li>Values refresh every minute and when you open the popup; <strong>Refresh</strong> reads them right away.</li>
   <li>In English, Korean, Spanish, Japanese and Chinese (Simplified and Traditional).</li>
 </ul>
@@ -140,21 +144,23 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <p>Full details: <a href="privacy/">privacy policy</a>.</p>
 
 <h2>Several accounts</h2>
-<p>To watch several accounts, sign in to each in its own Chrome profile and add Leeway to each. On Windows, the optional <a href="https://github.com/donasman/leeway/releases/latest">Leeway helper</a> lets every profile's popup and overlay show the other profiles' remaining usage. It is experimental, off by default, and passes only the numbers the popup shows, through a file on your computer.</p>
+<p>To watch several accounts, sign in to each in its own Chrome profile and add Leeway to each. On Windows, the optional <a href="https://github.com/donasman/leeway/releases/latest">Leeway helper</a> lets every profile's popup and overlay show the other profiles' usage. It is experimental, off by default, and passes only the numbers the popup shows, through a file on your computer.</p>
 
 <h2>FAQ</h2>
 <h3>How do I see how much of my Claude usage limit is left?</h3>
-<p>Install Leeway from the Chrome Web Store, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows the remaining percentage of your 5-hour and weekly limits and when each resets, and the toolbar badge shows the lowest remaining value.</p>
+<p>Install Leeway from the Chrome Web Store, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows how much of your 5-hour and weekly limits you have used and when each resets, and the toolbar badge shows the service closest to its limit. To see what is left instead, switch the popup to Left.</p>
+<h3>Can it show what is left instead of what is used?</h3>
+<p>Yes. The Used | Left switch at the top of the popup turns every number — popup, overlay and toolbar badge — into the remaining percentage, and back. Leeway remembers the choice; Used is the default. Colors follow what is left either way, so 85% used is red.</p>
 <h3>Does Leeway work with ChatGPT and Gemini too?</h3>
 <p>Yes. For ChatGPT it shows what ChatGPT's Settings &gt; Usage page shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Ordinary chat conversations are not counted there. For Gemini it reads the numbers on an open gemini.google.com/usage tab, so that page needs to be open. The popup's Gemini usage button opens that page, or switches to it if it is already open, and reads it once it has loaded. Leeway keeps that tab from being unloaded, and when it sits in the background with numbers more than five minutes old (or Chrome put it to sleep) Leeway reloads it, never while you are looking at it.</p>
 <h3>Do I need to paste a cookie, password or API key?</h3>
 <p>No. Leeway uses the sessions you are already signed in to in Chrome. It never asks for a password, cookie or API key, and session tokens are never stored, logged or sent anywhere.</p>
 <h3>Does Leeway read my conversations?</h3>
 <p>No. It reads only the usage limits. Its page script runs only on a service's usage screen, never on a conversation page.</p>
-<h3>Can I keep my remaining usage visible while I work?</h3>
+<h3>Can I keep my usage visible while I work?</h3>
 <p>Yes. Open overlay in the popup opens a small Leeway window, and its Float on top button (or Enter, right after) opens a small always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). Click it to collapse it to one line.</p>
 <h3>Can I see several accounts at once?</h3>
-<p>If one claude.ai sign-in belongs to several organizations, such as a personal plan and a Team workspace, each is shown separately. For separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental Leeway helper lets every profile show the others' remaining usage.</p>
+<p>If one claude.ai sign-in belongs to several organizations, such as a personal plan and a Team workspace, each is shown separately. For separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental Leeway helper lets every profile show the others' usage.</p>
 <h3>Is Leeway free? Is it official?</h3>
 <p>Leeway is free and open source under the MIT license. It is an independent project, not affiliated with Anthropic, OpenAI or Google.</p>
 

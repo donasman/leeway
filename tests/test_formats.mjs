@@ -36,22 +36,28 @@ const TZ = 'UTC';
 const iso = ms => new Date(ms).toISOString();
 const resetIn = (labels, ms) => formatReset({resets_at: iso(NOW + ms)}, NOW, TZ, NOW, labels);
 const resetAt = labels => formatReset({resets_at: '2026-10-20T00:00:00.000Z'}, NOW, TZ, NOW, labels); // Tue 00:00 UTC
-const claudeBadge = labels => {
+const claudeBadge = (labels, mode) => {
   const s = toSnapshot({provider: 'claude', status: 'ok', value: '', detail: '', limits: [
     {id: 'claude_5h', label: '5h', remaining_percent: 50, resets_at: iso(NOW + 2 * H + 48 * MIN), reset_text: null},
     {id: 'claude_weekly', label: 'wk', remaining_percent: 65, resets_at: '2026-10-20T00:00:00.000Z', reset_text: null},
   ]}, NOW);
-  return badgeView([{name: 'Claude', enabled: true, permitted: true, latest: s, lastOk: s}], NOW, TZ, labels).title.split('\n')[1];
+  return badgeView([{name: 'Claude', enabled: true, permitted: true, latest: s, lastOk: s}], NOW, TZ, labels, mode).title.split('\n')[1];
 };
 
 // Expected outputs, per the review. duration = 2 h 48 m; a date more than a day
-// out = Tue 20 Oct 00:00; an age of 3 minutes; a fresh 50%-left badge line.
+// out = Tue 20 Oct 00:00; an age of 3 minutes; a fresh 50%-left badge line, and
+// the same line when percentages are shown as used (badge_pct_used, not reviewed yet).
 const CASES = {
-  en:    {dur: 'resets in 2h 48m',                 date: 'resets 10/20 (Tue) 00:00',               age: '3m ago',     badge: 'Claude: 5-hour 50% left · resets in 2h 48m'},
-  es:    {dur: 'se restablece en 2 h 48 min',      date: 'se restablece el mar 20/10 a las 00:00', age: 'hace 3 min', badge: 'Claude: 5 horas 50% restante · se restablece en 2 h 48 min'},
-  ja:    {dur: 'あと2時間48分でリセット',            date: '10/20（火）00:00にリセット',               age: '3分前',      badge: 'Claude: 5時間 残り50%、あと2時間48分でリセット'},
-  zh:    {dur: '2小时48分钟后重置',                  date: '10月20日（周二）00:00 重置',               age: '3分钟前',    badge: 'Claude: 5小时 剩余50% · 2小时48分钟后重置'},
-  zh_TW: {dur: '2小時48分鐘後重設',                  date: '10/20（週二）00:00 重設',                  age: '3分鐘前',    badge: 'Claude: 5小時 剩餘50% · 2小時48分鐘後重設'},
+  en:    {dur: 'resets in 2h 48m',                 date: 'resets 10/20 (Tue) 00:00',               age: '3m ago',     badge: 'Claude: 5-hour 50% left · resets in 2h 48m',
+          used: 'Claude: 5-hour 50% used · resets in 2h 48m'},
+  es:    {dur: 'se restablece en 2 h 48 min',      date: 'se restablece el mar 20/10 a las 00:00', age: 'hace 3 min', badge: 'Claude: 5 horas 50% restante · se restablece en 2 h 48 min',
+          used: 'Claude: 5 horas 50% usado · se restablece en 2 h 48 min'},
+  ja:    {dur: 'あと2時間48分でリセット',            date: '10/20（火）00:00にリセット',               age: '3分前',      badge: 'Claude: 5時間 残り50%、あと2時間48分でリセット',
+          used: 'Claude: 5時間 使用済み50%、あと2時間48分でリセット'},
+  zh:    {dur: '2小时48分钟后重置',                  date: '10月20日（周二）00:00 重置',               age: '3分钟前',    badge: 'Claude: 5小时 剩余50% · 2小时48分钟后重置',
+          used: 'Claude: 5小时 已用50% · 2小时48分钟后重置'},
+  zh_TW: {dur: '2小時48分鐘後重設',                  date: '10/20（週二）00:00 重設',                  age: '3分鐘前',    badge: 'Claude: 5小時 剩餘50% · 2小時48分鐘後重設',
+          used: 'Claude: 5小時 已用50% · 2小時48分鐘後重設'},
 };
 
 for (const [lang, want] of Object.entries(CASES)) {
@@ -60,7 +66,8 @@ for (const [lang, want] of Object.entries(CASES)) {
   check(`${lang}: duration 2h 48m`, resetIn(labels, 2 * H + 48 * MIN), want.dur);
   check(`${lang}: reset date (more than a day out)`, resetAt(labels), want.date);
   check(`${lang}: age "3 min"`, formatAge(3 * MIN, labels), want.age);
-  check(`${lang}: badge line shows remaining`, claudeBadge(labels), want.badge);
+  check(`${lang}: badge line shows remaining`, claudeBadge(labels, 'remaining'), want.badge);
+  check(`${lang}: badge line shows used`, claudeBadge(labels, 'used'), want.used);
 }
 
 console.log(`\n${passed + failed} checks — ${passed} passed, ${failed} failed`);

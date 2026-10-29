@@ -1,10 +1,11 @@
 # Leeway
 
-> Leeway is a free, open-source Chrome extension that shows how much of your Claude, ChatGPT and Gemini usage limits is left — the 5-hour and weekly limits — as a percentage with reset times, in a popup, the toolbar badge and an always-on-top overlay. Unofficial; not affiliated with Anthropic, OpenAI or Google.
+> Leeway is a free, open-source Chrome extension that shows how much of your Claude, ChatGPT and Gemini usage limits you have used — or, with one switch, what is left — for the 5-hour and weekly limits, as a percentage with reset times, in a popup, the toolbar badge and an always-on-top overlay. Unofficial; not affiliated with Anthropic, OpenAI or Google.
 
 ## What it does
-- Shows the remaining percentage and reset time of each usage limit, as the signed-in usage pages show them (not a token-count estimate). A value that could not be read is shown as "?", never as 0%.
-- Toolbar badge with the lowest remaining value among the enabled services, color-coded (green from 50, orange 20–49, red below 20, grey when stale).
+- Shows the used percentage and reset time of each usage limit, as the signed-in usage pages show them (not a token-count estimate). A value that could not be read is shown as "?", never as 0%.
+- A Used | Left switch at the top of the popup turns every number (popup, overlay, badge) into the remaining percentage and back; used is the default.
+- Toolbar badge for the enabled service closest to its limit, color-coded by what is left (green from 50% left, orange 20–49% left, red below 20% left, grey when stale).
 - Always-on-top floating overlay through Chrome's Document Picture-in-Picture (Chrome 116+), opened from a small Leeway window (popup: Open overlay, then Float on top or Enter), collapsible to one line.
 - Plan names (e.g. Max 5x, Plus) when the service reports them; every Claude organization of one sign-in shown separately.
 - Refreshes every minute and when the popup opens; UI in English, Korean, Spanish, Japanese, Chinese (Simplified and Traditional).
@@ -21,7 +22,7 @@
 - Site permissions are optional and requested per service when it is turned on.
 
 ## Several accounts
-- Separate accounts: one Chrome profile per account. On Windows, the optional and experimental Leeway helper (leeway-helper.exe, GitHub Releases) lets each profile show the others' remaining usage, through a local file only.
+- Separate accounts: one Chrome profile per account. On Windows, the optional and experimental Leeway helper (leeway-helper.exe, GitHub Releases) lets each profile show the others' usage, through a local file only.
 
 ## Links
 - Install (Chrome Web Store): https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga

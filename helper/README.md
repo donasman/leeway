@@ -1,7 +1,7 @@
 # Leeway helper
 
 A small Windows program that lets Leeway in several Chrome profiles show each
-other's remaining usage ("Other Chrome profiles" in the popup). Chrome starts it
+other's usage ("Other Chrome profiles" in the popup). Chrome starts it
 through [Native Messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging)
 whenever a profile refreshes; it reads and writes one file and exits.
 

@@ -27,6 +27,7 @@ const settle = async () => { for (let i = 0; i < 10; i += 1) await new Promise(r
 
 globalThis.chrome = {i18n: {getMessage: key => KO[key] ?? ''}};
 const { openPip } = await import('../extension/overlay_view.js');
+const { toneOf } = await import('../extension/view.js');
 
 // Opens the overlay with `data` drawn in it, as the "Float on top" click does.
 async function openOverlay(data) {
@@ -40,7 +41,9 @@ async function openOverlay(data) {
   return {pip, root, resizes, requests, click: async () => { root.dispatchEvent(new pip.window.MouseEvent('click', {bubbles: true})); await settle(); }};
 }
 
-const row = (label, percent, reset = '', primary = false) => ({label, percent, reset, primary});
+// Rows as view.js makes them. These are left percentages, so the tone (from
+// what is left) follows the number; "used" rows are in their own section.
+const row = (label, percent, reset = '', primary = false) => ({label, percent, tone: toneOf(parseInt(percent, 10)), reset, primary});
 const provider = (name, extra) => ({provider: name, enabled: true, state: 'ok', status: '정상', dim: false, note: '', plan: null, accounts: [], rows: [], ...extra});
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : null);
 
@@ -128,6 +131,27 @@ console.log('\ncollapsed — one ring per service');
   await click();
   check('click again: expanded, 280 wide', [root.className, root.querySelectorAll('.prov').length, resizes.at(-1)[0]], ['', 3, 280]);
   check('expanded height stays within 140–520 of content (+30 title bar)', resizes.at(-1)[1] >= 170 && resizes.at(-1)[1] <= 550, true);
+}
+
+console.log('\nused — the numbers turn, the colours stay with what is left (CLAUDE.md §4)');
+{
+  const used = (label, percent, left, primary = false) => ({label, percent, tone: toneOf(left), reset: '', primary});
+  const USED = {checked: '2분 전 확인', mode: 'used', peers: [], providers: [
+    provider('claude', {rows: [used('5시간', '28%', 72, true), used('주간', '100%', 0)]}),
+  ]};
+  const {root, click} = await openOverlay(USED);
+  check('header: which way the numbers read, beside the brand', [text(root.querySelector('.brand')), text(root.querySelector('.hd > .muted'))], ['Leeway 사용', '2분 전 확인']);
+  check('28% used is 72 left: green, the bar as long as the 28', [root.querySelector('.big').className, root.querySelector('.bar i').getAttribute('style')], ['big good', 'width:28%']);
+  check('100% used (0 left): red', root.querySelector('.sub b')?.outerHTML, '<b class="bad">100%</b>');
+  await click();
+  const arc = root.querySelectorAll('circle')[1];
+  check('collapsed: no tag; the ring as long as the 28, green',
+    [root.querySelector('.plan'), arc?.getAttribute('stroke-dasharray').split(' ')[0], arc?.getAttribute('stroke')],
+    [null, (2 * Math.PI * 10 * 0.28).toFixed(1), '#3fca82']);
+}
+{
+  const {root} = await openOverlay({...DATA, mode: 'remaining'});
+  check('left: tagged as left', text(root.querySelector('.brand')), `Leeway ${KO.mode_left}`);
 }
 
 console.log('\ncollapsed — a service with nothing read yet keeps its place');

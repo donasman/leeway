@@ -202,6 +202,9 @@ store.set('usage_claude', claude);
 store.set('usage_last_ok_claude', claude);
 store.set('usage_chatgpt', snapshot('chatgpt', 'parse_failed', [], MIN, detail));
 store.set('usage_last_ok_chatgpt', chatgptOk(9 * MIN));
+// The checks are written in left percentages, so the used/left switch is at
+// left; the used default has its own section at the end.
+store.set('percent_mode', 'remaining');
 
 const timers = await openPopup('first');
 
@@ -215,7 +218,7 @@ console.log('\nopened — values from storage, no desktop app running');
   const enMessages = JSON.parse(readFileSync(new URL('../extension/_locales/en/messages.json', import.meta.url), 'utf8'));
   const fallbacks = [...new JSDOM(html).window.document.querySelectorAll('[data-i18n]')];
   check('static fallback text is the en message', fallbacks.filter(el => el.textContent !== enMessages[el.dataset.i18n]?.message).map(el => el.dataset.i18n), []);
-  check('...for every data-i18n element', fallbacks.length, 14);
+  check('...for every data-i18n element', fallbacks.length, 16);
   check('i18n replaces it on load', document.getElementById('refresh').textContent, KO.refresh);
   check('claude', card('claude'), {
     status: '정상',
@@ -482,9 +485,9 @@ console.log('\nGemini — a real provider: on, values shown, open-usage button')
   check('Gemini 사용량 button asks background to open the usage page', calls, [['runtime.sendMessage', 'OPEN_GEMINI_USAGE']]);
 
   // The hint's "gemini.google.com/usage" is a link doing what the button does.
-  const hint = globalThis.document.querySelector('[data-i18n="note_main"]');
+  const hint = $('note_main');
   const link = hint.querySelector('a');
-  check('hint: same words, the usage address as a link', [hint.textContent, link?.textContent, link?.getAttribute('href')],
+  check('hint: same words (left), the usage address as a link', [hint.textContent, link?.textContent, link?.getAttribute('href')],
     [KO.note_main, 'gemini.google.com/usage', 'https://gemini.google.com/usage']);
   calls.length = 0;
   const click = new globalThis.document.defaultView.MouseEvent('click', {bubbles: true, cancelable: true});
@@ -513,6 +516,37 @@ console.log('\noverlay button — background opens the Leeway window, whatever t
   await clickAndSettle('openOverlay');
   check('one OPEN_OVERLAY_WINDOW, nothing else', calls, [['runtime.sendMessage', 'OPEN_OVERLAY_WINDOW']]);
   check('no "open it from a web page" line any more', [$('ovmsg'), 'overlay_hint' in KO], [null, false]);
+}
+
+console.log('\nused or left — the switch in the header (CLAUDE.md §4)');
+{
+  const claudeValues = () => rows('claude').map(row => row[1]);
+  const tones = () => [...$('limits_claude').children].map(row => [row.className, row.style.getPropertyValue('--pct')]);
+  const pressed = () => [$('mode_used').getAttribute('aria-pressed'), $('mode_left').getAttribute('aria-pressed')];
+  const fresh = claudeOk();
+  granted.add(CLAUDE);
+  store.set('enabledProviders', ['claude']);
+  store.set('usage_claude', fresh);
+  store.set('usage_last_ok_claude', fresh);
+  store.delete('percent_mode'); // never switched
+  await openPopup('used-default');
+  check('never switched: used — 60 left is 40%, 0 left is 100%', claudeValues(), ['40%', '100%']);
+  check('"사용" is down, "남음" is not; the group is named', [...pressed(), $('mode').getAttribute('aria-label')], ['true', 'false', KO.mode_aria]);
+  check('colours from what is left (40% used: green, 100% used: red); bars as long as the numbers shown',
+    tones(), [['limit primary good', '40'], ['limit bad', '100']]);
+  check('the hint says used, its Gemini address still a link', [$('note_main').textContent, $('note_main').querySelector('a')?.textContent], [KO.note_main_used, 'gemini.google.com/usage']);
+
+  calls.length = 0;
+  $('mode_left').click();
+  await settle();
+  check('"남음" saves the setting here, nothing asked of background', calls, [['storage.set', {percent_mode: 'remaining'}]]);
+  check('...and the popup follows: 60%, 0%, the same colours', [claudeValues(), tones()], [['60%', '0%'], [['limit primary good', '60'], ['limit bad', '0']]]);
+  check('"남음" is down now; the hint says left', [...pressed(), $('note_main').textContent], ['false', 'true', KO.note_main]);
+  await openPopup('left-kept');
+  check('opened again: the setting is kept', [claudeValues(), ...pressed()], [['60%', '0%'], 'false', 'true']);
+  $('mode_used').click();
+  await settle();
+  check('"사용" turns it back', [claudeValues(), ...pressed()], [['40%', '100%'], 'true', 'false']);
 }
 
 // ---------------------------------------------------------------------------

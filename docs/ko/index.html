@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Leeway — Claude·ChatGPT·Gemini 남은 사용량을 Chrome에서</title>
-<meta name="description" content="Leeway는 Claude, ChatGPT, Gemini의 5시간·주간 사용량 한도가 얼마나 남았는지 팝업, 툴바 배지, 항상 위에 뜨는 오버레이로 보여주는 무료 오픈소스 Chrome 확장 프로그램입니다.">
+<title>Leeway — Claude·ChatGPT·Gemini 사용량 한도를 Chrome에서</title>
+<meta name="description" content="Leeway는 Claude, ChatGPT, Gemini의 5시간·주간 사용량 한도를 얼마나 썼는지(또는 얼마나 남았는지) 팝업, 툴바 배지, 항상 위에 뜨는 오버레이로 보여주는 무료 오픈소스 Chrome 확장 프로그램입니다.">
 <link rel="canonical" href="https://donasman.github.io/leeway/ko/">
 <link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/">
 <link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/">
 <link rel="alternate" hreflang="x-default" href="https://donasman.github.io/leeway/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
-<meta property="og:title" content="Leeway — Claude·ChatGPT·Gemini 남은 사용량을 Chrome에서">
-<meta property="og:description" content="5시간·주간 AI 사용량 한도가 얼마나 남았는지 Chrome 툴바에서 바로 확인. 무료, 오픈소스, 데이터는 내 컴퓨터 밖으로 나가지 않습니다.">
+<meta property="og:title" content="Leeway — Claude·ChatGPT·Gemini 사용량 한도를 Chrome에서">
+<meta property="og:description" content="5시간·주간 AI 사용량 한도를 얼마나 썼는지, 얼마나 남았는지 Chrome 툴바에서 바로 확인. 무료, 오픈소스, 데이터는 내 컴퓨터 밖으로 나가지 않습니다.">
 <meta property="og:url" content="https://donasman.github.io/leeway/ko/">
 <meta property="og:image" content="https://donasman.github.io/leeway/img/popup.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -22,7 +22,7 @@
   "@type": "SoftwareApplication",
   "name": "Leeway — AI usage & limits meter",
   "alternateName": "Leeway",
-  "description": "Claude, ChatGPT, Gemini의 5시간·주간 사용량 한도가 얼마나 남았는지 팝업, 툴바 배지, 항상 위 오버레이로 보여주는 Chrome 확장 프로그램.",
+  "description": "Claude, ChatGPT, Gemini의 5시간·주간 사용량 한도를 사용한 비율 또는 남은 비율로 팝업, 툴바 배지, 항상 위 오버레이에 보여주는 Chrome 확장 프로그램.",
   "applicationCategory": "BrowserApplication",
   "operatingSystem": "Google Chrome on Windows, macOS, Linux and ChromeOS",
   "url": "https://donasman.github.io/leeway/ko/",
@@ -44,17 +44,19 @@
   "inLanguage": "ko",
   "mainEntity": [
     {"@type": "Question", "name": "Claude 사용량이 얼마나 남았는지 어떻게 확인하나요?",
-     "acceptedAnswer": {"@type": "Answer", "text": "Chrome 웹 스토어에서 Leeway를 설치하고 팝업에서 Claude를 켜세요. Chrome에서 claude.ai에 로그인되어 있으면 팝업에 5시간·주간 한도의 남은 비율과 초기화 시각이 나오고, 툴바 배지에는 가장 낮은 남은 값이 표시됩니다."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "Chrome 웹 스토어에서 Leeway를 설치하고 팝업에서 Claude를 켜세요. Chrome에서 claude.ai에 로그인되어 있으면 팝업에 5시간·주간 한도를 사용한 비율과 초기화 시각이 나오고, 툴바 배지에는 한도에 가장 가까운 서비스의 값이 표시됩니다. 남은 비율로 보려면 팝업 위쪽에서 남음을 고르세요."}},
+    {"@type": "Question", "name": "사용한 비율 대신 남은 비율로 볼 수 있나요?",
+     "acceptedAnswer": {"@type": "Answer", "text": "네. 팝업 위쪽의 사용 | 남음 전환으로 팝업, 오버레이, 툴바 배지의 모든 숫자를 남은 비율로 바꾸거나 되돌릴 수 있고, 고른 것은 기억합니다. 기본은 사용입니다. 색은 어느 쪽이든 남은 양을 따르므로 85% 사용이면 빨강입니다."}},
     {"@type": "Question", "name": "ChatGPT와 Gemini도 되나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "네. ChatGPT는 설정 > 사용량 화면에 나오는 값, 즉 Codex, Work, 워크스페이스 에이전트, ChatGPT for Excel이 함께 쓰는 요금제 한도를 보여줍니다. 일반 채팅 대화는 그 화면에서 집계되지 않습니다. Gemini는 열려 있는 gemini.google.com/usage 탭의 숫자를 읽으므로 그 페이지가 열려 있어야 합니다. 팝업의 Gemini 사용량 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다. Leeway는 그 탭이 메모리에서 내려가지 않게 하고, 뒤에 있는 탭의 숫자가 5분보다 오래됐거나 Chrome이 탭을 재웠으면 그 탭을 새로고침합니다. 보고 있는 탭은 건드리지 않습니다."}},
     {"@type": "Question", "name": "쿠키, 비밀번호, API 키를 넣어야 하나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "아니요. Leeway는 Chrome에 이미 로그인된 세션을 그대로 씁니다. 비밀번호, 쿠키, API 키를 요구하지 않고, 세션 토큰은 저장·기록·전송하지 않습니다."}},
     {"@type": "Question", "name": "대화 내용을 읽나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "아니요. 사용량 한도만 읽습니다. 페이지 스크립트는 각 서비스의 사용량 화면에서만 실행되고 대화 페이지에서는 실행되지 않습니다."}},
-    {"@type": "Question", "name": "작업하면서 남은 사용량을 계속 볼 수 있나요?",
+    {"@type": "Question", "name": "작업하면서 사용량을 계속 볼 수 있나요?",
      "acceptedAnswer": {"@type": "Answer", "text": "네. 팝업의 오버레이 열기를 누르면 작은 Leeway 창이 열리고, 그 창의 항상 위에 띄우기 버튼을 누르거나 바로 Enter를 누르면 Chrome의 Document Picture-in-Picture로 항상 위에 뜨는 작은 창이 열립니다(Chrome 116 이상). 클릭하면 한 줄로 접힙니다."}},
     {"@type": "Question", "name": "여러 계정을 한 번에 볼 수 있나요?",
-     "acceptedAnswer": {"@type": "Answer", "text": "claude.ai 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 조직별로 따로 보여줍니다. 다른 계정은 계정마다 Chrome 프로필을 따로 두고 로그인하세요. Windows에서는 선택 기능인 Leeway helper(실험 기능)로 각 프로필이 다른 프로필의 남은 사용량도 함께 보여줍니다."}},
+     "acceptedAnswer": {"@type": "Answer", "text": "claude.ai 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 조직별로 따로 보여줍니다. 다른 계정은 계정마다 Chrome 프로필을 따로 두고 로그인하세요. Windows에서는 선택 기능인 Leeway helper(실험 기능)로 각 프로필이 다른 프로필의 사용량도 함께 보여줍니다."}},
     {"@type": "Question", "name": "무료인가요? 공식 프로그램인가요?",
      "acceptedAnswer": {"@type": "Answer", "text": "Leeway는 MIT 라이선스의 무료 오픈소스입니다. Anthropic, OpenAI, Google과 관계없는 독립 프로젝트입니다."}}
   ]
@@ -95,18 +97,19 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <div class="wrap">
 <nav><strong>Leeway</strong><span><a href="../">English</a><a href="../privacy/">개인정보처리방침</a><a href="https://github.com/donasman/leeway">GitHub</a></span></nav>
 
-<h1>Claude·ChatGPT·Gemini 남은 사용량을 Chrome에서 바로</h1>
-<p class="lead">Leeway는 AI 사용량 한도(5시간·주간)가 얼마나 남았는지 팝업, 툴바 배지, 항상 위에 뜨는 오버레이로 보여주는 무료 오픈소스 Chrome 확장 프로그램입니다.</p>
+<h1>Claude·ChatGPT·Gemini 사용량 한도를 Chrome에서 바로</h1>
+<p class="lead">Leeway는 AI 사용량 한도(5시간·주간)를 얼마나 썼는지, 또는 얼마나 남았는지 팝업, 툴바 배지, 항상 위에 뜨는 오버레이로 보여주는 무료 오픈소스 Chrome 확장 프로그램입니다.</p>
 <div class="cta">
   <a class="btn primary" href="https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga">Chrome에 추가 — 무료</a>
   <a class="btn" href="https://github.com/donasman/leeway">GitHub 소스</a>
 </div>
-<img class="shot" src="../img/popup.png" width="1280" height="800" alt="Claude, ChatGPT, Gemini의 5시간·주간 남은 사용량을 색으로 구분한 비율과 초기화 시각으로 보여주는 Leeway 팝업">
+<img class="shot" src="../img/popup.png" width="1280" height="800" alt="Claude, ChatGPT, Gemini의 5시간·주간 사용량을 색으로 구분한 비율과 초기화 시각으로 보여주는 Leeway 팝업">
 
 <h2>보여주는 것</h2>
 <ul>
-  <li><strong>남은 비율과 초기화 시각</strong> — 로그인된 사용량 화면이 보여주는 바로 그 숫자입니다. 토큰 수로 추정한 값이 아닙니다. 읽지 못한 값은 0%가 아니라 <code>?</code>로 표시합니다.</li>
-  <li><strong>툴바 배지</strong> — 켜 둔 서비스 중 가장 낮은 남은 값. 50 이상 초록, 20~49 주황, 20 미만 빨강, 오래된 값은 회색.</li>
+  <li><strong>사용한 비율과 초기화 시각</strong> — 로그인된 사용량 화면이 보여주는 바로 그 숫자입니다. 토큰 수로 추정한 값이 아닙니다. 읽지 못한 값은 0%가 아니라 <code>?</code>로 표시합니다.</li>
+  <li><strong>사용 또는 남음</strong> — 팝업 위쪽의 전환으로 팝업, 오버레이, 배지의 모든 숫자를 남은 비율로 바꾸거나 되돌립니다. 색은 어느 쪽이든 남은 양을 따릅니다.</li>
+  <li><strong>툴바 배지</strong> — 켜 둔 서비스 중 한도에 가장 가까운 서비스의 값. 남은 양이 50% 이상이면 초록, 20~49%면 주황, 20% 미만이면 빨강, 오래된 값은 회색.</li>
   <li><strong>항상 위 오버레이</strong> — Chrome의 Document Picture-in-Picture(Chrome 116 이상). 팝업의 오버레이 열기, 이어서 Leeway 창의 항상 위에 띄우기(또는 Enter)를 누릅니다. 클릭하면 한 줄로 접힙니다.</li>
   <li><strong>요금제 이름</strong> — 서비스가 알려 주면 Max 5x, Plus처럼 표시합니다.</li>
   <li><strong>Claude 조직별 사용량</strong> — 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 각각 따로 보여줍니다.</li>
@@ -133,21 +136,23 @@ footer{border-top:1px solid var(--line);margin-top:48px;padding-top:18px;color:v
 <p>자세한 내용: <a href="../privacy/">개인정보처리방침</a>(영문)</p>
 
 <h2>여러 계정</h2>
-<p>여러 계정을 보려면 계정마다 Chrome 프로필을 따로 만들어 로그인하고, 각 프로필에 Leeway를 추가하세요. Windows에서는 선택 기능인 <a href="https://github.com/donasman/leeway/releases/latest">Leeway helper</a>로 각 프로필의 팝업과 오버레이가 다른 프로필의 남은 사용량도 함께 보여줍니다. 실험 기능이고 기본은 꺼져 있으며, 팝업에 보이는 숫자만 내 컴퓨터의 파일을 통해 주고받습니다.</p>
+<p>여러 계정을 보려면 계정마다 Chrome 프로필을 따로 만들어 로그인하고, 각 프로필에 Leeway를 추가하세요. Windows에서는 선택 기능인 <a href="https://github.com/donasman/leeway/releases/latest">Leeway helper</a>로 각 프로필의 팝업과 오버레이가 다른 프로필의 사용량도 함께 보여줍니다. 실험 기능이고 기본은 꺼져 있으며, 팝업에 보이는 숫자만 내 컴퓨터의 파일을 통해 주고받습니다.</p>
 
 <h2>자주 묻는 질문</h2>
 <h3>Claude 사용량이 얼마나 남았는지 어떻게 확인하나요?</h3>
-<p>Chrome 웹 스토어에서 Leeway를 설치하고 팝업에서 Claude를 켜세요. Chrome에서 claude.ai에 로그인되어 있으면 팝업에 5시간·주간 한도의 남은 비율과 초기화 시각이 나오고, 툴바 배지에는 가장 낮은 남은 값이 표시됩니다.</p>
+<p>Chrome 웹 스토어에서 Leeway를 설치하고 팝업에서 Claude를 켜세요. Chrome에서 claude.ai에 로그인되어 있으면 팝업에 5시간·주간 한도를 사용한 비율과 초기화 시각이 나오고, 툴바 배지에는 한도에 가장 가까운 서비스의 값이 표시됩니다. 남은 비율로 보려면 팝업 위쪽에서 남음을 고르세요.</p>
+<h3>사용한 비율 대신 남은 비율로 볼 수 있나요?</h3>
+<p>네. 팝업 위쪽의 사용 | 남음 전환으로 팝업, 오버레이, 툴바 배지의 모든 숫자를 남은 비율로 바꾸거나 되돌릴 수 있고, 고른 것은 기억합니다. 기본은 사용입니다. 색은 어느 쪽이든 남은 양을 따르므로 85% 사용이면 빨강입니다.</p>
 <h3>ChatGPT와 Gemini도 되나요?</h3>
 <p>네. ChatGPT는 설정 &gt; 사용량 화면에 나오는 값, 즉 Codex, Work, 워크스페이스 에이전트, ChatGPT for Excel이 함께 쓰는 요금제 한도를 보여줍니다. 일반 채팅 대화는 그 화면에서 집계되지 않습니다. Gemini는 열려 있는 gemini.google.com/usage 탭의 숫자를 읽으므로 그 페이지가 열려 있어야 합니다. 팝업의 Gemini 사용량 버튼을 누르면 그 페이지를 열거나 이미 열린 탭으로 이동하고, 로드된 뒤 자동으로 읽습니다. Leeway는 그 탭이 메모리에서 내려가지 않게 하고, 뒤에 있는 탭의 숫자가 5분보다 오래됐거나 Chrome이 탭을 재웠으면 그 탭을 새로고침합니다. 보고 있는 탭은 건드리지 않습니다.</p>
 <h3>쿠키, 비밀번호, API 키를 넣어야 하나요?</h3>
 <p>아니요. Leeway는 Chrome에 이미 로그인된 세션을 그대로 씁니다. 비밀번호, 쿠키, API 키를 요구하지 않고, 세션 토큰은 저장·기록·전송하지 않습니다.</p>
 <h3>대화 내용을 읽나요?</h3>
 <p>아니요. 사용량 한도만 읽습니다. 페이지 스크립트는 각 서비스의 사용량 화면에서만 실행되고 대화 페이지에서는 실행되지 않습니다.</p>
-<h3>작업하면서 남은 사용량을 계속 볼 수 있나요?</h3>
+<h3>작업하면서 사용량을 계속 볼 수 있나요?</h3>
 <p>네. 팝업의 오버레이 열기를 누르면 작은 Leeway 창이 열리고, 그 창의 항상 위에 띄우기 버튼을 누르거나 바로 Enter를 누르면 Chrome의 Document Picture-in-Picture로 항상 위에 뜨는 작은 창이 열립니다(Chrome 116 이상). 클릭하면 한 줄로 접힙니다.</p>
 <h3>여러 계정을 한 번에 볼 수 있나요?</h3>
-<p>claude.ai 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 조직별로 따로 보여줍니다. 다른 계정은 계정마다 Chrome 프로필을 따로 두고 로그인하세요. Windows에서는 선택 기능인 Leeway helper(실험 기능)로 각 프로필이 다른 프로필의 남은 사용량도 함께 보여줍니다.</p>
+<p>claude.ai 로그인 하나가 개인 요금제와 Team 워크스페이스처럼 여러 조직에 속해 있으면 조직별로 따로 보여줍니다. 다른 계정은 계정마다 Chrome 프로필을 따로 두고 로그인하세요. Windows에서는 선택 기능인 Leeway helper(실험 기능)로 각 프로필이 다른 프로필의 사용량도 함께 보여줍니다.</p>
 <h3>무료인가요? 공식 프로그램인가요?</h3>
 <p>Leeway는 MIT 라이선스의 무료 오픈소스입니다. Anthropic, OpenAI, Google과 관계없는 독립 프로젝트입니다.</p>
 

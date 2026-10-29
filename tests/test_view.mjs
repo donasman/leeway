@@ -6,6 +6,7 @@ import {
   STALE_MS, asSnapshot, isStale, currentValues, primaryLimit, formatPercent,
   limitLabel as _limitLabel, formatAge as _formatAge, formatReset as _formatReset,
   providerView as _providerView, badgeView as _badgeView, BADGE_COLOR,
+  PERCENT_MODE_KEY, percentMode, shownPercent, toneOf,
 } from '../extension/view.js';
 import { toSnapshot } from '../extension/snapshot.js';
 import { readFileSync } from 'node:fs';
@@ -20,8 +21,10 @@ const KO = Object.fromEntries(Object.entries(
 const limitLabel = (limit) => _limitLabel(limit, KO);
 const formatAge = (ageMs) => _formatAge(ageMs, KO);
 const formatReset = (limit, nowMs, timeZone, collectedMs) => _formatReset(limit, nowMs, timeZone, collectedMs, KO);
-const providerView = (input, nowMs, timeZone) => _providerView(input, nowMs, timeZone, KO);
-const badgeView = (entries, nowMs, timeZone) => _badgeView(entries, nowMs, timeZone, KO);
+// The checks below are written in remaining percentages; the used default has
+// its own section ("used or left").
+const providerView = (input, nowMs, timeZone, mode = 'remaining') => _providerView(input, nowMs, timeZone, KO, mode);
+const badgeView = (entries, nowMs, timeZone, mode = 'remaining') => _badgeView(entries, nowMs, timeZone, KO, mode);
 
 const PASS = '\x1b[32mPASS\x1b[0m';
 const FAIL = '\x1b[31mFAIL\x1b[0m';
@@ -51,8 +54,8 @@ const claudeOk = (agoMs = 2 * MIN) => stored('claude', 'ok', [
   limit('claude_weekly', 0, {label: 'Weekly limit', resets_at: '2026-10-20T00:00:00Z'}),
 ], agoMs);
 const claudeRows = [
-  {id: 'claude_5h', label: '5시간', percent: '60%', reset: '4시간 20분 후 초기화', primary: true},
-  {id: 'claude_weekly', label: '주간', percent: '0%', reset: '10/20 (화) 09:00 초기화', primary: false},
+  {id: 'claude_5h', label: '5시간', percent: '60%', tone: 'good', reset: '4시간 20분 후 초기화', primary: true},
+  {id: 'claude_weekly', label: '주간', percent: '0%', tone: 'bad', reset: '10/20 (화) 09:00 초기화', primary: false},
 ];
 const chatgptOk = (agoMs = 2 * MIN) => stored('chatgpt', 'ok', [
   limit('chatgpt_5h', 61, {label: '5-hour limit', reset_text: '4시간 20분 후 초기화'}),
@@ -61,8 +64,8 @@ const chatgptOk = (agoMs = 2 * MIN) => stored('chatgpt', 'ok', [
 // The page's wording is recounted from collected_at (+ half its last unit):
 // 2 min later "4시간 20분" is 4 h 18 min 30 s away, "6일 0시간" still 6 d 0 h.
 const chatgptRows = fiveHourReset => [
-  {id: 'chatgpt_5h', label: '5시간', percent: '61%', reset: fiveHourReset, primary: true},
-  {id: 'chatgpt_weekly', label: '주간', percent: '60%', reset: '6일 0시간 후 초기화', primary: false},
+  {id: 'chatgpt_5h', label: '5시간', percent: '61%', tone: 'good', reset: fiveHourReset, primary: true},
+  {id: 'chatgpt_weekly', label: '주간', percent: '60%', tone: 'good', reset: '6일 0시간 후 초기화', primary: false},
 ];
 const failedRead = (provider, agoMs, detail) => stored(provider, 'parse_failed', [], agoMs, detail);
 
@@ -250,7 +253,7 @@ console.log('\nproviderView — ok');
   const pro = stored('chatgpt', 'ok', [limit('chatgpt_weekly', 40, {reset_text: '3일 후 초기화'})], 0);
   check('no 5-hour limit at all (Pro): weekly row is primary, labeled 주간',
     view({...on, latest: pro, lastOk: pro}).rows,
-    [{id: 'chatgpt_weekly', label: '주간', percent: '40%', reset: '3일 후 초기화', primary: true}]);
+    [{id: 'chatgpt_weekly', label: '주간', percent: '40%', tone: 'warn', reset: '3일 후 초기화', primary: true}]);
 }
 
 console.log('\nproviderView — stale after 6 minutes');
@@ -297,8 +300,8 @@ console.log('\nproviderView — failed read, nothing ok before');
     '5-hour card found, but its remaining percentage was not found');
   check('ChatGPT DOM partial (5-hour left out): "5시간 ?" shown, weekly not alone',
     view({...on, latest: domPartial, lastOk: null}).rows, [
-      {id: 'chatgpt_5h', label: '5시간', percent: '?', reset: '', primary: false},
-      {id: 'chatgpt_weekly', label: '주간', percent: '60%', reset: '6일 0시간 후 초기화', primary: false},
+      {id: 'chatgpt_5h', label: '5시간', percent: '?', tone: '', reset: '', primary: false},
+      {id: 'chatgpt_weekly', label: '주간', percent: '60%', tone: 'good', reset: '6일 0시간 후 초기화', primary: false},
     ]);
   const junk = stored('claude', 'ok', [limit('claude_5h', 50)], 0);
   junk.limits.unshift(null, 'x');
@@ -311,8 +314,8 @@ console.log('\nproviderView — failed read, nothing ok before');
   const p = view({...on, latest: partial, lastOk: null});
   check('partial: stored as parse_failed', partial.status, 'parse_failed');
   check('partial: 5-hour "?", weekly shown, neither primary (weekly never promoted)', p.rows, [
-    {id: 'claude_5h', label: '5시간', percent: '?', reset: '', primary: false},
-    {id: 'claude_weekly', label: '주간', percent: '70%', reset: '10/20 (화) 09:00 초기화', primary: false},
+    {id: 'claude_5h', label: '5시간', percent: '?', tone: '', reset: '', primary: false},
+    {id: 'claude_weekly', label: '주간', percent: '70%', tone: 'good', reset: '10/20 (화) 09:00 초기화', primary: false},
   ]);
   check('partial: status', p.status, '읽기 실패');
   check('partial: note', p.note, '일부만 읽음 · 방금 확인');
@@ -378,6 +381,40 @@ console.log('\nbadgeView — the lowest primary value among the enabled provider
   ]);
   check('tooltip marks a stale value', badge(claude(70, 7 * MIN)).title.split('\n')[1], 'Claude: 5시간 70% 남음 · 4시간 후 초기화 (오래됨)');
   check('tooltip names a provider without a value', badge(claude(70), entry('ChatGPT', {permitted: false})).title.split('\n')[2], 'ChatGPT: 권한 필요');
+}
+
+// ---------------------------------------------------------------------------
+console.log('\nused or left — only the display turns; stored values stay remaining (CLAUDE.md §1, §4)');
+{
+  check('setting key', PERCENT_MODE_KEY, 'percent_mode');
+  check('used is the default, also for anything unreadable', ['used', 'remaining', undefined, null, '', 'left', 1].map(percentMode),
+    ['used', 'remaining', 'used', 'used', 'used', 'used', 'used']);
+  check('left: as stored', [60, 0, 100, null].map(v => shownPercent(v, 'remaining')), ['60%', '0%', '100%', '?']);
+  check('used: 100 − left; 0 left is 100% used; "?" stays "?"', [60, 0, 100, null, NaN].map(v => shownPercent(v, 'used')), ['40%', '100%', '0%', '?', '?']);
+  check('used and left add up to 100 after rounding (49.5 left → 50 / 50)', [shownPercent(49.5, 'remaining'), shownPercent(49.5, 'used')], ['50%', '50%']);
+  check('tone from what is left: 50 good, 49.6 good (shown 50), 49 warn, 20 warn, 19 bad, 0 bad, none ""',
+    [50, 49.6, 49, 20, 19, 0, null].map(toneOf), ['good', 'good', 'warn', 'warn', 'bad', 'bad', '']);
+
+  const s = claudeOk();
+  const used = providerView({...on, latest: s, lastOk: s}, NOW, TZ, 'used');
+  check('used rows: 60 left → 40%, 0 left → 100%, the same tones as left', used.rows.map(r => [r.percent, r.tone]), [['40%', 'good'], ['100%', 'bad']]);
+  check('only percent differs from the left view', used.rows.map(({percent, ...rest}) => rest), claudeRows.map(({percent, ...rest}) => rest));
+  check('the stored snapshot is untouched', s.limits.map(l => l.remaining_percent), [60, 0]);
+  const parse = stored('chatgpt', 'parse_failed', [limit('chatgpt_weekly', 60, {reset_text: '6일 0시간 후 초기화'})], 0);
+  check('used, failed partial read: 5시간 stays "?"', providerView({...on, latest: parse, lastOk: null}, NOW, TZ, 'used').rows.map(r => r.percent), ['?', '40%']);
+  check('the pure default (no mode passed) is used too', _providerView({...on, latest: s, lastOk: s}, NOW, TZ, KO).rows[0].percent, '40%');
+
+  const both = (name, provider, primary, value) => {
+    const snapshot = stored(provider, 'ok', [limit(primary, value, {resets_at: iso(NOW + 4 * H)})], MIN);
+    return {name, enabled: true, permitted: true, latest: snapshot, lastOk: snapshot};
+  };
+  const pair = [both('Claude', 'claude', 'claude_5h', 70), both('ChatGPT', 'chatgpt', 'chatgpt_5h', 15)];
+  const left = badgeView(pair, NOW, TZ, 'remaining');
+  const usedBadge = badgeView(pair, NOW, TZ, 'used');
+  check('badge, left: least left "15", red', [left.text, left.color], ['15', BADGE_COLOR.red]);
+  check('badge, used: the same service, "85", the same red', [usedBadge.text, usedBadge.color], ['85', BADGE_COLOR.red]);
+  check('badge, used: tooltip says used', usedBadge.title.split('\n').slice(1), ['Claude: 5시간 30% 사용 · 4시간 후 초기화', 'ChatGPT: 5시간 85% 사용 · 4시간 후 초기화']);
+  check('badge, used: 0 left is "100"', badgeView([both('Claude', 'claude', 'claude_5h', 0)], NOW, TZ, 'used').text, '100');
 }
 
 // ---------------------------------------------------------------------------

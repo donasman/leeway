@@ -15,7 +15,7 @@ const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
 // Older than this is stale: six missed 1-minute polls (CLAUDE.md §4). Kept at
-// 6 minutes when the poll went from 2 minutes to 1 (1.0.1), so a Gemini page
+// 6 minutes when the poll went from 2 minutes to 1 (1.1.0), so a Gemini page
 // reloaded at 5 minutes old doesn't flicker to stale.
 export const STALE_MS = 6 * MINUTE_MS;
 
@@ -81,6 +81,31 @@ export function primaryLimit(snapshot) {
 // 0 is a value: "0%". Only a missing value is "?" (CLAUDE.md §1).
 export function formatPercent(value) {
   return isPercent(value) ? `${Math.round(value)}%` : '?';
+}
+
+// Which way percentages are shown (CLAUDE.md §4): 'used' — the default, also
+// for anything unreadable — or 'remaining'. Only the display turns: stored
+// values stay remaining percentages either way (CLAUDE.md §1).
+export const PERCENT_MODE_KEY = 'percent_mode';
+export function percentMode(value) {
+  return value === 'remaining' ? 'remaining' : 'used';
+}
+
+// The text shown for a remaining percent: itself, or what is used — 100 minus
+// the rounded remaining, so the two always add up to 100 and one value has
+// one colour either way. 0 left is "100%" used; a missing value stays "?".
+export function shownPercent(remaining, mode) {
+  if (!isPercent(remaining)) return '?';
+  return formatPercent(mode === 'remaining' ? remaining : 100 - Math.round(remaining));
+}
+
+// Colour by what is left, whichever way it is shown — the popup, the overlay
+// and the badge alike: 50 and up good, 20–49 warn, under 20 bad, '' for no
+// value. Compared as shown: 49.6 left is "50", good.
+export function toneOf(remaining) {
+  if (!isPercent(remaining)) return '';
+  const value = Math.round(remaining);
+  return value < 20 ? 'bad' : value < 50 ? 'warn' : 'good';
 }
 
 export function limitLabel(limit, labels = {}) {
@@ -155,13 +180,15 @@ export function formatReset(limit, nowMs, timeZone, collectedMs, labels = {}) {
   return fill(labels.reset_at, {date});
 }
 
-function rowsOf(snapshot, nowMs, timeZone, labels) {
+// percent is the text shown (used or left, per mode); tone is from what is left.
+function rowsOf(snapshot, nowMs, timeZone, labels, mode) {
   const primary = primaryLimit(snapshot);
   const collectedMs = Date.parse(snapshot?.collected_at);
   return limitsOf(snapshot).map(limit => ({
     id: limit.id,
     label: limitLabel(limit, labels),
-    percent: formatPercent(limit.remaining_percent),
+    percent: shownPercent(limit.remaining_percent, mode),
+    tone: toneOf(limit.remaining_percent),
     reset: formatReset(limit, nowMs, timeZone, collectedMs, labels),
     primary: limit === primary,
   }));
@@ -178,7 +205,7 @@ function stateOf(snapshot, nowMs) {
 // Every Claude organization of the sign-in, when there is more than one: its
 // plan as the name ("Max 5x", "Team"), "Account 2" when the plan is unknown,
 // and its own rows. Two of the same plan read "Team", "Team 2".
-function accountsOf(snapshot, nowMs, timeZone, labels) {
+function accountsOf(snapshot, nowMs, timeZone, labels, mode) {
   const accounts = Array.isArray(snapshot?.accounts) ? snapshot.accounts.filter(a => a && typeof a === 'object') : [];
   if (accounts.length < 2) return [];
   const seen = {};
@@ -186,12 +213,12 @@ function accountsOf(snapshot, nowMs, timeZone, labels) {
     const base = typeof account.plan === 'string' && account.plan ? account.plan : fill(labels.account_n, {n: i + 1});
     seen[base] = (seen[base] || 0) + 1;
     const state = account.status === 'ok' ? 'ok' : (account.status === 'logged_out' ? 'logged_out' : 'parse_failed');
-    const rows = rowsOf({status: account.status, primary_limit_id: account.primary_limit_id, limits: account.limits, collected_at: snapshot.collected_at}, nowMs, timeZone, labels);
+    const rows = rowsOf({status: account.status, primary_limit_id: account.primary_limit_id, limits: account.limits, collected_at: snapshot.collected_at}, nowMs, timeZone, labels, mode);
     return {
       label: seen[base] > 1 ? `${base} ${seen[base]}` : base,
       state,
       status: labels['status_' + state] ?? '',
-      rows: rows.length ? rows : [{id: 'claude_5h', label: labels.limit_5h ?? '5h', percent: '?', reset: '', primary: true}],
+      rows: rows.length ? rows : [{id: 'claude_5h', label: labels.limit_5h ?? '5h', percent: '?', tone: '', reset: '', primary: true}],
     };
   });
 }
@@ -201,8 +228,9 @@ const joinNote = (...parts) => parts.filter(Boolean).join(' · ');
 
 // What the popup shows for one provider. enabled (enabledProviders) and
 // permitted (chrome.permissions) are live and win over what the last refresh
-// stored, so a provider that is off shows no values (CLAUDE.md §2).
-export function providerView({enabled, permitted, latest, lastOk}, nowMs, timeZone, labels = {}) {
+// stored, so a provider that is off shows no values (CLAUDE.md §2). mode is
+// percentMode() of what is stored under PERCENT_MODE_KEY.
+export function providerView({enabled, permitted, latest, lastOk}, nowMs, timeZone, labels = {}, mode = 'used') {
   const view = (state, rest = {}) => ({state, status: labels['status_' + state] ?? '', rows: [], dim: false, note: '', detail: '', plan: null, accounts: [], ...rest});
   if (!enabled) return view('off');
   if (!permitted) return view('needs_permission', {note: labels.note_no_permission ?? ''});
@@ -218,9 +246,9 @@ export function providerView({enabled, permitted, latest, lastOk}, nowMs, timeZo
     if (shown.fromLastOk) note = joinNote(labels.note_last_ok, age);
     else if (stale) note = joinNote(labels.note_stale, checkedAt(age, labels));
     return view(state, {
-      rows: rowsOf(shown.snapshot, nowMs, timeZone, labels), dim: shown.fromLastOk || stale, note, detail,
+      rows: rowsOf(shown.snapshot, nowMs, timeZone, labels, mode), dim: shown.fromLastOk || stale, note, detail,
       plan: typeof shown.snapshot.plan === 'string' ? shown.snapshot.plan : null,
-      accounts: accountsOf(shown.snapshot, nowMs, timeZone, labels),
+      accounts: accountsOf(shown.snapshot, nowMs, timeZone, labels, mode),
     });
   }
   if (!failed) return view(state);
@@ -228,10 +256,10 @@ export function providerView({enabled, permitted, latest, lastOk}, nowMs, timeZo
   // A failed read with no earlier ok one may still carry what it could read,
   // e.g. the weekly value. Its 5-hour value stays "?" — listed or not, weekly
   // never takes its place (CLAUDE.md §1).
-  const rows = rowsOf(latest, nowMs, timeZone, labels);
+  const rows = rowsOf(latest, nowMs, timeZone, labels, mode);
   if (rows.length) {
     const fiveHour = `${latest.provider}_5h`;
-    if (!rows.some(row => row.id === fiveHour)) rows.unshift({id: fiveHour, label: labels.limit_5h ?? '5h', percent: '?', reset: '', primary: false});
+    if (!rows.some(row => row.id === fiveHour)) rows.unshift({id: fiveHour, label: labels.limit_5h ?? '5h', percent: '?', tone: '', reset: '', primary: false});
     return view(state, {rows, dim: isStale(latest, nowMs), note: joinNote(labels.note_partial, checked), detail});
   }
   return view(state, {note: joinNote(checked, state === 'logged_out' ? labels.note_login : labels.note_unread), detail});
@@ -252,7 +280,7 @@ function peerLabel(value) {
 // What the popup and overlay show for the other profiles: per profile its
 // name, when it last sent, and one providerView per service it shared — the
 // same view as this profile's own, so 0% stays 0% and an old value is dimmed.
-export function peerViews(record, nowMs, timeZone, labels = {}) {
+export function peerViews(record, nowMs, timeZone, labels = {}, mode = 'used') {
   const profiles = Array.isArray(record?.profiles) ? record.profiles : [];
   const views = [];
   for (const profile of profiles) {
@@ -261,7 +289,7 @@ export function peerViews(record, nowMs, timeZone, labels = {}) {
     for (const raw of Array.isArray(profile.snapshots) ? profile.snapshots : []) {
       const snapshot = fromShared(raw);
       if (!snapshot || providers.some(p => p.provider === snapshot.provider)) continue;
-      providers.push({provider: snapshot.provider, ...providerView({enabled: true, permitted: true, latest: snapshot}, nowMs, timeZone, labels)});
+      providers.push({provider: snapshot.provider, ...providerView({enabled: true, permitted: true, latest: snapshot}, nowMs, timeZone, labels, mode)});
     }
     if (!providers.length) continue;
     const age = formatAge(nowMs - Date.parse(profile.updated_at), labels);
@@ -274,14 +302,16 @@ export function peerViews(record, nowMs, timeZone, labels = {}) {
 // ---- toolbar badge (CLAUDE.md §4) --------------------------------------------
 
 export const BADGE_COLOR = {green: '#1e8e3e', orange: '#e37400', red: '#d93025', grey: '#80868b'};
+const TONE_COLOR = {good: BADGE_COLOR.green, warn: BADGE_COLOR.orange, bad: BADGE_COLOR.red};
 
-// The lowest primary value among the enabled providers, digits only; grey once
-// that value is older than STALE_MS. "?" when providers are on but none has a
-// value, empty when none is on. The title (tooltip) has a line per enabled
-// provider. entries: [{name, enabled, permitted, latest, lastOk}], one per
-// provider with a collector — the same inputs as providerView(). "Leeway" is
-// the brand (not translated); other words come from labels.
-export function badgeView(entries, nowMs, timeZone, labels = {}) {
+// The primary value with the least left among the enabled providers, digits
+// only, shown per mode (used: the most used); grey once that value is older
+// than STALE_MS. "?" when providers are on but none has a value, empty when
+// none is on. The title (tooltip) has a line per enabled provider. entries:
+// [{name, enabled, permitted, latest, lastOk}], one per provider with a
+// collector — the same inputs as providerView(). "Leeway" is the brand (not
+// translated); other words come from labels.
+export function badgeView(entries, nowMs, timeZone, labels = {}, mode = 'used') {
   const lines = [];
   let lowest = null;
   for (const entry of entries.filter(e => e.enabled)) {
@@ -295,10 +325,11 @@ export function badgeView(entries, nowMs, timeZone, labels = {}) {
     const stale = isStale(shown.snapshot, nowMs);
     const reset = formatReset(limit, nowMs, timeZone, Date.parse(shown.snapshot.collected_at), labels);
     const note = shown.fromLastOk ? `${status} · ${labels.note_last_ok ?? ''}` : stale ? (labels.status_stale ?? '') : '';
-    // "{limit} {remaining%}" so the tooltip can't read as usage, then the reset
-    // and any note; the separator and the note brackets are per-locale (ja: 、 and
-    // full-width brackets).
-    const pctText = fill(labels.badge_pct || '{pct}', {pct: formatPercent(limit.remaining_percent)});
+    // "{limit} {pct} left" or "{pct} used", so the tooltip says which it is,
+    // then the reset and any note; the separator and the note brackets are
+    // per-locale (ja: 、 and full-width brackets).
+    const pctTpl = (mode === 'remaining' ? labels.badge_pct : labels.badge_pct_used) || '{pct}';
+    const pctText = fill(pctTpl, {pct: shownPercent(limit.remaining_percent, mode)});
     const sep = labels.badge_sep || ' · ';
     const noteText = note ? fill(labels.badge_note_fmt || ' ({note})', {note}) : '';
     lines.push(`${entry.name}: ${limitLabel(limit, labels)} ${pctText}${reset ? `${sep}${reset}` : ''}${noteText}`);
@@ -309,7 +340,6 @@ export function badgeView(entries, nowMs, timeZone, labels = {}) {
   if (!lines.length) return {text: '', color: BADGE_COLOR.grey, title: `Leeway — ${labels.badge_none ?? ''}`};
   const title = ['Leeway', ...lines].join('\n');
   if (!lowest) return {text: '?', color: BADGE_COLOR.grey, title};
-  const color = lowest.stale ? BADGE_COLOR.grey
-    : lowest.value >= 50 ? BADGE_COLOR.green : lowest.value >= 20 ? BADGE_COLOR.orange : BADGE_COLOR.red;
-  return {text: String(lowest.value), color, title};
+  const color = lowest.stale ? BADGE_COLOR.grey : TONE_COLOR[toneOf(lowest.value)];
+  return {text: String(mode === 'remaining' ? lowest.value : 100 - lowest.value), color, title};
 }

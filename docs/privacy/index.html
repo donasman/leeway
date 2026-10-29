@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leeway — Privacy Policy</title>
-<meta name="description" content="Privacy policy for Leeway, the Chrome extension that shows your remaining Claude, ChatGPT and Gemini usage.">
+<meta name="description" content="Privacy policy for Leeway, the Chrome extension that shows your Claude, ChatGPT and Gemini usage limits.">
 <link rel="canonical" href="https://donasman.github.io/leeway/privacy/">
 <!-- Mirrors PRIVACY.md at the repository root; keep both in sync. -->
 <style>
@@ -33,11 +33,11 @@ footer{border-top:1px solid var(--line);margin-top:44px;padding-top:18px;color:v
 <header>
   <p class="sub"><a href="../">← Leeway</a></p>
   <h1>Privacy Policy — Leeway</h1>
-  <p class="sub">Last updated: 2026-10-28</p>
+  <p class="sub">Last updated: 2026-10-29</p>
   <span class="badge">Unofficial project — not affiliated with Anthropic, OpenAI or Google</span>
 </header>
 
-<p>Leeway is a Chrome extension that shows how much of your <strong>remaining</strong> usage is left on Claude, ChatGPT and Gemini, in its popup, toolbar badge, and an optional floating overlay. This policy explains exactly what it reads, where that stays, and what it never does.</p>
+<p>Leeway is a Chrome extension that shows how much of your Claude, ChatGPT and Gemini usage limits you have used (or, if you switch it, what is left), in its popup, toolbar badge, and an optional floating overlay. This policy explains exactly what it reads, where that stays, and what it never does.</p>
 
 <h2>Short version</h2>
 <ul>
@@ -62,6 +62,7 @@ footer{border-top:1px solid var(--line);margin-top:44px;padding-top:18px;color:v
   <li>The latest parsed usage snapshot per service (status, remaining percentages, reset times, the plan name, and for Claude one entry per organization), so the popup and badge can show it.</li>
   <li>Which services you turned on.</li>
   <li>Where you last left the Leeway window (its position and size on screen), so it reopens there.</li>
+  <li>Whether numbers are shown as used or as left (the popup's switch).</li>
 </ul>
 <p>All of this lives only in your browser profile, on your device. It is not sent anywhere. Removing the extension removes it.</p>
 
@@ -89,7 +90,7 @@ footer{border-top:1px solid var(--line);margin-top:44px;padding-top:18px;color:v
 <h2>Other Chrome profiles (optional, off by default)</h2>
 <p>If you use several Chrome profiles (for example one per Claude account), you can see all of their usage in one popup and overlay. This needs the Leeway helper, a small program you install yourself on Windows (<code>leeway-helper.exe</code>).</p>
 <ul>
-  <li><strong>What each profile sends to the helper</strong>: the same values its popup shows — remaining percentages, reset times, the plan name — plus the name you give the profile (e.g. "Work") and a random id Leeway made for that profile.</li>
+  <li><strong>What each profile sends to the helper</strong>: the usage values its popup shows — stored as remaining percentages — reset times, the plan name — plus the name you give the profile (e.g. "Work") and a random id Leeway made for that profile.</li>
   <li><strong>What it never sends</strong>: cookies, passwords, session or access tokens, email addresses, organization names, page text or conversations.</li>
   <li><strong>Where it goes</strong>: the helper keeps the entries in one file on your computer, <code>%LOCALAPPDATA%\Leeway\profiles.json</code>, so your other profiles can read them. The helper has no network access of its own and sends nothing anywhere.</li>
   <li><strong>How long</strong>: an entry is replaced on every refresh. Turning the feature off in a profile removes that profile's entry; an entry not refreshed for 7 days is removed; <code>leeway-helper.exe uninstall</code> removes the file and the helper.</li>

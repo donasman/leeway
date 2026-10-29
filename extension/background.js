@@ -2,7 +2,7 @@ import { clampPct, claudePlanLabel, fmtReset, pickClaudeBuckets } from './parser
 import { snapshotWrites, usageKey, lastOkKey } from './snapshot.js';
 import { whamPayload, whamPlan, whamWindows } from './chatgpt_api.js';
 import { geminiPayload, updatedAgoMs } from './gemini.js';
-import { badgeView } from './view.js';
+import { PERCENT_MODE_KEY, badgeView, percentMode } from './view.js';
 import { HELPER_HOST, PEER_PERMISSION, cleanLabel, newProfileId, peerRecord, sharedSnapshots } from './peers.js';
 import { viewLabels } from './i18n.js';
 
@@ -708,7 +708,7 @@ async function updateBadge() {
   const current = ++badgeUpdates;
   try {
     const providers = Object.keys(PROVIDER_HOSTS);
-    const data = await chrome.storage.local.get(['enabledProviders', ...providers.flatMap(p => [usageKey(p), lastOkKey(p)])]);
+    const data = await chrome.storage.local.get(['enabledProviders', PERCENT_MODE_KEY, ...providers.flatMap(p => [usageKey(p), lastOkKey(p)])]);
     const enabled = new Set(Array.isArray(data.enabledProviders) ? data.enabledProviders : []);
     const entries = await Promise.all(providers.map(async p => ({
       name: PROVIDER_NAMES[p] || p,
@@ -718,7 +718,7 @@ async function updateBadge() {
       lastOk: data[lastOkKey(p)],
     })));
     if (current !== badgeUpdates) return;
-    const badge = badgeView(entries, Date.now(), undefined, viewLabels());
+    const badge = badgeView(entries, Date.now(), undefined, viewLabels(), percentMode(data[PERCENT_MODE_KEY]));
     await chrome.action.setBadgeText({text: badge.text});
     await chrome.action.setBadgeBackgroundColor({color: badge.color});
     await chrome.action.setTitle({title: badge.title});
@@ -869,12 +869,13 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(() => { setupAlarm(); setTimeout(refreshAll, 1000); });
 chrome.alarms.onAlarm.addListener(a => { if (a.name === ALARM) refreshAll(); });
 
-// The badge follows what is stored: every saved result (publish()) and every
-// turn on/off changes one of these keys. Also set once whenever the service
-// worker starts, so it is right before the first refresh.
+// The badge follows what is stored: every saved result (publish()), every
+// turn on/off and the popup's used/left switch changes one of these keys.
+// Also set once whenever the service worker starts, so it is right before the
+// first refresh.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
-  if (Object.keys(changes).some(key => key === 'enabledProviders' || key.startsWith('usage_'))) updateBadge();
+  if (Object.keys(changes).some(key => key === 'enabledProviders' || key === PERCENT_MODE_KEY || key.startsWith('usage_'))) updateBadge();
 });
 updateBadge();
 
