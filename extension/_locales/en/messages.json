@@ -84,5 +84,5 @@
   "labs_title": {"message": "Experimental"},
   "peers_get_helper": {"message": "Get the helper (Windows)"},
   "peers_about_helper": {"message": "What the helper does"},
-  "support_leeway": {"message": "Support Leeway"}
+  "support_leeway": {"message": "Support"}
 }
