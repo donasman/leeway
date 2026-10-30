@@ -277,7 +277,9 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
   - 투명도: html·body를 `transparent`나 `rgba(0,0,0,0.5)`로 해도 뒤가 비치지 않는다(흰 바탕이나 회색으로 그려짐). 구현하지 않았다.
   - Chrome 129 이하에는 `preferInitialWindowPlacement`가 없다(130+). 그래서 다시 열 때 마지막 크기·위치로 열릴 수 있다. 그 경우에도 내용은 §4 규칙으로 그린다.
     `minimum_chrome_version`은 넣지 않았다(2026-10-30 결정).
-  - 미확인: 실제 Windows 배율 150%와 다른 모니터, 사용 중인 Chrome 프로필, Chrome 재시작 뒤 처음 열기, 내용이 화면보다 높을 때 Chrome이 자르는 모양.
+  - 확인됨: PiP를 500×410으로 키우고 옮긴 채 Chrome을 닫았다가 같은 프로필로 다시 띄웠다. PiP는 저절로 열리지 않았다.
+    "항상 위에 띄우기"를 누르면 280×250으로 화면 오른쪽 아래에 열렸다.
+  - 미확인: 실제 Windows 배율 150%와 다른 모니터, 사용 중인 Chrome 프로필, 내용이 화면보다 높을 때 Chrome이 자르는 모양.
 - Enter로 PiP 열기(feat/pin-enter, 2026-10-28, Chrome 156, 압축해제 로드한 이 브랜치, 키는 CDP `Input.dispatchKeyEvent`).
   - 확인됨: 팝업의 "오버레이 열기"로 창이 뜨면 포커스가 버튼에 있고(`document.hasFocus()` true), 키를 누르지 않으면 2초 넘게 아무것도 열리지 않음.
   - 확인됨: Enter → PiP 열림·창 최소화. PiP 닫기 → 창 복원·포커스 다시 버튼. Space도 열림. 자동 반복 keydown만으로는 안 열림.
