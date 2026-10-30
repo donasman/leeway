@@ -15,7 +15,7 @@
 | 1.1.0에 함께 바꾼 것 | 패키지 `leeway-1.1.0.zip`(태그 v1.1.0), 스크린샷 3장(사용 기준)·작은 프로모션 타일·6개 언어 상세 설명(저장소 밖 `leeway-store-1.1.0/`) |
 | 1.2.1에 들어갈 것 | PiP가 자기 크기를 지킨다(창을 끌어 바꿔도 내용은 정한 크기로 그리고, 크기는 열 때와 펼침/접힘 전환 클릭 때만 맞춘다). 접힌 PiP 폭이 켜진 서비스 수에 맞는다(360 고정 해제). 후원 링크(GitHub Sponsors·Buy Me a Coffee — 저장소·제품 페이지 두 개·README·`docs/llms.txt`와 팝업 맨 아래 텍스트 링크 1개). 팝업의 후원 줄은 `후원하기: GitHub Sponsors · Buy Me a Coffee` 한 줄이고, 6개 언어 모두 한 줄에 들어가는 것을 실제 렌더링으로 쟀다(가장 빠듯한 ko가 여유 26px. 재는 도구는 저장소 밖 `leeway-store-1.2.1/gen/measure-support.mjs`). `manifest.json` 1.2.1(2026-10-30) |
 | 1.2.0 | 태그와 helper Release만 냈다(2026-10-30, v1.2.0). 스토어에는 올리지 않고 1.2.1로 넘어간다 — 확장 안 후원 줄에 Buy Me a Coffee를 더하기로 해서다. 태그와 Release는 공개돼 있어 내용을 바꿔 다시 태그하지 않는다(0.6.4와 같은 처리) |
-| 심사 중 | 없음. 1.2.1 제출 전 남은 일: 태그·push, 스토어 제출(스크린샷은 `leeway-store-1.2.1/`에 다시 생성해 둠) |
+| 심사 중 | **1.2.1** (2026-10-30 제출). 패키지 `leeway-1.2.1.zip`(태그 v1.2.1), 스크린샷 3장을 함께 교체(저장소 밖 `leeway-store-1.2.1/`). 상세 설명 6개 언어와 개인정보 탭은 1.1.0 그대로 두었다. 게시되면 "스토어 게시 버전"을 1.2.1로 |
 | helper | v1.1.0 Releases (2026-10-29. `check` 명령, 버전은 태그에서. 코드는 v0.6.3과 같음), 서명 없음 |
 | 사이트·검색 | donasman.github.io/leeway (영어·한국어·개인정보처리방침). Google Search Console·Bing Webmaster Tools 등록, 첫 페이지·`/ko/` 색인 요청. Bing 사이트맵 성공, Google 사이트맵은 처리 대기(2026-10-27 기준). 소개 문구를 사용 기준으로 갱신(2026-10-29, v1.1.0 push로 게시) |
 | 지표 | `metrics` 워크플로가 매일 GitHub 트래픽·유입·다운로드·스타를 기록(`docs/metrics.md`). 홍보 링크는 `scripts/make_link.py`로 만든다(`docs/tracking-links.md`) |
