@@ -19,7 +19,7 @@ function check(label, got, expected) {
 }
 
 const fit = await import('../extension/overlay_fit.js');
-const { fitOverlay, pipSize, pipOuterSize, EXPANDED_MIN_SCALE, COMPACT_MIN_SCALE, FIT_MARGIN } = fit;
+const { fitOverlay, pipSize, pipOuterSize, EXPANDED_MIN_SCALE, COMPACT_MIN_SCALE, COMPACT_MIN_W, FIT_MARGIN } = fit;
 
 // Three services: expanded 280 wide, 202 tall (as measured in Chrome 156);
 // the strip 360×58 with names, 230 wide without.
@@ -35,8 +35,12 @@ check('expanded: not lower than 140', pipSize('expanded', 90), { width: 280, hei
 check('expanded: no upper limit any more (nothing scrolls)', pipSize('expanded', 900), { width: 280, height: 900 });
 check('expanded: a fraction of a pixel is rounded up, not cut', pipSize('expanded', 201.2).height, 202);
 check('expanded, content not measured: three services\' worth', pipSize('expanded', 0), { width: 280, height: 270 });
-check('collapsed: the strip, 58 high (resizeTo goes no lower)', pipSize('compact', 202), { width: 360, height: 58 });
-check('resizeTo gets the outer size: 16×42 of frame at 100% (measured)', pipOuterSize('compact', 202, { width: 16, height: 42 }), { width: 376, height: 100 });
+check('collapsed: as wide as the strip it was given, 58 high (resizeTo goes no lower)', pipSize('compact', 360), { width: 360, height: 58 });
+check('collapsed, one service (139 of strip): the window follows it down to the smallest PiP Chrome gives', [pipSize('compact', 139), COMPACT_MIN_W], [{ width: 240, height: 58 }, 240]);
+check('collapsed, two services: in between, the width of the strip itself', pipSize('compact', 262), { width: 262, height: 58 });
+check('collapsed: a fraction of a pixel is rounded up, not cut', pipSize('compact', 261.2).width, 262);
+check('collapsed, strip not measured: three services wide', pipSize('compact', 0), { width: 360, height: 58 });
+check('resizeTo gets the outer size: 16×42 of frame at 100% (measured)', pipOuterSize('compact', 360, { width: 16, height: 42 }), { width: 376, height: 100 });
 check('… 14×42 at 150%', pipOuterSize('expanded', 202, { width: 14, height: 42 }), { width: 294, height: 244 });
 check('no frame measured (or a negative one): the inner size', pipOuterSize('expanded', 202, { width: -3, height: NaN }), { width: 280, height: 202 });
 
