@@ -43,7 +43,8 @@ export function pipSize(mode, contentHeight) {
 
 // resizeTo() takes the outer size: the inner one plus what Chrome puts around
 // it, measured as outer − inner. On Windows that is the title bar and an
-// invisible border left and right (16×42 at 100%, 14×42 at 150%, measured).
+// invisible border left and right (measured: 16×42 at 100%; at 150% 15×41,
+// or 14×42 emulated — it rounds, so it is measured each time, not assumed).
 export function pipOuterSize(mode, contentHeight, frame = {}) {
   const inner = pipSize(mode, contentHeight);
   return {width: inner.width + size(frame?.width), height: inner.height + size(frame?.height)};
