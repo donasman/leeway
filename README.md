@@ -79,7 +79,8 @@ If that endpoint fails (it is unofficial and may change), and a Settings > Usage
 Click **Open overlay** in the popup — the same on any tab — to open the small Leeway window, which shows the same usage bars as the popup. Its **Float on top** button opens a small always-on-top window through Chrome's Document Picture-in-Picture — no separate app to install (needs Chrome 116+) — and then minimizes the Leeway window. The button has the focus when the window opens, so **Open overlay** then Enter does it too. Chrome lets only a click or key press in the Leeway window itself open that window, so the popup's click can't do both.
 
 - Both refresh live, like the popup.
-- Click the always-on-top window to collapse it to a single line; click again to expand. The window resizes to match.
+- Click the always-on-top window to collapse it to a single line; click again to expand. Each click sets the window to the overlay's own size.
+- Dragging its border can't be stopped, but the overlay keeps its size. In a bigger window it stays as it is. In a smaller one it shrinks to fit, and when the window gets too small it shows the single line instead, and then the line without the service names. It never scrolls.
 - It stays on top of other windows while Chrome runs. Its title bar shows the extension's name and address (`chrome-extension://…`), not the site you are on.
 - It belongs to the Leeway window: closing the Leeway window closes it too. Closing the always-on-top window brings the Leeway window back.
 - **Open overlay** again brings the open Leeway window forward instead of opening another. It reopens where you last left it.
