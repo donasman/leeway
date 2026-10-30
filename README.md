@@ -102,6 +102,14 @@ server, no analytics, and never stores page text, cookies, passwords, or
 session tokens. See [PRIVACY.md](PRIVACY.md) for the full policy, including what
 each permission is for.
 
+## Support
+
+Leeway is free, has no ads and collects nothing. If it saves you a trip to
+three usage pages, you can support its development through
+[GitHub Sponsors](https://github.com/sponsors/donasman) or
+[Buy Me a Coffee](https://buymeacoffee.com/donasman). Sponsoring changes
+nothing in the extension: there is no paid tier, and no feature is held back.
+
 ## License
 
 [MIT](LICENSE).

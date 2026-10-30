@@ -83,5 +83,6 @@
   "peers_updated": {"message": "updated {age}", "description": "{age} is a relative time like '3m ago'"},
   "labs_title": {"message": "Experimental"},
   "peers_get_helper": {"message": "Get the helper (Windows)"},
-  "peers_about_helper": {"message": "What the helper does"}
+  "peers_about_helper": {"message": "What the helper does"},
+  "support_leeway": {"message": "Support Leeway"}
 }

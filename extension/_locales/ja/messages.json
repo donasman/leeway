@@ -83,5 +83,6 @@
   "peers_updated": {"message": "{age}に更新"},
   "labs_title": {"message": "試験運用機能"},
   "peers_get_helper": {"message": "ヘルパーを入手 (Windows)"},
-  "peers_about_helper": {"message": "ヘルパーの役割"}
+  "peers_about_helper": {"message": "ヘルパーの役割"},
+  "support_leeway": {"message": "Leeway を支援する"}
 }

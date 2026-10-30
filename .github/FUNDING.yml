@@ -1,0 +1,5 @@
+# GitHub renders a "Sponsor" button on the repository from this file.
+# Both targets must exist before this ships: GitHub Sponsors has to be enabled
+# for the account, and the Buy Me a Coffee handle has to be claimed.
+github: [donasman]
+buy_me_a_coffee: donasman

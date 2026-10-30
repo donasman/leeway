@@ -218,7 +218,7 @@ console.log('\nopened — values from storage, no desktop app running');
   const enMessages = JSON.parse(readFileSync(new URL('../extension/_locales/en/messages.json', import.meta.url), 'utf8'));
   const fallbacks = [...new JSDOM(html).window.document.querySelectorAll('[data-i18n]')];
   check('static fallback text is the en message', fallbacks.filter(el => el.textContent !== enMessages[el.dataset.i18n]?.message).map(el => el.dataset.i18n), []);
-  check('...for every data-i18n element', fallbacks.length, 16);
+  check('...for every data-i18n element', fallbacks.length, 17);
   check('i18n replaces it on load', document.getElementById('refresh').textContent, KO.refresh);
   check('claude', card('claude'), {
     status: '정상',

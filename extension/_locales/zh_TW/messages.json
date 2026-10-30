@@ -83,5 +83,6 @@
   "peers_updated": {"message": "{age}更新"},
   "labs_title": {"message": "實驗功能"},
   "peers_get_helper": {"message": "下載輔助程式 (Windows)"},
-  "peers_about_helper": {"message": "輔助程式的作用"}
+  "peers_about_helper": {"message": "輔助程式的作用"},
+  "support_leeway": {"message": "贊助 Leeway"}
 }
