@@ -37,6 +37,12 @@
 - [x] helper 연결 진단 (0.6.3·helper v0.6.3에 포함. 설치된 helper로 상태별 문구를 직접 확인하는 일은 남음): 팝업에서 "설치 안 됨 / 이 확장 ID가 허용 목록에 없음 / 실행 실패"를 구분해 보여 주고, `leeway-helper.exe`를 실행하면 레지스트리·manifest·허용 ID를 스스로 점검해 출력. 비슷한 구조의 제품들에서 가장 많은 문의가 "설치했는데 연결 안 됨"이다
 - [x] 제품 사이트(영어·한국어, FAQ·구조화 데이터), `llms.txt`·`sitemap.xml`, README 첫 화면, Google Search Console·Bing 등록 (2026-10-27)
 - [ ] helper 배포 보강: GitHub Releases(sha256 포함)는 유지하고 winget에 등록, SignPath Foundation 무료 서명 신청 (Azure Artifact Signing은 개인이면 미국·캐나다만 가능)
+- [ ] 후원 링크 (2026-10-30 결정, `feat/sponsor-links`): `.github/FUNDING.yml`(GitHub Sponsors + Buy Me a Coffee), 팝업 맨 아래
+      dim 텍스트 링크 1개(아이콘·배지·애니메이션 없음), `support_leeway` 6개 언어, README·제품 페이지 두 개·`docs/llms.txt`.
+      수수료·추적·서드파티 요청이 없어 `PRIVACY.md`와 스토어 개인정보 탭은 그대로다. §5 검증은 통과했다.
+      **머지 조건**: GitHub Sponsors 활성화와 Buy Me a Coffee 핸들 확보가 먼저다 — 계정이 없으면 사이트·저장소에 공개되는 링크가 404가 된다.
+      한국 계좌 지급이 실제로 되는지는 미확인(가입 시 Payout 화면에서 확인). 팝업 링크는 1.1.0 심사가 끝난 뒤 다음 버전에 실린다(CLAUDE.md §6).
+      팝업의 실제 모양은 미확인(`test_popup.mjs`는 레이아웃·CSS를 보지 않는다). 6개 언어 새 문구는 원어민 검토 전
 - [ ] 알릴 곳: r/ClaudeAI(도구 소개 글은 메가스레드로 안내될 수 있음), Product Hunt. 차별점은 "Windows에서 쓰는 확장, 쿠키·토큰을 붙여넣거나 저장하지 않음". 링크는 `scripts/make_link.py`로 만들고, 장소 목록에 없는 곳(예: Product Hunt)은 스크립트 `SOURCES`와 `docs/tracking-links.md`에 먼저 추가한다
 
 지표 (분석 도구 없이 볼 수 있는 것):
@@ -76,6 +82,25 @@
 - Store에 EXE/MSI로 올리는 길은 신뢰된 인증서로 서명된 파일이 필요하다 → SignPath 서명이 먼저 있어야 한다
 - 유료 서명이 필요해지면 OV 인증서(연 $150–300, 하드웨어 토큰 필요). EV도 2024년부터 SmartScreen을 바로 통과하지 못한다
 - Desktop 유료 여부와 가격: 이때 정한다. 확장은 계속 무료
+- 유료화 경로: Chrome Web Store 자체 결제가 폐지된 뒤로는 ExtensionPay(Stripe 기반)가 사실상 표준이다.
+  자체 서버 없이 라이선스 검증이 되는지는 미확인 — Desktop 유료화를 정할 때 함께 확인한다
+
+### 광고는 붙이지 않는다 (2026-10-30 결정)
+
+확장 안에 광고를 넣는 안을 조사하고 접었다. 정책과 규모 양쪽에서 막히고, 막히지 않는 구성은 수익이 사실상 없다.
+근거는 아래 [근거](#근거)의 "광고·수익모델 조사"에 있다. 대신 **후원**(1단계)과 **Desktop 유료화**(이 단계)로 간다.
+
+절대 하지 않을 것:
+
+- 확장 내 AdSense·Ad Manager·AdMob 태그 (정책상 금지)
+- claude.ai·chatgpt.com·gemini.google.com 페이지로의 광고 주입, 그 페이지에 겹치는 광고 (single purpose 위반)
+- 사용량 데이터를 광고 타게팅·판매·개인화에 쓰는 것 (동의를 받아도, 익명화해도 금지)
+- 공시·개인정보처리방침을 고치기 전에 광고나 식별자 코드를 먼저 배포하는 것
+- 조용한 추천·제휴 링크 (공시 없는 어필리에이트는 문서화된 삭제 사유다)
+- PiP 오버레이·툴바 배지 같은 상시 노출 면에 광고를 두는 것 (정책 문언이 없는 미확인 영역이라 보수적으로 피한다)
+
+광고를 시험해 보고 싶다면 CWS 정책 밖인 **제품 사이트**(`docs/`)가 유일하게 리스크 없는 면이다.
+다만 Carbon Ads 기준 월 1만 PV가 가입 문턱이라 지금은 신청 자체가 안 된다 — 선행 과제는 광고 코드가 아니라 트래픽이다.
 
 ---
 
@@ -83,6 +108,31 @@
 
 - 별도 helper가 선택 기능이면 핵심 사용감 피해는 작고, 주된 위험은 "설치했는데 연결 안 됨" 리뷰가 확장 평점으로 돌아오는 것 — 2026-10-27 리서치 보고서 "확장 helper 설치 사용자 반응"
 - 다중 계정 수요는 Claude Code 사용자·프리랜서·구독을 여러 개 쓰는 사람에게 몰려 있고, 이들이 exe 설치를 감수하는 층과 겹친다 — 같은 보고서
+
+### 광고·수익모델 조사 (2026-10-30)
+
+1차 출처 21건을 적대적 3표 검증한 결과(105개 주장 중 17개 통과, 8개 반박). 정책 결론은 신뢰도 높음, 금액·네트워크 약관은 일부 2차 출처.
+
+- 확장 내부 AdSense는 금지다. CWS Ads 정책 3항이 "Currently, AdSense may not be used to serve ads in Products"이고,
+  상류의 AdSense 배치 정책은 "toolbars, browser extensions, and desktop applications"를 직접 호명한다.
+  자체 호스팅 페이지를 iframe으로 띄우는 우회도 같은 조항("소프트웨어 애플리케이션을 통한 배포")에 걸린다
+- 서드파티 광고 JS는 기술적으로도 못 싣는다. MV3가 `extension_pages`의 `script-src`를 `self`·`none`·`wasm-unsafe-eval`로 고정하고
+  (Chromium `csp_validator.cc`), 광고 도메인 allowlist는 매니페스트 단계에서 거부된다. Google 자체 태그도 거절된 사례가 있다
+- 페이지 주입은 single purpose 위반이다. Google 공식 FAQ가 "Can I bundle ad injection with some other type of functionality?"에 "No"로
+  직답하고, 구제책은 "광고를 멈추거나 광고 외 전 기능을 제거"하는 양자택일뿐이다
+- 사용량 데이터의 광고 활용은 Limited Use로 전면 금지다. 동의 예외도 익명화 방어도 없다(2026-08-01 시행 강화판이 현행)
+- "no server, no analytics" 공개 약속을 뒤집으면 대시보드 공시·개인정보처리방침·UI 내 공시·기존 사용자 선제 고지가 모두 필요하고,
+  세 곳과 실제 동작이 어긋나면 퍼블리셔 계정 전체 정지와 기존 설치 기반 비활성화까지 갈 수 있다
+- **규모가 더 결정적인 벽이다.** EthicalAds는 월 5만 PV·CPM 약 $2.50, Carbon Ads는 사이트 월 1만 PV·typical CPM $1.50–2.30을 요구하고
+  둘 다 "자기 네트워크 광고만" 조건이다. Carbon은 CLI·TUI·AI 어시스턴트 지면을 받지만 브라우저 확장은 언급 자체가 없다.
+  지금 설치 규모에서는 가입 문턱을 넘지 못하고, 넘어도 월 20달러 미만이다. 사용자 7만 명대 확장이 광고 단독으로 거의 벌지 못한 보고도 있다
+- 어필리에이트도 성립하지 않는다. Anthropic·OpenAI에 개인 대상 공개 제휴 프로그램이 없다(Anthropic은 엔터프라이즈 Partner Network,
+  OpenAI는 캠페인성 추천만). 2차 출처 기준이라 미확정
+- 확장 **자체 팝업** 안의 비AdSense contextual 광고는 금지 조항도, 2025~2026년 승인 선례도 확인되지 않은 회색 지대다
+- 반박된 주장(쓰지 말 것): "2026 정책 업데이트에 AI 서비스의 usage limit 우회를 겨냥한 확장 금지 조항이 추가됐다"는 0-3으로 반박됐다.
+  그런 조항은 확인되지 않았으므로 Leeway의 리스크로 적지 않는다
+
+출처: [CWS Ads 정책](https://developer.chrome.com/docs/webstore/program-policies/ads) · [CWS Program Policies](https://developer.chrome.com/docs/webstore/program-policies/policies) · [AdSense 배치 정책](https://support.google.com/adsense/answer/1346295) · [MV3 remote code](https://developer.chrome.com/docs/extensions/develop/migrate/improve-security) · [MV3 CSP](https://developer.chrome.com/docs/extensions/reference/manifest/content-security-policy) · [Single purpose FAQ](https://developer.chrome.com/docs/extensions/mv3/single_purpose/) · [Limited Use](https://developer.chrome.com/docs/webstore/program-policies/limited-use) · [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq) · [2026 정책 업데이트](https://developer.chrome.com/blog/cws-policy-updates-2026) · [어필리에이트 정책 2025](https://developer.chrome.com/blog/cws-policy-update-affiliate-ads-2025) · [EthicalAds Publisher FAQ](https://www.ethicalads.io/publishers/faq/) · [Carbon Ads Join](https://www.carbonads.net/join) · [Carbon Ads for CLI](https://carbonads.net/cli) · [ExtensionPay](https://extensionpay.com/articles/extensionpay-is-the-chrome-web-store-payments-replacement)
 
 ### 비슷한 구조의 제품 (2026-10-27 조사)
 
