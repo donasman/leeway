@@ -83,5 +83,6 @@
   "peers_updated": {"message": "{age}更新"},
   "labs_title": {"message": "实验功能"},
   "peers_get_helper": {"message": "获取助手程序 (Windows)"},
-  "peers_about_helper": {"message": "助手程序的作用"}
+  "peers_about_helper": {"message": "助手程序的作用"},
+  "support_leeway": {"message": "赞助 Leeway"}
 }
