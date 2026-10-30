@@ -8,6 +8,8 @@
 // then the main limit's reset and the other limits on one line); collapsed =
 // one line of small rings, one per service. A click on the PiP window toggles
 // between them. Text from storage goes through esc() (CLAUDE.md §3).
+import { COMPACT_H, COMPACT_W, EXPANDED_W, fitOverlay, pipOuterSize, pipSize } from './overlay_fit.js';
+
 export const CSS = `
     html,body{margin:0;background:#0f141b}
     body{color:#e7ecf3;-webkit-font-smoothing:antialiased;cursor:pointer;overflow-y:auto;
@@ -51,8 +53,6 @@ const toneOfRow = (r) => (r && TONE_HEX[r.tone] ? r.tone : '');
 const msg = (key, fallback) => { try { return chrome.i18n.getMessage(key) || fallback; } catch (_) { return fallback; } };
 // Which way the numbers read, beside the brand when the data says (CLAUDE.md §4).
 const MODE_KEYS = { used: 'mode_used', remaining: 'mode_left' };
-let collapsed = false;
-let lastData = { providers: [] };
 
 // One service (or one Claude organization, or another profile's service).
 // v: {name, plan, state, status, dim, rows, note}
@@ -124,39 +124,64 @@ export function renderCompact(root, data) {
   }).join('');
 }
 
-// Click to collapse to one line / expand. The window follows:
-//   collapsed — a fixed strip, COMPACT_W wide and COMPACT_H of content;
-//   expanded  — EXPANDED_W wide, as tall as its content between
-//               EXPANDED_MIN_H and EXPANDED_MAX_H (more than that scrolls).
-// Heights are content heights; Chrome's title bar is added on top. Chrome
-// lets the user resize a PiP window at any time and offers no way to stop
-// it: these sizes are applied on open and on every click. resizeTo needs
-// the click's user activation and may be a no-op in some Chrome builds.
-const COMPACT_W = 360;
-const COMPACT_H = 44;
-const EXPANDED_W = 280;
-const EXPANDED_MIN_H = 140;
-const EXPANDED_MAX_H = 520;
-const OPEN_H = 270; // when the content could not be measured: three services fit
+// The PiP window's size (overlay_fit.js, CLAUDE.md §4): set on open and on
+// the click that collapses or expands it — the click's user activation is
+// what lets resizeTo() work. Chrome lets the user drag the window to any
+// size in between and gives that drag no activation, so it can't be set
+// back; the overlay keeps its own size instead, shrunk to fit a smaller
+// window and never scrolled. This style is the PiP's only, after CSS:
+// expanded at the top left, the strip vertically centred, the rest of the
+// window the same background.
+const FIT_CSS = `
+    html,body{height:100%;overflow:hidden}
+    body{display:flex;flex-direction:column;align-items:flex-start;cursor:default}
+    body.strip{justify-content:center}
+    #ov{flex:none;width:${EXPANDED_W}px;box-sizing:border-box;transform-origin:0 0;cursor:pointer}
+    #ov.compact{width:max-content;min-width:${COMPACT_W}px;height:${COMPACT_H}px;min-height:0;transform-origin:0 50%}
+    #ov.bare{min-width:0}
+    #ov.bare .ci > span{display:none}`;
 
 // How tall the expanded overlay is for `data` at the width the PiP opens
 // with, measured in `doc` — the opener's own page, which has the same style
-// (CSS) — in a hidden copy that is removed again. The PiP then opens at that
-// height: once requestWindow() has spent the click's activation, resizeTo()
-// does nothing, so the window can't be fitted after it opens.
+// (CSS) — in a hidden copy that is removed again (0 when it can't be). The
+// PiP then opens at that height: once requestWindow() has spent the click's
+// activation, resizeTo() is refused, so the window can't be fitted after it opens.
 function openingHeight(doc, data) {
-  if (!doc?.body) return OPEN_H;
+  if (!doc?.body) return 0;
   const probe = doc.createElement('div');
   probe.id = 'ov';
   probe.style.cssText = `position:absolute;left:-10000px;top:0;visibility:hidden;width:${EXPANDED_W}px;box-sizing:border-box`;
   doc.body.appendChild(probe);
   try {
     render(probe, data);
-    const content = probe.scrollHeight;
-    return content ? Math.min(EXPANDED_MAX_H, Math.max(EXPANDED_MIN_H, content)) : OPEN_H;
+    return probe.scrollHeight;
   } finally {
     probe.remove();
   }
+}
+
+// The overlay's own size in each layout for `data` (fitOverlay's `content`),
+// drawn in hidden copies in the PiP's document, which has FIT_CSS, and
+// removed again. Where nothing can be measured, the layout's fixed size.
+function contentSizes(doc, data) {
+  const measure = (paint, bare, least) => {
+    const probe = doc.createElement('div');
+    probe.id = 'ov';
+    probe.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+    doc.body.appendChild(probe);
+    try {
+      paint(probe, data);
+      if (bare) probe.classList.add('bare');
+      return { width: Math.max(least.width, probe.scrollWidth || 0), height: Math.max(least.height, probe.scrollHeight || 0) };
+    } finally {
+      probe.remove();
+    }
+  };
+  return {
+    expanded: measure(render, false, { width: EXPANDED_W, height: 0 }),
+    compact: measure(renderCompact, false, { width: COMPACT_W, height: COMPACT_H }),
+    bare: measure(renderCompact, true, { width: 0, height: COMPACT_H }),
+  };
 }
 
 // Opens the always-on-top window with `data` drawn in it, expanded, as tall
@@ -168,8 +193,8 @@ export async function openPip(documentPictureInPicture, data, measureIn = null) 
   try {
     // preferInitialWindowPlacement: open at this size every time — without it
     // Chrome reopens at the size and place the window last had (e.g. one the
-    // user dragged bigger) and ignores width/height.
-    pip = await documentPictureInPicture.requestWindow({ width: EXPANDED_W, height: openingHeight(measureIn, data), preferInitialWindowPlacement: true });
+    // user dragged bigger) and ignores width/height (measured; Chrome 130+).
+    pip = await documentPictureInPicture.requestWindow({ ...pipSize('expanded', openingHeight(measureIn, data)), preferInitialWindowPlacement: true });
   } catch (e) {
     console.warn('Leeway overlay: could not open PiP', e);
     return null;
@@ -177,25 +202,40 @@ export async function openPip(documentPictureInPicture, data, measureIn = null) 
   const doc = pip.document;
   doc.title = 'Leeway';
   const style = doc.createElement('style'); style.textContent = CSS; doc.head.appendChild(style);
+  const fit = doc.createElement('style'); fit.textContent = FIT_CSS; doc.head.appendChild(fit);
   const root = doc.createElement('div'); root.id = 'ov'; doc.body.appendChild(root);
-  let collapsed = false;
+  let mode = 'expanded'; // where the clicks left it
   let lastData = { providers: [] };
+  let sizes = null;      // the overlay's own size per layout, for lastData
+  let drawn = null;      // how it was last drawn (fitOverlay)
+  let clicked = false;   // until the click's own resize has come: no holding back
 
-  function resizePip() {
-    try {
-      const frame = Math.max(0, (pip.outerHeight || 0) - (pip.innerHeight || 0));
-      if (collapsed) { pip.resizeTo(COMPACT_W, COMPACT_H + frame); return; }
-      const content = root.scrollHeight || 240;
-      pip.resizeTo(EXPANDED_W, Math.min(EXPANDED_MAX_H, Math.max(EXPANDED_MIN_H, content)) + frame);
-    } catch (_) {}
+  function layout() {
+    const next = fitOverlay({ width: pip.innerWidth, height: pip.innerHeight }, mode, sizes, clicked ? null : drawn);
+    (next.mode === 'compact' ? renderCompact : render)(root, lastData);
+    root.classList.toggle('bare', !next.names);
+    root.style.transform = next.scale < 1 ? `scale(${next.scale})` : '';
+    doc.body.classList.toggle('strip', next.mode === 'compact');
+    drawn = next;
   }
-  const paint = () => (collapsed ? renderCompact : render)(root, lastData);
-  root.addEventListener('click', () => { collapsed = !collapsed; paint(); resizePip(); });
+  const paint = () => { sizes = contentSizes(doc, lastData); layout(); };
 
+  // resizeTo() takes the outer size: Chrome's frame (title bar, and on
+  // Windows a border left and right) is measured each time, as outer − inner.
+  function fitWindow() {
+    try {
+      const frame = { width: pip.outerWidth - pip.innerWidth, height: pip.outerHeight - pip.innerHeight };
+      const { width, height } = pipOuterSize(mode, sizes?.expanded?.height, frame);
+      pip.resizeTo(width, height);
+    } catch (_) { /* refused: the drawing still fits the window as it is */ }
+  }
+  root.addEventListener('click', () => { mode = mode === 'compact' ? 'expanded' : 'compact'; clicked = true; fitWindow(); layout(); });
+  // The user dragging its border, or the click's resize landing.
+  pip.addEventListener('resize', () => { if (root.isConnected) layout(); clicked = false; });
+
+  // New values (a service turned on or off, a Claude organization more) can
+  // change the overlay's size; the window stays as it is until the next click.
   const show = (next) => { lastData = next || lastData; if (root.isConnected) paint(); };
-  // Already opened at the content's height (openingHeight). Fitting it here as
-  // well only takes where a Chrome build still allows resizeTo.
   show(data);
-  resizePip();
   return { window: pip, show };
 }
