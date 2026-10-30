@@ -88,8 +88,10 @@ button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line
 .row button{flex:1;font-size:12px;padding:7px 4px}
 /* Support line: text only, dim, bottom-most — it must not compete with the
    numbers (CLAUDE.md §4). No icon, no badge, no animation. */
-.support{margin:10px 2px 0;text-align:center;font-size:11.5px}
+.support{margin:10px 2px 0;text-align:center;font-size:11.5px;color:var(--dim)}
 .support a{color:var(--dim)}
+.support span::after{content:": "}
+.support a+a::before{content:" · ";color:var(--dim)}
 </style></head><body>
 <header>
   <h1><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M 20.29 79.71 A 42 42 0 1 1 79.71 79.71" fill="none" stroke="var(--track)" stroke-width="13" stroke-linecap="round"/><path d="M 20.29 79.71 A 42 42 0 0 1 72.97 15.03" fill="none" stroke="var(--accent)" stroke-width="13" stroke-linecap="round"/></svg>Leeway</h1>
@@ -124,5 +126,5 @@ button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line
 <button id="refresh" data-i18n="refresh">Refresh</button>
 <button id="openOverlay" data-i18n="open_overlay">Open overlay</button>
 <div class="row"><button id="openClaude" data-i18n="open_claude">Claude usage</button><button id="openChatGPT" data-i18n="open_chatgpt">ChatGPT usage</button><button id="openGemini" data-i18n="open_gemini">Gemini usage</button></div>
-<p class="support"><a href="https://github.com/sponsors/donasman" target="_blank" rel="noopener" data-i18n="support_leeway">Support Leeway</a></p>
+<p class="support"><span data-i18n="support_leeway">Support Leeway</span><a href="https://github.com/sponsors/donasman" target="_blank" rel="noopener">GitHub Sponsors</a><a href="https://buymeacoffee.com/donasman" target="_blank" rel="noopener">Buy Me a Coffee</a></p>
 <script type="module" src="popup.js"></script></body></html>
