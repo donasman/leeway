@@ -84,5 +84,5 @@
   "labs_title": {"message": "실험 기능"},
   "peers_get_helper": {"message": "helper 받기 (Windows)"},
   "peers_about_helper": {"message": "helper가 하는 일"},
-  "support_leeway": {"message": "Leeway 후원하기"}
+  "support_leeway": {"message": "후원하기"}
 }
