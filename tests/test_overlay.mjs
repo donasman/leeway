@@ -140,7 +140,7 @@ console.log('\ncollapsed — one ring per service');
   check('a ring arc for a value, none for "?"', items.map(i => i.querySelectorAll('circle').length), [2, 2, 1]);
   check('low values coloured, plenty stays plain', items.map(i => i.querySelector('b').className), ['', 'bad', '']);
   check('stale stays dimmed', items[2].classList.contains('dim'), true);
-  check('the window becomes the fixed strip: 360 wide, 58 of content (the least resizeTo gives) plus the title bar (30)', resizes.at(-1), [360, 88]);
+  check('the strip could not be measured here (jsdom): three services wide, 58 of content (the least resizeTo gives) plus the title bar (30)', resizes.at(-1), [360, 88]);
   await click();
   check('click again: expanded, 280 wide', [root.className, root.querySelectorAll('.prov').length, resizes.at(-1)[0]], ['', 3, 280]);
   check('content not measured (jsdom): three services\' worth, 270 + 30 title bar', resizes.at(-1)[1], 300);
@@ -239,11 +239,14 @@ check('the pins hold 0%, "?", a stale service and the strip',
   [MARKUP.expanded.includes('>0%<'), MARKUP.expanded.includes('>?<'), MARKUP.expanded.includes('class="prov dim"'), MARKUP.collapsed.includes('class="ci dim"')], [true, true, true, true]);
 
 // The window's size and the drawing in it (overlay_fit.js, CLAUDE.md §4).
-// A measured #ov here: expanded 280 wide, 30 + 60 per block; the strip 330
-// wide with names (so the 360 minimum), 230 without; 58 high.
-const measured = el => (el.classList.contains('compact')
-  ? [el.classList.contains('bare') ? 230 : 330, 58]
-  : [280, 30 + 60 * el.querySelectorAll('.prov').length]);
+// A measured #ov here: expanded 280 wide, 30 + 60 per block; the strip 58
+// high and as wide as the services in it — 30 + 110 each with names (three
+// make 360), 20 + 70 each without (three make 230).
+const measured = (el) => {
+  if (!el.classList.contains('compact')) return [280, 30 + 60 * el.querySelectorAll('.prov').length];
+  const services = el.querySelectorAll('.ci').length;
+  return [el.classList.contains('bare') ? 20 + 70 * services : 30 + 110 * services, 58];
+};
 // Chrome's frame as measured on Windows at 100%: 16 wide (an invisible border
 // left and right), 42 high (title bar and the bottom border).
 const sized = (width, height) => ({innerWidth: width, innerHeight: height, outerWidth: width + 16, outerHeight: height + 42});
@@ -253,7 +256,7 @@ console.log('\nthe window — sized on open and by a click only, with both sides
   const {resizes, requests, click, show} = await openOverlay(DATA, sized(280, 210), measured);
   check('opened at the size asked for, with the option; no resizeTo after it', [requests, resizes], [[{width: 280, height: 270, preferInitialWindowPlacement: true}], []]);
   await click();
-  check('collapse: the strip 360×58 plus the frame measured on both sides → 376×100', resizes.at(-1), [376, 100]);
+  check('collapse: the strip for three services (360×58) plus the frame measured on both sides → 376×100', resizes.at(-1), [376, 100]);
   await click();
   check('expand: 280 + 16 wide, the content measured in the PiP (210) + 42 high', resizes.at(-1), [296, 252]);
   const count = resizes.length;
@@ -284,14 +287,34 @@ console.log('\nthe drawing — its own size whatever the window: shrunk, never e
   check('the strip keeps its rings and values', [o.root.querySelectorAll('.ci svg').length, [...o.root.querySelectorAll('.ci b')].map(text)], [3, ['72%', '0%', '?']]);
   check('none of that resized the window', o.resizes, []);
   const fit = doc.head.querySelectorAll('style')[1]?.textContent || '';
-  check('the PiP\'s own style: no scrolling, the strip centred, names hidden only without room',
-    ['html,body{height:100%;overflow:hidden}', 'body.strip{justify-content:center}', 'transform-origin:0 50%', '#ov.bare .ci > span{display:none}'].map(s => fit.includes(s)), [true, true, true, true]);
+  check('the PiP style: no scrolling, the strip as wide as its services and centred both ways, names hidden only without room',
+    ['html,body{height:100%;overflow:hidden}', 'body.strip{justify-content:center;align-items:center}', '#ov.compact{width:max-content;', 'transform-origin:50% 50%', '#ov.bare .ci > span{display:none}'].map(s => fit.includes(s)), [true, true, true, true, true]);
+  check('the strip has no minimum width of its own: the window is sized to it instead', fit.includes('min-width'), false);
 
   await o.resize(1536, 830);
   await o.click();
   check('picked collapsed in a big window (0.8 of the screen): the strip as it is, centred', state(), ['compact', '', 'strip']);
   await o.resize(330, 100);
   check('narrower: the strip shrunk', state(), ['compact', `scale(${330 / 360})`, 'strip']);
+}
+
+console.log('\nthe strip is as wide as the services that are on (CLAUDE.md §4)');
+{
+  const o = await openOverlay({...DATA, providers: [DATA.providers[0]]}, sized(280, 210), measured);
+  await o.click();
+  check('one service: its 140 of strip is under the smallest PiP Chrome gives, so the window is that 240, not the 360 three take (+16 of frame; 58 + 42 high)',
+    o.resizes.at(-1), [256, 100]);
+  check('drawn at its own size, centred in the window', [o.root.className, o.root.style.transform], ['compact', '']);
+  const before = o.resizes.length;
+  await o.show({...DATA, providers: DATA.providers.slice(0, 2)});
+  check('a second service turned on: the window is left as it is until the next click', o.resizes.length, before);
+  await o.click();
+  await o.click();
+  check('clicked back to the strip: the 250 the two take (+16)', o.resizes.at(-1), [266, 100]);
+  await o.show(DATA);
+  await o.click();
+  await o.click();
+  check('all three on: 360 (+16), as before', o.resizes.at(-1), [376, 100]);
 }
 
 console.log('\nthe drawing — new values in a window left as it was');

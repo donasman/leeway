@@ -8,7 +8,7 @@
 // then the main limit's reset and the other limits on one line); collapsed =
 // one line of small rings, one per service. A click on the PiP window toggles
 // between them. Text from storage goes through esc() (CLAUDE.md §3).
-import { COMPACT_H, COMPACT_W, EXPANDED_W, fitOverlay, pipOuterSize, pipSize } from './overlay_fit.js';
+import { COMPACT_H, EXPANDED_W, fitOverlay, pipOuterSize, pipSize } from './overlay_fit.js';
 
 export const CSS = `
     html,body{margin:0;background:#0f141b}
@@ -130,15 +130,18 @@ export function renderCompact(root, data) {
 // size in between and gives that drag no activation, so it can't be set
 // back; the overlay keeps its own size instead, shrunk to fit a smaller
 // window and never scrolled. This style is the PiP's only, after CSS:
-// expanded at the top left, the strip vertically centred, the rest of the
-// window the same background.
+// expanded at the top left, the strip in the middle, the rest of the
+// window the same background. The strip is only as wide as the services that
+// are on (no minimum width of its own: the window is sized to it instead), and
+// it sits in the middle of the window, so a window the user dragged wider —
+// or Chrome's 240 minimum under a single service — leaves the same gap on
+// both sides. It is scaled from its middle for the same reason.
 const FIT_CSS = `
     html,body{height:100%;overflow:hidden}
     body{display:flex;flex-direction:column;align-items:flex-start;cursor:default}
-    body.strip{justify-content:center}
+    body.strip{justify-content:center;align-items:center}
     #ov{flex:none;width:${EXPANDED_W}px;box-sizing:border-box;transform-origin:0 0;cursor:pointer}
-    #ov.compact{width:max-content;min-width:${COMPACT_W}px;height:${COMPACT_H}px;min-height:0;transform-origin:0 50%}
-    #ov.bare{min-width:0}
+    #ov.compact{width:max-content;height:${COMPACT_H}px;min-height:0;transform-origin:50% 50%}
     #ov.bare .ci > span{display:none}`;
 
 // How tall the expanded overlay is for `data` at the width the PiP opens
@@ -179,7 +182,7 @@ function contentSizes(doc, data) {
   };
   return {
     expanded: measure(render, false, { width: EXPANDED_W, height: 0 }),
-    compact: measure(renderCompact, false, { width: COMPACT_W, height: COMPACT_H }),
+    compact: measure(renderCompact, false, { width: 0, height: COMPACT_H }),
     bare: measure(renderCompact, true, { width: 0, height: COMPACT_H }),
   };
 }
@@ -225,7 +228,10 @@ export async function openPip(documentPictureInPicture, data, measureIn = null) 
   function fitWindow() {
     try {
       const frame = { width: pip.outerWidth - pip.innerWidth, height: pip.outerHeight - pip.innerHeight };
-      const { width, height } = pipOuterSize(mode, sizes?.expanded?.height, frame);
+      // The overlay's own size in the layout the click left it in: the
+      // expanded height, or the strip's width for the services that are on.
+      const own = mode === 'compact' ? sizes?.compact?.width : sizes?.expanded?.height;
+      const { width, height } = pipOuterSize(mode, own, frame);
       pip.resizeTo(width, height);
     } catch (_) { /* refused: the drawing still fits the window as it is */ }
   }
