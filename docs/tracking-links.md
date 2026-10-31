@@ -31,6 +31,7 @@
 | `geeknews` | GeekNews (news.hada.io) | |
 | `reddit_claudeai` | Reddit r/ClaudeAI | karma 50 미만이면 쇼케이스 메가스레드 댓글(Rule 7) |
 | `reddit_sideproject` | Reddit r/SideProject | 올리기 전 사이드바·고정글에서 플레어·요일 제한 확인 |
+| `reddit_chromeext` | Reddit r/chrome_extensions | Self Promotion 말머리로 올린다 |
 | `hackernews` | Hacker News (Show HN) | 제목은 `Show HN: `로 시작. UTM을 붙이지 않은 맨 URL로 올린다(아래 주의) |
 | `disquiet` | 디스콰이엇 | |
 | `zenn` | Zenn (zenn.dev) | 일본어. GitHub 계정으로 가입 |
