@@ -54,7 +54,7 @@ Claude · ChatGPT · Gemini의 사용량(5시간·주간·월간 한도. 기본�
 | `extension/gemini.js`, `gemini_scan.js` | 열린 gemini.google.com/usage 탭에서 값을 읽어 수집 결과로 |
 | `extension/peers.js` | helper로 보낼 값 만들기, helper 응답 해석 |
 | `extension/i18n.js` | `chrome.i18n` → view.js용 라벨 맵 |
-| `extension/popup.html`, `popup.js` | 팝업 |
+| `extension/popup.html`, `popup.js` | 팝업. 맨 아래 후원 줄은 `support_leeway` 라벨 + GitHub Sponsors·Buy Me a Coffee 링크(인라인 SVG 아이콘, 외부 이미지·요청 없음. 1.2.1). 한 줄에 들어가는지는 저장소 밖 `leeway-store-1.2.1/gen/measure-support.mjs`로 잰다 |
 | `extension/overlay_window.html`, `overlay_window.js` | Leeway 창(§4). 펼친 오버레이를 보여주고 "항상 위에 띄우기"(포커스가 있어 Enter로도)로 Document Picture-in-Picture 오버레이를 연다. 값은 storage에서 직접 읽고, 자기 창 위치를 저장한다 |
 | `extension/overlay_view.js` | 오버레이 그리기(펼침·접힘, CSS, PiP 열기, 전환 클릭 때 창 크기 맞춤, 창 크기에 맞춰 그리기). 그리는 HTML과 스타일은 `tests/test_overlay.mjs`가 고정 |
 | `extension/overlay_fit.js` | PiP 오버레이의 정한 크기(`pipSize`, `pipOuterSize`)와 창 크기에 따라 그리는 방식(`fitOverlay`: 그릴 모양·축소 비율·이름 표시, §4) |

@@ -31,4 +31,4 @@
 - Privacy policy: https://donasman.github.io/leeway/privacy/
 - Source code (MIT): https://github.com/donasman/leeway
 - Helper releases: https://github.com/donasman/leeway/releases/latest
-- Sponsor the project (optional, changes nothing in the extension): https://github.com/sponsors/donasman
+- Sponsor the project (optional, changes nothing in the extension): https://github.com/sponsors/donasman or https://buymeacoffee.com/donasman

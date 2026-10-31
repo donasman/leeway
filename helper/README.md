@@ -68,7 +68,7 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o d
 ```
 
 A build from source reports its version as `dev`. The release build sets it from
-the tag (`-ldflags "-s -w -X main.version=0.6.3"`). The extension asks the user
+the tag (for `v1.2.1`: `-ldflags "-s -w -X main.version=1.2.1"`). The extension asks the user
 to update a helper older than `MIN_HELPER_VERSION` (`extension/peers.js`).
 
 The program is not code-signed, so Windows SmartScreen may warn the first time
