@@ -19,3 +19,13 @@ snapshot_date,path,title,count,uniques
 2026-10-30,/donasman/leeway/blob/metrics/data/traffic.csv,/blob/metrics/data/traffic.csv,1,1
 2026-10-30,/donasman/leeway/pull/1,/pull/1,1,1
 2026-10-30,/donasman/leeway/pull/2,/pull/2,1,1
+2026-10-31,/donasman/leeway,Overview,4,1
+2026-10-31,/donasman/leeway/actions,/actions,3,1
+2026-10-31,/donasman/leeway/actions/runs/40473371235,/actions/runs/40473371235,2,1
+2026-10-31,/donasman/leeway/actions/workflows/helper-release.yml,/actions/workflows/helper-release.yml,2,1
+2026-10-31,/donasman/leeway/actions/runs/40446999706,/actions/runs/40446999706,1,1
+2026-10-31,/donasman/leeway/actions/workflows/metrics.yml,/actions/workflows/metrics.yml,1,1
+2026-10-31,/donasman/leeway/actions/workflows/pages/pages-build-deployment,/actions/workflows/pages/pages-build-deployment,1,1
+2026-10-31,/donasman/leeway/blob/metrics/data/traffic.csv,/blob/metrics/data/traffic.csv,1,1
+2026-10-31,/donasman/leeway/pull/1,/pull/1,1,1
+2026-10-31,/donasman/leeway/pull/2,/pull/2,1,1
