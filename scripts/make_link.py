@@ -22,12 +22,21 @@ TARGETS = {
 }
 
 # utm_source: where the link is posted. Add new places here and in docs/tracking-links.md.
-SOURCES = ["geeknews", "reddit_claudeai", "disquiet", "study", "github_readme"]
+SOURCES = [
+    # communities
+    "geeknews", "reddit_claudeai", "reddit_sideproject", "hackernews", "disquiet",
+    "zenn", "qiita", "v2ex",
+    # launch and directory sites
+    "producthunt", "alternativeto", "peerlist", "uneed", "microlaunch", "fazier", "devhunt",
+    # ours and offline
+    "github_readme", "study",
+]
 
-# utm_medium: what kind of post it is.
-MEDIUMS = ["post", "comment", "readme", "dm"]
+# utm_medium: what kind of post it is. "listing" is a directory entry, not a post.
+MEDIUMS = ["post", "comment", "readme", "dm", "listing"]
 
-NAME_RE = re.compile(r"^[a-z_]+$")
+# Lowercase, digits and _; a digit may not start the name (so "v2ex" is fine, "2ex" is not).
+NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 CAMPAIGN_RE = re.compile(r"^launch_(\d{4})(\d{2})$")
 
 
@@ -37,8 +46,8 @@ class LinkError(ValueError):
 
 def check_name(kind, value, allowed):
     if not NAME_RE.match(value):
-        raise LinkError(f"{kind} {value!r} is not allowed (lowercase letters and _ only). "
-                        f"allowed: {', '.join(sorted(allowed))}")
+        raise LinkError(f"{kind} {value!r} is not allowed (lowercase letters, digits and _, "
+                        f"not starting with a digit). allowed: {', '.join(sorted(allowed))}")
     if value not in allowed:
         raise LinkError(f"{kind} {value!r} is not in the list. allowed: {', '.join(sorted(allowed))}")
 

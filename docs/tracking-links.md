@@ -17,22 +17,39 @@
 | 파라미터 | 뜻 | 허용 값 |
 |---|---|---|
 | `utm_source` | 게시 장소 | 아래 장소 목록 |
-| `utm_medium` | 게시 형태 | `post`, `comment`, `readme`, `dm` |
+| `utm_medium` | 게시 형태 | `post`, `comment`, `readme`, `dm`, `listing`(디렉터리 등록) |
 | `utm_campaign` | 캠페인 | `launch_YYYYMM` (예: `launch_202610`). 생략하면 이번 달 |
 
-- `utm_source`·`utm_medium`은 **소문자와 밑줄(`_`)만** 쓴다. 대문자·하이픈·공백·숫자는 스크립트가 거부한다.
+- `utm_source`·`utm_medium`은 **소문자·숫자·밑줄(`_`)만** 쓰고, 숫자로 시작할 수 없다(`v2ex`는 되고 `2ex`는 안 된다). 대문자·하이픈·공백은 스크립트가 거부한다.
 - 목록에 없는 값도 스크립트가 거부한다(종료 코드 2, stdout 비어 있음).
 - 새 장소가 생기면 `scripts/make_link.py`의 `SOURCES`와 아래 표에 **같이** 추가한다.
 
 ### 장소 목록 (`utm_source`)
 
-| 값 | 장소 |
-|---|---|
-| `geeknews` | GeekNews (news.hada.io) |
-| `reddit_claudeai` | Reddit r/ClaudeAI |
-| `disquiet` | 디스콰이엇 |
-| `study` | 스터디 모임·커뮤니티 |
-| `github_readme` | GitHub README |
+| 값 | 장소 | 비고 |
+|---|---|---|
+| `geeknews` | GeekNews (news.hada.io) | |
+| `reddit_claudeai` | Reddit r/ClaudeAI | karma 50 미만이면 쇼케이스 메가스레드 댓글(Rule 7) |
+| `reddit_sideproject` | Reddit r/SideProject | 올리기 전 사이드바·고정글에서 플레어·요일 제한 확인 |
+| `hackernews` | Hacker News (Show HN) | 제목은 `Show HN: `로 시작. UTM을 붙이지 않은 맨 URL로 올린다(아래 주의) |
+| `disquiet` | 디스콰이엇 | |
+| `zenn` | Zenn (zenn.dev) | 일본어. GitHub 계정으로 가입 |
+| `qiita` | Qiita | 일본어 |
+| `v2ex` | V2EX | 중국어. 신규 계정 글쓰기 제한 미확인 |
+| `producthunt` | Product Hunt | |
+| `alternativeto` | AlternativeTo | 글이 아니라 제품 등록 → `listing` |
+| `peerlist` | Peerlist | 프로필에 프로젝트로 추가 → `listing` |
+| `uneed` | Uneed | |
+| `microlaunch` | Microlaunch | |
+| `fazier` | Fazier | |
+| `devhunt` | DevHunt | |
+| `study` | 스터디 모임·커뮤니티 | |
+| `github_readme` | GitHub README | |
+
+### Hacker News 주의
+
+Show HN에 올리는 URL에는 **UTM을 붙이지 않는다.** HN은 추적 파라미터가 붙은 링크를 좋게 보지 않고, 제목·링크를 손대면 눈에 띈다.
+HN 쪽 유입은 GitHub 트래픽의 유입 도메인(`news.ycombinator.com`)으로 구분한다. `hackernews` 값은 댓글에 스토어 링크를 적을 때만 쓴다.
 
 ## 스크립트 사용법
 
