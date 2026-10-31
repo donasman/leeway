@@ -24,7 +24,7 @@ TARGETS = {
 # utm_source: where the link is posted. Add new places here and in docs/tracking-links.md.
 SOURCES = [
     # communities
-    "geeknews", "reddit_claudeai", "reddit_sideproject", "hackernews", "disquiet",
+    "geeknews", "reddit_claudeai", "reddit_sideproject", "reddit_chromeext", "hackernews", "disquiet",
     "zenn", "qiita", "v2ex",
     # launch and directory sites
     "producthunt", "alternativeto", "peerlist", "uneed", "microlaunch", "fazier", "devhunt",
