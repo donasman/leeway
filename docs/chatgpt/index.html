@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatGPT usage limits in Chrome — Leeway</title>
+<meta name="description" content="See the ChatGPT plan limits from Settings &gt; Usage — the ones shared by Codex, Work, workspace agents and ChatGPT for Excel — in Chrome's toolbar, used or left, with reset times. Free and open source.">
+<link rel="canonical" href="https://donasman.github.io/leeway/chatgpt/">
+<link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/chatgpt/">
+<link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/chatgpt/">
+<link rel="alternate" hreflang="x-default" href="https://donasman.github.io/leeway/chatgpt/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ChatGPT usage limits in Chrome — Leeway">
+<meta property="og:description" content="The ChatGPT limits shared by Codex, Work and workspace agents, in Chrome's toolbar. No tab to keep open.">
+<meta property="og:url" content="https://donasman.github.io/leeway/chatgpt/">
+<meta property="og:image" content="https://donasman.github.io/leeway/img/popup.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Which ChatGPT limits does Leeway show?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Exactly what ChatGPT's Settings > Usage page shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Depending on the account these are 5-hour, weekly or 30-day windows, and Leeway shows each as a percentage with its reset time."}},
+    {"@type": "Question", "name": "Does it count my ordinary chat messages?",
+     "acceptedAnswer": {"@type": "Answer", "text": "No. Ordinary chat conversations are not counted on ChatGPT's Settings > Usage page, so they are not counted in Leeway either. Leeway shows the same numbers that page shows and nothing more."}},
+    {"@type": "Question", "name": "Can I see my Codex usage limit?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Yes, in the sense that Codex draws on the plan limits shown on Settings > Usage, and those are the numbers Leeway displays. There is no separate Codex-only counter — the limit is shared with Work, workspace agents and ChatGPT for Excel."}},
+    {"@type": "Question", "name": "Does a chatgpt.com tab need to be open?",
+     "acceptedAnswer": {"@type": "Answer", "text": "No. Leeway reads the ChatGPT limits in the background, so nothing has to stay open. You only need to be signed in to chatgpt.com in that Chrome profile."}}
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<nav><strong><a href="../" style="color:inherit;text-decoration:none;margin:0">Leeway</a></strong><span><a href="../claude/">Claude</a><a href="../gemini/">Gemini</a><a href="../ko/chatgpt/">한국어</a><a href="../privacy/">Privacy</a><a href="https://github.com/donasman/leeway">GitHub</a></span></nav>
+
+<h1>ChatGPT usage limits in Chrome</h1>
+<p class="lead">Leeway shows the ChatGPT plan limits from Settings &gt; Usage — the ones Codex, Work, workspace agents and ChatGPT for Excel share — in a popup, the toolbar badge and an always-on-top overlay. Used or left, with reset times.</p>
+<div class="cta">
+  <a class="btn primary" href="https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga">Add to Chrome — free</a>
+  <a class="btn" href="https://github.com/donasman/leeway">Source on GitHub</a>
+</div>
+<img class="shot" src="../img/popup.png" width="1280" height="800" alt="Leeway popup showing ChatGPT plan usage as a color-coded percentage with its reset time, alongside Claude and Gemini">
+
+<h2>Which numbers these are</h2>
+<p>ChatGPT reports usage in one place: <strong>Settings &gt; Usage</strong>. Leeway shows what that page shows, and nothing it does not — the plan limits shared by <strong>Codex, Work, workspace agents and ChatGPT for Excel</strong>. Depending on the account the window is 5-hour, weekly or 30-day.</p>
+<p><strong>Ordinary chat conversations are not counted there</strong>, so they are not counted here either. If you are looking for a message counter for normal chats, this is not that — and no extension can show a number ChatGPT does not publish.</p>
+<p class="note">These are not public, stable APIs and may change without notice.</p>
+
+<h2>What it shows</h2>
+<ul>
+  <li><strong>Each limit as a percentage with its reset time</strong>, taken from the same place ChatGPT reports it.</li>
+  <li><strong>Used or left.</strong> The switch at the top of the popup turns every number — popup, overlay and toolbar badge — into the remaining percentage, and back. Used is the default.</li>
+  <li><strong>Your plan name</strong>, such as Plus, when ChatGPT reports it.</li>
+  <li><strong>A toolbar badge</strong> for whichever enabled service is closest to its limit: green with 50% or more left, orange from 20 to 49% left, red below 20% left, grey when the value is old.</li>
+  <li>A value that could not be read is shown as <code>?</code>, never as 0%.</li>
+  <li>No tab to keep open — Leeway reads it in the background. You only need to be signed in to chatgpt.com in that Chrome profile.</li>
+</ul>
+
+<h2>Keep it visible while you work</h2>
+<p>Open overlay in the popup opens a small Leeway window, and its Float on top button (or Enter, right after) turns it into an always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). Useful while a long Codex run is going: it stays above other apps, and a click collapses it to one line.</p>
+
+<h2>Private by design</h2>
+<ul>
+  <li>Uses the session you are already signed in to. No sign-in, and no cookie, password or API key to paste.</li>
+  <li>Session tokens are never stored, logged or sent anywhere. Conversations are never read — the page script runs only on a usage screen.</li>
+  <li>No server, no account, no analytics. Everything stays in your browser.</li>
+  <li>The chatgpt.com site permission is requested only when you turn ChatGPT on.</li>
+</ul>
+<p>Full details: <a href="../privacy/">privacy policy</a>.</p>
+
+<h2>FAQ</h2>
+<h3>Which ChatGPT limits does Leeway show?</h3>
+<p>Exactly what Settings &gt; Usage shows: the plan limits shared by Codex, Work, workspace agents and ChatGPT for Excel. Depending on the account these are 5-hour, weekly or 30-day windows.</p>
+<h3>Does it count my ordinary chat messages?</h3>
+<p>No. Ordinary chat conversations are not counted on that page, so they are not counted in Leeway either.</p>
+<h3>Can I see my Codex usage limit?</h3>
+<p>Yes, in the sense that Codex draws on the plan limits shown on Settings &gt; Usage, and those are the numbers Leeway displays. There is no separate Codex-only counter — the limit is shared.</p>
+<h3>Does a chatgpt.com tab need to be open?</h3>
+<p>No. Leeway reads it in the background; you only need to be signed in in that Chrome profile.</p>
+
+<h2>Also for</h2>
+<div class="siblings">
+  <a class="btn" href="../claude/">Claude usage limits</a>
+  <a class="btn" href="../gemini/">Gemini usage limits</a>
+  <a class="btn" href="../">All three together</a>
+</div>
+
+<footer>
+  Leeway — unofficial project, not affiliated with Anthropic, OpenAI or Google. ·
+  <a href="https://github.com/donasman/leeway">github.com/donasman/leeway</a> ·
+  <a href="../privacy/">Privacy policy</a> ·
+  Sponsor: <a href="https://github.com/sponsors/donasman">GitHub Sponsors</a> / <a href="https://buymeacoffee.com/donasman">Buy Me a Coffee</a> ·
+  <a href="https://github.com/donasman/leeway/issues">Issues</a>
+</footer>
+</div>
+</body>
+</html>

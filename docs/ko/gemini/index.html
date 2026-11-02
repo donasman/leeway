@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemini 사용량 한도를 Chrome에서 바로 — Leeway</title>
+<meta name="description" content="Gemini 현재 사용량과 주간 사용량을 Chrome 툴바에서 쓴 양 또는 남은 양으로 확인합니다. Gemini는 사용량 API가 없어 Leeway가 gemini.google.com/usage 탭을 읽고 백그라운드에서 알아서 갱신합니다. 무료 오픈소스.">
+<link rel="canonical" href="https://donasman.github.io/leeway/ko/gemini/">
+<link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/gemini/">
+<link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/gemini/">
+<link rel="alternate" hreflang="x-default" href="https://donasman.github.io/leeway/gemini/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gemini 사용량 한도를 Chrome에서 바로 — Leeway">
+<meta property="og:description" content="Gemini 사용량을 툴바에서 바로. Gemini는 사용량 API가 없어 Leeway가 사용량 페이지를 읽고 백그라운드에서 갱신합니다.">
+<meta property="og:url" content="https://donasman.github.io/leeway/ko/gemini/">
+<meta property="og:image" content="https://donasman.github.io/leeway/img/popup.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../../site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "ko",
+  "mainEntity": [
+    {"@type": "Question", "name": "Gemini는 왜 탭을 열어 두어야 하나요?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Claude와 ChatGPT와 달리 Gemini에는 백그라운드로 읽을 사용량 엔드포인트가 없습니다. 그 숫자는 gemini.google.com/usage 페이지 자체에만 있으므로 Leeway가 읽으려면 그 페이지가 열려 있어야 합니다. 팝업의 'Gemini 사용량' 버튼이 그 페이지를 열거나, 이미 열려 있으면 그 탭으로 전환한 뒤 로딩이 끝나면 읽습니다."}},
+    {"@type": "Question", "name": "제가 보고 있는 중에 페이지를 새로 고치지는 않나요?",
+     "acceptedAnswer": {"@type": "Answer", "text": "그러지 않습니다. Leeway는 그 탭이 메모리에서 내려가지 않게 지켜 주고, 탭이 백그라운드에 있으면서 숫자가 5분 넘게 오래되었거나 Chrome이 절전 상태로 돌렸을 때만 새로 고칩니다. 보고 있는 탭은 절대 새로 고치지 않습니다."}},
+    {"@type": "Question", "name": "Gemini의 어떤 숫자를 읽나요?",
+     "acceptedAnswer": {"@type": "Answer", "text": "gemini.google.com/usage 페이지의 현재 사용량 카드와 주간 카드이며, 각각 퍼센트와 초기화 시각으로 보여줍니다. 읽지 못한 값은 물음표로 표시하고 0%로 보여주지 않습니다."}},
+    {"@type": "Question", "name": "쿠키나 비밀번호, API 키를 붙여넣어야 하나요?",
+     "acceptedAnswer": {"@type": "Answer", "text": "아닙니다. Leeway는 Chrome에 이미 로그인된 Google 세션을 그대로 씁니다. 비밀번호·쿠키·API 키를 묻지 않고, 세션 토큰을 저장하거나 기록하거나 어디로도 보내지 않습니다."}}
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<nav><strong><a href="../" style="color:inherit;text-decoration:none;margin:0">Leeway</a></strong><span><a href="../claude/">Claude</a><a href="../chatgpt/">ChatGPT</a><a href="../../gemini/">English</a><a href="../../privacy/">개인정보처리방침</a><a href="https://github.com/donasman/leeway">GitHub</a></span></nav>
+
+<h1>Gemini 사용량 한도를 Chrome에서 바로</h1>
+<p class="lead">Leeway는 Gemini의 현재 사용량과 주간 사용량을 — 쓴 양 또는 남은 양으로, 초기화 시각과 함께 — 팝업, 툴바 배지, 항상 위에 뜨는 오버레이로 Claude·ChatGPT와 나란히 보여줍니다.</p>
+<div class="cta">
+  <a class="btn primary" href="https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga">Chrome에 추가 — 무료</a>
+  <a class="btn" href="https://github.com/donasman/leeway">GitHub 소스</a>
+</div>
+<img class="shot" src="../../img/popup.png" width="1280" height="800" alt="Gemini 사용량을 초기화 시각과 함께 색으로 구분된 퍼센트로 보여주는 Leeway 팝업. Claude와 ChatGPT도 함께 표시됨">
+
+<h2>먼저 솔직한 부분</h2>
+<p>세 서비스 중 Gemini가 가장 까다롭습니다. Claude와 ChatGPT는 Leeway가 백그라운드로 읽을 수 있는 사용량 엔드포인트가 있어서 아무것도 열어 둘 필요가 없습니다. <strong>Gemini에는 그게 없습니다.</strong> 숫자가 <code>gemini.google.com/usage</code> 페이지 자체에만 있어서 <strong>그 페이지가 열려 있어야</strong> Leeway가 읽을 수 있습니다.</p>
+<p>그래서 최대한 손이 덜 가게 만들었습니다.</p>
+<ul>
+  <li>팝업의 <strong>Gemini 사용량</strong> 버튼이 그 페이지를 열거나 — 이미 열려 있으면 그 탭으로 전환하고 — 로딩이 끝나면 읽습니다.</li>
+  <li>Chrome의 메모리 절약 기능이 <strong>그 탭을 내리지 않게 지켜 줍니다.</strong></li>
+  <li>탭이 백그라운드에 있으면서 숫자가 5분 넘게 오래되었거나 Chrome이 절전 상태로 돌렸을 때 <strong>조용히 새로 고칩니다.</strong> <strong>보고 있는 중에는 절대 새로 고치지 않습니다.</strong></li>
+</ul>
+<p class="note">공개된 안정적인 API가 아니므로 예고 없이 바뀔 수 있습니다.</p>
+
+<h2>보여주는 것</h2>
+<ul>
+  <li><strong>사용량 페이지의 현재 사용량 카드와 주간 카드</strong>를 각각 퍼센트와 초기화 시각으로.</li>
+  <li><strong>쓴 양 또는 남은 양.</strong> 팝업 맨 위 전환으로 팝업·오버레이·툴바 배지의 모든 숫자가 남은 퍼센트로 바뀌고 다시 돌아옵니다. 기본값은 '사용'입니다.</li>
+  <li><strong>툴바 배지</strong>는 켜 둔 서비스 중 한도에 가장 가까운 것을 보여줍니다. 남은 양 50% 이상 초록, 20~49% 주황, 20% 미만 빨강, 값이 오래되면 회색.</li>
+  <li>읽지 못한 값은 <code>?</code>로 표시합니다 — 오래된 Gemini 숫자가 진짜 숫자인 척하지 않습니다.</li>
+</ul>
+
+<h2>작업하는 동안 계속 보이게</h2>
+<p>팝업의 '오버레이 열기'로 작은 Leeway 창을 띄우고, 그 창의 '항상 위' 버튼(또는 바로 Enter)을 누르면 Chrome의 Document Picture-in-Picture로 항상 위에 뜨는 창이 됩니다(Chrome 116 이상). 다른 앱 위에 계속 남아 있고, 클릭하면 한 줄로 접힙니다.</p>
+
+<h2>설계부터 개인정보 보호</h2>
+<ul>
+  <li>Chrome에 이미 로그인된 Google 세션을 그대로 씁니다. 별도 로그인도, 붙여넣을 쿠키·비밀번호·API 키도 없습니다.</li>
+  <li>세션 토큰을 저장하거나 기록하거나 어디로도 보내지 않습니다. 대화 내용은 읽지 않습니다 — 페이지 스크립트는 사용량 화면에서만 동작하고 대화 페이지에서는 동작하지 않습니다.</li>
+  <li>서버도, 계정도, 분석 도구도 없습니다. 모든 것이 브라우저 안에 남습니다.</li>
+  <li>gemini.google.com 사이트 권한은 Gemini를 켤 때만 요청합니다.</li>
+</ul>
+<p>자세한 내용: <a href="../../privacy/">개인정보처리방침</a>.</p>
+
+<h2>자주 묻는 질문</h2>
+<h3>Gemini는 왜 탭을 열어 두어야 하나요?</h3>
+<p>Claude와 ChatGPT와 달리 Gemini에는 백그라운드로 읽을 사용량 엔드포인트가 없습니다. 숫자가 사용량 페이지에만 있어서 그 페이지가 열려 있어야 합니다.</p>
+<h3>제가 보고 있는 중에 페이지를 새로 고치지는 않나요?</h3>
+<p>그러지 않습니다. 탭이 백그라운드에 있고 숫자가 5분 넘게 오래되었거나 Chrome이 절전 상태로 돌렸을 때만 새로 고칩니다. 보고 있는 탭은 건드리지 않습니다.</p>
+<h3>Gemini의 어떤 숫자를 읽나요?</h3>
+<p>현재 사용량 카드와 주간 카드를 각각 퍼센트와 초기화 시각으로 읽습니다.</p>
+<h3>쿠키나 비밀번호, API 키를 붙여넣어야 하나요?</h3>
+<p>아닙니다. Chrome에 이미 로그인된 Google 세션을 그대로 쓰며, 세션 토큰은 저장·기록·전송하지 않습니다.</p>
+
+<h2>다른 서비스</h2>
+<div class="siblings">
+  <a class="btn" href="../claude/">Claude 사용량 한도</a>
+  <a class="btn" href="../chatgpt/">ChatGPT 사용량 한도</a>
+  <a class="btn" href="../">세 개 함께 보기</a>
+</div>
+
+<footer>
+  Leeway — 비공식 프로젝트이며 Anthropic, OpenAI, Google과 관계없습니다. ·
+  <a href="https://github.com/donasman/leeway">github.com/donasman/leeway</a> ·
+  <a href="../../privacy/">개인정보처리방침</a> ·
+  후원: <a href="https://github.com/sponsors/donasman">GitHub Sponsors</a> / <a href="https://buymeacoffee.com/donasman">Buy Me a Coffee</a> ·
+  <a href="https://github.com/donasman/leeway/issues">문의(Issues)</a>
+</footer>
+</div>
+</body>
+</html>

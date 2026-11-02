@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemini usage limits in Chrome — Leeway</title>
+<meta name="description" content="See your Gemini current-usage and weekly numbers in Chrome's toolbar, used or left. Gemini has no usage API, so Leeway reads an open gemini.google.com/usage tab and keeps it fresh for you. Free and open source.">
+<link rel="canonical" href="https://donasman.github.io/leeway/gemini/">
+<link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/gemini/">
+<link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/gemini/">
+<link rel="alternate" hreflang="x-default" href="https://donasman.github.io/leeway/gemini/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gemini usage limits in Chrome — Leeway">
+<meta property="og:description" content="Your Gemini usage in Chrome's toolbar. Gemini publishes no usage API, so Leeway reads the usage page and keeps it fresh in the background.">
+<meta property="og:url" content="https://donasman.github.io/leeway/gemini/">
+<meta property="og:image" content="https://donasman.github.io/leeway/img/popup.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Why does a Gemini tab need to be open?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Gemini has no usage endpoint to read in the background, unlike Claude and ChatGPT. The numbers exist only on the gemini.google.com/usage page itself, so that page has to be open for Leeway to read them. The popup's Gemini usage button opens it, or switches to it if it is already open, and reads it once it has loaded."}},
+    {"@type": "Question", "name": "Will Leeway reload the page while I am looking at it?",
+     "acceptedAnswer": {"@type": "Answer", "text": "No. Leeway keeps that tab from being unloaded, and reloads it only when it is sitting in the background with numbers more than five minutes old, or when Chrome has put it to sleep. It never reloads a tab you are looking at."}},
+    {"@type": "Question", "name": "Which Gemini numbers does it read?",
+     "acceptedAnswer": {"@type": "Answer", "text": "The current-usage and weekly cards on the gemini.google.com/usage page, each shown as a percentage with its reset time. A value that could not be read is shown as a question mark, never as 0%."}},
+    {"@type": "Question", "name": "Do I need to paste a cookie, password or API key?",
+     "acceptedAnswer": {"@type": "Answer", "text": "No. Leeway uses the Google session you are already signed in to in Chrome. It never asks for a password, cookie or API key, and session tokens are never stored, logged or sent anywhere."}}
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<nav><strong><a href="../" style="color:inherit;text-decoration:none;margin:0">Leeway</a></strong><span><a href="../claude/">Claude</a><a href="../chatgpt/">ChatGPT</a><a href="../ko/gemini/">한국어</a><a href="../privacy/">Privacy</a><a href="https://github.com/donasman/leeway">GitHub</a></span></nav>
+
+<h1>Gemini usage limits in Chrome</h1>
+<p class="lead">Leeway shows your Gemini current-usage and weekly numbers — used or left, with reset times — in a popup, the toolbar badge and an always-on-top overlay, alongside Claude and ChatGPT.</p>
+<div class="cta">
+  <a class="btn primary" href="https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga">Add to Chrome — free</a>
+  <a class="btn" href="https://github.com/donasman/leeway">Source on GitHub</a>
+</div>
+<img class="shot" src="../img/popup.png" width="1280" height="800" alt="Leeway popup showing Gemini usage as a color-coded percentage with its reset time, alongside Claude and ChatGPT">
+
+<h2>The honest part first</h2>
+<p>Gemini is the awkward one of the three. Claude and ChatGPT both have a usage endpoint Leeway can read in the background, so nothing needs to stay open. <strong>Gemini has none.</strong> The numbers exist only on the <code>gemini.google.com/usage</code> page itself, so <strong>that page has to be open</strong> for Leeway to read them.</p>
+<p>Leeway makes that as painless as it can:</p>
+<ul>
+  <li>The popup's <strong>Gemini usage</strong> button opens that page — or switches to it if it is already open — and reads it once it has loaded.</li>
+  <li>Leeway <strong>keeps the tab from being unloaded</strong> by Chrome's memory saver.</li>
+  <li>When the tab sits in the background with numbers more than five minutes old, or Chrome has put it to sleep, Leeway <strong>reloads it quietly</strong> — and <strong>never while you are looking at it</strong>.</li>
+</ul>
+<p class="note">These are not public, stable APIs and may change without notice.</p>
+
+<h2>What it shows</h2>
+<ul>
+  <li><strong>The current-usage and weekly cards</strong> from the Gemini usage page, each as a percentage with its reset time.</li>
+  <li><strong>Used or left.</strong> The switch at the top of the popup turns every number — popup, overlay and toolbar badge — into the remaining percentage, and back. Used is the default.</li>
+  <li><strong>A toolbar badge</strong> for whichever enabled service is closest to its limit: green with 50% or more left, orange from 20 to 49% left, red below 20% left, grey when the value is old.</li>
+  <li>A value that could not be read is shown as <code>?</code>, never as 0% — so a stale Gemini number never pretends to be a real one.</li>
+</ul>
+
+<h2>Keep it visible while you work</h2>
+<p>Open overlay in the popup opens a small Leeway window, and its Float on top button (or Enter, right after) turns it into an always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). It stays above other apps while you work, and a click collapses it to one line.</p>
+
+<h2>Private by design</h2>
+<ul>
+  <li>Uses the Google session you are already signed in to. No sign-in, and no cookie, password or API key to paste.</li>
+  <li>Session tokens are never stored, logged or sent anywhere. Conversations are never read — the page script runs only on the usage screen, never on a chat page.</li>
+  <li>No server, no account, no analytics. Everything stays in your browser.</li>
+  <li>The gemini.google.com site permission is requested only when you turn Gemini on.</li>
+</ul>
+<p>Full details: <a href="../privacy/">privacy policy</a>.</p>
+
+<h2>FAQ</h2>
+<h3>Why does a Gemini tab need to be open?</h3>
+<p>Gemini has no usage endpoint to read in the background, unlike Claude and ChatGPT. The numbers exist only on the usage page, so that page has to be open.</p>
+<h3>Will Leeway reload the page while I am looking at it?</h3>
+<p>No. It reloads that tab only when the tab is in the background and its numbers are more than five minutes old, or when Chrome has put it to sleep. Never while it is in view.</p>
+<h3>Which Gemini numbers does it read?</h3>
+<p>The current-usage and weekly cards, each as a percentage with its reset time.</p>
+<h3>Do I need to paste a cookie, password or API key?</h3>
+<p>No. Leeway uses the Google session you are already signed in to in Chrome, and session tokens are never stored, logged or sent anywhere.</p>
+
+<h2>Also for</h2>
+<div class="siblings">
+  <a class="btn" href="../claude/">Claude usage limits</a>
+  <a class="btn" href="../chatgpt/">ChatGPT usage limits</a>
+  <a class="btn" href="../">All three together</a>
+</div>
+
+<footer>
+  Leeway — unofficial project, not affiliated with Anthropic, OpenAI or Google. ·
+  <a href="https://github.com/donasman/leeway">github.com/donasman/leeway</a> ·
+  <a href="../privacy/">Privacy policy</a> ·
+  Sponsor: <a href="https://github.com/sponsors/donasman">GitHub Sponsors</a> / <a href="https://buymeacoffee.com/donasman">Buy Me a Coffee</a> ·
+  <a href="https://github.com/donasman/leeway/issues">Issues</a>
+</footer>
+</div>
+</body>
+</html>
