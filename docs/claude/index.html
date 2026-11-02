@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude usage limits in Chrome — Leeway</title>
+<meta name="description" content="See how much of your Claude 5-hour and weekly usage limits you have used, or what is left, in Chrome's toolbar — without opening claude.ai's usage page. Free, open source, nothing leaves your device.">
+<link rel="canonical" href="https://donasman.github.io/leeway/claude/">
+<link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/claude/">
+<link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/claude/">
+<link rel="alternate" hreflang="x-default" href="https://donasman.github.io/leeway/claude/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Claude usage limits in Chrome — Leeway">
+<meta property="og:description" content="Your Claude 5-hour and weekly limits in Chrome's toolbar, used or left, with reset times. No tab to keep open.">
+<meta property="og:url" content="https://donasman.github.io/leeway/claude/">
+<meta property="og:image" content="https://donasman.github.io/leeway/img/popup.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "How do I see how much of my Claude usage limit is left?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Install Leeway from the Chrome Web Store, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows how much of your 5-hour and weekly limits you have used and when each resets, and the toolbar badge shows the service closest to its limit. Switch the popup to Left to see the remaining percentage instead."}},
+    {"@type": "Question", "name": "Does a claude.ai tab need to be open?",
+     "acceptedAnswer": {"@type": "Answer", "text": "No. Leeway reads the Claude limits in the background from the same usage endpoint claude.ai's own usage page uses, so nothing has to stay open. You only need to be signed in to claude.ai in that Chrome profile."}},
+    {"@type": "Question", "name": "I have a personal plan and a Team workspace. Can I see both?",
+     "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every organization that one claude.ai sign-in belongs to is listed separately with its own usage and plan name. For genuinely separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental Leeway helper lets every profile show the others' usage."}},
+    {"@type": "Question", "name": "Do I need to paste a cookie, password or API key?",
+     "acceptedAnswer": {"@type": "Answer", "text": "No. Leeway uses the session you are already signed in to in Chrome. It never asks for a password, cookie or API key, and session tokens are never stored, logged or sent anywhere. It reads only the usage limits, never your conversations."}}
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+<nav><strong><a href="../" style="color:inherit;text-decoration:none;margin:0">Leeway</a></strong><span><a href="../chatgpt/">ChatGPT</a><a href="../gemini/">Gemini</a><a href="../ko/claude/">한국어</a><a href="../privacy/">Privacy</a><a href="https://github.com/donasman/leeway">GitHub</a></span></nav>
+
+<h1>Claude usage limits in Chrome</h1>
+<p class="lead">Leeway shows how much of your Claude 5-hour and weekly limits you have used — or what is left — in a popup, the toolbar badge and an always-on-top overlay. No usage page to open, no tab to keep alive.</p>
+<div class="cta">
+  <a class="btn primary" href="https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga">Add to Chrome — free</a>
+  <a class="btn" href="https://github.com/donasman/leeway">Source on GitHub</a>
+</div>
+<img class="shot" src="../img/popup.png" width="1280" height="800" alt="Leeway popup showing Claude 5-hour and weekly usage as color-coded percentages with reset times, alongside ChatGPT and Gemini">
+
+<h2>What it shows for Claude</h2>
+<ul>
+  <li><strong>The 5-hour and the weekly limit</strong>, each as a percentage with its reset time — the same numbers claude.ai's usage page shows, not a token-count estimate.</li>
+  <li><strong>Used or left.</strong> The switch at the top of the popup turns every number — popup, overlay and toolbar badge — into the remaining percentage, and back. Used is the default.</li>
+  <li><strong>Your plan name</strong>, such as Max 5x, when Claude reports it.</li>
+  <li><strong>Every organization</strong> of one sign-in — for example a personal plan and a Team workspace — listed separately with its own usage.</li>
+  <li><strong>A toolbar badge</strong>: green with 50% or more left, orange from 20 to 49% left, red below 20% left, grey when the value is old.</li>
+  <li>A value that could not be read is shown as <code>?</code>, never as 0%.</li>
+</ul>
+
+<h2>No tab to keep open</h2>
+<p>Claude is the straightforward one of the three services. Leeway reads its limits in the background from the same usage endpoint claude.ai's own usage page uses, so nothing has to stay open — you only need to be signed in to claude.ai in that Chrome profile. Values refresh every minute and whenever you open the popup.</p>
+<p class="note">This is not a public, stable API and may change without notice.</p>
+
+<h2>Keep it visible while you work</h2>
+<p>Open overlay in the popup opens a small Leeway window, and its Float on top button (or Enter, right after) turns it into an always-on-top window through Chrome's Document Picture-in-Picture (Chrome 116 or later). It stays above other apps while you work, and a click collapses it to one line.</p>
+
+<h2>Private by design</h2>
+<ul>
+  <li>Uses the session you are already signed in to. No sign-in, and no cookie, password or API key to paste.</li>
+  <li>Session tokens are never stored, logged or sent anywhere. Conversations are never read — the page script runs only on a usage screen.</li>
+  <li>No server, no account, no analytics. Everything stays in your browser.</li>
+  <li>The claude.ai site permission is requested only when you turn Claude on.</li>
+</ul>
+<p>Full details: <a href="../privacy/">privacy policy</a>.</p>
+
+<h2>FAQ</h2>
+<h3>How do I see how much of my Claude usage limit is left?</h3>
+<p>Install Leeway, open its popup and turn on Claude. While you are signed in to claude.ai in Chrome, the popup shows how much of your 5-hour and weekly limits you have used and when each resets, and the toolbar badge shows the service closest to its limit. Switch the popup to Left to see the remaining percentage instead.</p>
+<h3>Does a claude.ai tab need to be open?</h3>
+<p>No. Leeway reads the limits in the background, so nothing has to stay open. You only need to be signed in to claude.ai in that Chrome profile.</p>
+<h3>I have a personal plan and a Team workspace. Can I see both?</h3>
+<p>Yes. Every organization that one claude.ai sign-in belongs to is listed separately with its own usage and plan name. For genuinely separate accounts, sign in to each in its own Chrome profile; on Windows the optional, experimental <a href="https://github.com/donasman/leeway/releases/latest">Leeway helper</a> lets every profile show the others' usage.</p>
+<h3>Do I need to paste a cookie, password or API key?</h3>
+<p>No. Leeway uses the session you are already signed in to in Chrome, and session tokens are never stored, logged or sent anywhere.</p>
+
+<h2>Also for</h2>
+<div class="siblings">
+  <a class="btn" href="../chatgpt/">ChatGPT usage limits</a>
+  <a class="btn" href="../gemini/">Gemini usage limits</a>
+  <a class="btn" href="../">All three together</a>
+</div>
+
+<footer>
+  Leeway — unofficial project, not affiliated with Anthropic, OpenAI or Google. ·
+  <a href="https://github.com/donasman/leeway">github.com/donasman/leeway</a> ·
+  <a href="../privacy/">Privacy policy</a> ·
+  Sponsor: <a href="https://github.com/sponsors/donasman">GitHub Sponsors</a> / <a href="https://buymeacoffee.com/donasman">Buy Me a Coffee</a> ·
+  <a href="https://github.com/donasman/leeway/issues">Issues</a>
+</footer>
+</div>
+</body>
+</html>

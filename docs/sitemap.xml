@@ -11,6 +11,36 @@
     <xhtml:link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/"/>
   </url>
   <url>
+    <loc>https://donasman.github.io/leeway/claude/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/claude/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/claude/"/>
+  </url>
+  <url>
+    <loc>https://donasman.github.io/leeway/ko/claude/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/claude/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/claude/"/>
+  </url>
+  <url>
+    <loc>https://donasman.github.io/leeway/chatgpt/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/chatgpt/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/chatgpt/"/>
+  </url>
+  <url>
+    <loc>https://donasman.github.io/leeway/ko/chatgpt/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/chatgpt/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/chatgpt/"/>
+  </url>
+  <url>
+    <loc>https://donasman.github.io/leeway/gemini/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/gemini/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/gemini/"/>
+  </url>
+  <url>
+    <loc>https://donasman.github.io/leeway/ko/gemini/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://donasman.github.io/leeway/gemini/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://donasman.github.io/leeway/ko/gemini/"/>
+  </url>
+  <url>
     <loc>https://donasman.github.io/leeway/privacy/</loc>
   </url>
 </urlset>

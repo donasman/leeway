@@ -28,6 +28,9 @@
 - Install (Chrome Web Store): https://chromewebstore.google.com/detail/dlifmhanolkjflblnofiifgkffhkpgga
 - Website: https://donasman.github.io/leeway/
 - Korean page: https://donasman.github.io/leeway/ko/
+- Claude page: https://donasman.github.io/leeway/claude/ (Korean: /ko/claude/)
+- ChatGPT page: https://donasman.github.io/leeway/chatgpt/ (Korean: /ko/chatgpt/)
+- Gemini page: https://donasman.github.io/leeway/gemini/ (Korean: /ko/gemini/)
 - Privacy policy: https://donasman.github.io/leeway/privacy/
 - Source code (MIT): https://github.com/donasman/leeway
 - Helper releases: https://github.com/donasman/leeway/releases/latest
