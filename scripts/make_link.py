@@ -26,6 +26,8 @@ SOURCES = [
     # communities
     "geeknews", "reddit_claudeai", "reddit_sideproject", "reddit_chromeext", "hackernews", "disquiet",
     "zenn", "qiita", "v2ex",
+    # social
+    "x", "threads", "instagram",
     # launch and directory sites
     "producthunt", "alternativeto", "peerlist", "uneed", "microlaunch", "fazier", "devhunt",
     # ours and offline
