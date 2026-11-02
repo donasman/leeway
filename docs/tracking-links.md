@@ -30,7 +30,7 @@
 |---|---|---|
 | `geeknews` | GeekNews (news.hada.io) | |
 | `reddit_claudeai` | Reddit r/ClaudeAI | karma 50 미만이면 쇼케이스 메가스레드 댓글(Rule 7) |
-| `reddit_sideproject` | Reddit r/SideProject | 올리기 전 사이드바·고정글에서 플레어·요일 제한 확인 |
+| `reddit_sideproject` | Reddit r/SideProject | 올리기 전 사이드바·고정글에서 플레어·요일 제한 확인. **UTM을 붙이지 않는다**(아래 주의) |
 | `reddit_chromeext` | Reddit r/chrome_extensions | Self Promotion 말머리로 올린다 |
 | `hackernews` | Hacker News (Show HN) | 제목은 `Show HN: `로 시작. UTM을 붙이지 않은 맨 URL로 올린다(아래 주의) |
 | `disquiet` | 디스콰이엇 | |
@@ -46,6 +46,28 @@
 | `devhunt` | DevHunt | |
 | `study` | 스터디 모임·커뮤니티 | |
 | `github_readme` | GitHub README | |
+| `x` | X (구 트위터) | 단독 글보다 **기존 스레드 답글**. 외부 링크가 도달에 불리하다는 정황은 있으나 수치는 미확인 |
+| `threads` | 스레드 | 한국어. 링크 홀대는 완화됐다(Mosseri 2026 발언: "Links have been working much better for more than a month now") |
+| `instagram` | 인스타그램 | **캡션 링크는 클릭되지 않는다.** 바이오 링크·스토리 스티커만 가능하므로 UTM은 **바이오 링크에만** 의미가 있다 |
+
+### Reddit 주의
+
+**스토어 링크에 UTM을 붙이지 않는다.** 레딧은 아웃바운드 링크에 `noreferrer`를 붙여 어차피 유입이 거의 잡히지 않고,
+신규 계정 + 추적 파라미터는 스팸 필터가 싫어하는 조합이다.
+2026-11-01 r/SideProject 글이 게시 직후 **"Reddit 필터로 제거된 게시물"** 이 된 뒤 내린 결정이다 — 원인은 **미확인**.
+레딧發 유입은 포기하고 설치 수 변화로만 본다.
+
+계정 요건은 **층이 둘이고 섞어 쓰면 안 된다.**
+
+- **서브레딧 규칙** — 각 서브가 정한 수치는 그 서브의 모더레이터 공지·사이드바가 1차 출처다.
+  예: r/ClaudeAI는 단독 쇼케이스 글에 총 karma 50 이상을 요구하고 미만이면 메가스레드 댓글로 안내한다(모더레이터 공지).
+  이런 수치는 **쓸 수 있다.**
+- **Reddit 전역 스팸 필터** — 수치가 공개되지 않는다. Poster Eligibility Guide 원문(최종 수정 2026-10-02):
+  "Specific karma and account age thresholds used by communities aren't disclosed at this time to deter potential misuse."
+  그래서 **"몇 karma면 전역 필터에 안 걸린다"는 기준은 세울 수 없다.**
+  공식 문서가 제시하는 유일한 방법은 올릴 서브에서 먼저 댓글로 karma를 쌓는 것이다 —
+  "even earning a small amount of karma by commenting on another post within a community, **can help** you get past the filter."
+  ("Why can't I see my post?", 최종 수정 2026-10-05) "can help"이지 보장이 아니다.
 
 ### Hacker News 주의
 
