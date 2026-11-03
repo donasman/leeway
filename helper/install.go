@@ -20,10 +20,22 @@ import (
 
 var extensionIDPattern = regexp.MustCompile(`^[a-p]{32}$`)
 
+// Where each browser looks for the Native Messaging manifest, under HKCU.
+// Edge falls back to the Chromium and Chrome locations when its own key is
+// missing, but install writes its key too so registration does not depend on
+// that fallback (CLAUDE.md §2).
 const (
-	registrySubkey = `Software\Google\Chrome\NativeMessagingHosts\` + hostName
-	registryKey    = `HKCU\` + registrySubkey
+	chromeSubkey = `Software\Google\Chrome\NativeMessagingHosts\` + hostName
+	edgeSubkey   = `Software\Microsoft\Edge\NativeMessagingHosts\` + hostName
 )
+
+var browserKeys = []struct {
+	Browser string
+	Subkey  string
+}{
+	{"Chrome", chromeSubkey},
+	{"Edge", edgeSubkey},
+}
 
 type hostManifest struct {
 	Name           string   `json:"name"`
@@ -44,7 +56,7 @@ func manifestFor(exePath string, ids []string) hostManifest {
 	}
 	return hostManifest{
 		Name:           hostName,
-		Description:    "Leeway helper: shares remaining-usage values between your Chrome profiles",
+		Description:    "Leeway helper: shares remaining-usage values between your browser profiles",
 		Path:           exePath,
 		Type:           "stdio",
 		AllowedOrigins: origins,
@@ -104,12 +116,17 @@ func install(ids []string) error {
 	if err := os.WriteFile(manifestPath, data, 0o600); err != nil {
 		return err
 	}
-	if out, err := exec.Command("reg", "add", registryKey, "/ve", "/t", "REG_SZ", "/d", manifestPath, "/f").CombinedOutput(); err != nil {
-		return fmt.Errorf("registry: %v: %s", err, strings.TrimSpace(string(out)))
+	browsers := []string{}
+	for _, k := range browserKeys {
+		if out, err := exec.Command("reg", "add", `HKCU\`+k.Subkey, "/ve", "/t", "REG_SZ", "/d", manifestPath, "/f").CombinedOutput(); err != nil {
+			return fmt.Errorf("registry (%s): %v: %s", k.Browser, err, strings.TrimSpace(string(out)))
+		}
+		browsers = append(browsers, k.Browser)
 	}
 	fmt.Println("Leeway helper is registered for this Windows user.")
 	fmt.Println("  helper:   " + target)
 	fmt.Println("  manifest: " + manifestPath)
+	fmt.Println("  browsers: " + strings.Join(browsers, ", "))
 	fmt.Println("  allowed:  " + strings.Join(manifest.AllowedOrigins, ", "))
 	fmt.Println("Turn on \"Other Chrome profiles\" in Leeway's popup in each profile.")
 	return nil
@@ -119,9 +136,11 @@ func uninstall() error {
 	if runtime.GOOS != "windows" {
 		return errors.New("uninstall is for Windows")
 	}
-	out, err := exec.Command("reg", "delete", registryKey, "/f").CombinedOutput()
-	if err != nil && !strings.Contains(strings.ToLower(string(out)), "unable to find") {
-		fmt.Fprintln(os.Stderr, "registry:", strings.TrimSpace(string(out)))
+	for _, k := range browserKeys {
+		out, err := exec.Command("reg", "delete", `HKCU\`+k.Subkey, "/f").CombinedOutput()
+		if err != nil && !strings.Contains(strings.ToLower(string(out)), "unable to find") {
+			fmt.Fprintln(os.Stderr, "registry ("+k.Browser+"):", strings.TrimSpace(string(out)))
+		}
 	}
 	// The copy running this command (if any) can't delete itself; the rest goes.
 	dir := dataDir()

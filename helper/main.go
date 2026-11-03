@@ -32,12 +32,15 @@ const (
 // (-ldflags "-X main.version=0.6.3"); a build from source says "dev".
 var version = "dev"
 
-// Extensions allowed to talk to the helper: the Chrome Web Store build and
-// the unpacked development build that carries the old manifest "key". An
-// unpacked copy without the key has a path-based ID; pass it with
-// --extension-id.
+// Extensions allowed to talk to the helper: the two store builds and the
+// unpacked development build that carries the old manifest "key". An unpacked
+// copy without the key has a path-based ID; pass it with --extension-id.
+// The two stores give the same extension different IDs, so both are listed
+// (Edge native-messaging docs say to allow both when an extension ships to
+// both stores).
 var defaultExtensionIDs = []string{
 	"dlifmhanolkjflblnofiifgkffhkpgga", // Chrome Web Store
+	"pacheepliaabphbgpabfdlkdpipceado", // Microsoft Edge Add-ons
 	"nnknbbnoekgbalackpaekkemnjibicia", // development key
 }
 
