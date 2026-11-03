@@ -18,7 +18,9 @@ function check(label, got, expected) {
 
 const dir = new URL('../extension/_locales/', import.meta.url);
 const load = lang => JSON.parse(readFileSync(new URL(`${lang}/messages.json`, dir), 'utf8'));
-const langs = readdirSync(dir, {withFileTypes: true}).filter(e => e.isDirectory()).map(e => e.name).sort();
+// Skip dot-directories: locale names never start with one, but local tooling
+// (.omc, .claude) can leave state folders here and they are not languages.
+const langs = readdirSync(dir, {withFileTypes: true}).filter(e => e.isDirectory() && !e.name.startsWith('.')).map(e => e.name).sort();
 const tokensOf = message => [...String(message).matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
 
 console.log('\n_locales — every language matches the default (en) keys and placeholders');
