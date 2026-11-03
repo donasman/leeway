@@ -26,8 +26,11 @@ leeway-helper.exe version
 
 `install` copies the program to `%LOCALAPPDATA%\Leeway\helper\`, writes
 `com.leeway.helper.json` beside it, and registers it for the current Windows user
-under `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.leeway.helper`, so
-every Chrome profile of that user finds it. No administrator rights.
+under both `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.leeway.helper`
+and `HKCU\Software\Microsoft\Edge\NativeMessagingHosts\com.leeway.helper`, so
+every Chrome and Edge profile of that user finds it. No administrator rights.
+Edge also falls back to the Chrome location when its own key is missing, but
+writing both means the registration does not depend on that.
 
 Only the extension IDs in `allowed_origins` may talk to it: the ones in
 `defaultExtensionIDs` (`main.go`) plus any `--extension-id`. An unpacked build
@@ -44,10 +47,10 @@ file it makes and deletes in the data folder, and uses no network.
 
 | Check | A FAIL means |
 |---|---|
-| Registered with Chrome | no default value under `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.leeway.helper` |
+| Registered with Chrome or Edge | neither browser's key under `HKCU\...\NativeMessagingHosts\com.leeway.helper` has a default value |
 | Host manifest | the file it names is missing or not JSON, or its `name`/`type` is not `com.leeway.helper`/`stdio` |
 | Manifest points at the installed helper | its `path` is missing, or is not `%LOCALAPPDATA%\Leeway\helper\leeway-helper.exe` |
-| Allows Leeway from the Chrome Web Store | `allowed_origins` lacks `chrome-extension://dlifmhanolkjflblnofiifgkffhkpgga/` |
+| Allows the store builds of Leeway | `allowed_origins` lacks the Chrome Web Store origin, the Microsoft Edge Add-ons origin, or both |
 | Data folder writable | `%LOCALAPPDATA%\Leeway` (before the first run: the folder it goes in) takes no file |
 | Shared file readable | `profiles.json` exists but can't be read as JSON |
 | Chrome policy allows per-user helpers | `NativeMessagingUserLevelHosts` is 0: only machine-wide helpers |
@@ -84,5 +87,7 @@ helper, so the extension's link to
 
 The extension IDs allowed to talk to the helper are compiled in
 (`defaultExtensionIDs` in `main.go`): the Chrome Web Store build
-(`dlifmhanolkjflblnofiifgkffhkpgga`) and the development key. Any other ID gets
+(`dlifmhanolkjflblnofiifgkffhkpgga`), the Microsoft Edge Add-ons build
+(`pacheepliaabphbgpabfdlkdpipceado`) and the development key. The same extension
+gets a different ID in each store, so both are listed. Any other ID gets
 "access forbidden" until it is added there or passed with `--extension-id`.

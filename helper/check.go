@@ -18,9 +18,14 @@ import (
 )
 
 const (
-	storeOrigin  = "chrome-extension://dlifmhanolkjflblnofiifgkffhkpgga/"
-	chromePolicy = `Software\Policies\Google\Chrome`
+	chromeStoreOrigin = "chrome-extension://dlifmhanolkjflblnofiifgkffhkpgga/"
+	edgeStoreOrigin   = "chrome-extension://pacheepliaabphbgpabfdlkdpipceado/"
+	chromePolicy      = `Software\Policies\Google\Chrome`
 )
+
+// storeOrigins: the store builds install allows. A complete install has both,
+// so a manifest missing either one is stale and reinstalling is the fix.
+var storeOrigins = []string{chromeStoreOrigin, edgeStoreOrigin}
 
 type checkItem struct {
 	Name   string
@@ -41,6 +46,29 @@ func newChecker() checker {
 	return checker{reg: systemRegistry{}, dataDir: dir, installedExe: filepath.Join(dir, "helper", "leeway-helper.exe"), launch: askHello}
 }
 
+// registrations looks for the Native Messaging registration of each browser.
+// It returns the first manifest path found (install writes the same path to
+// every key), the browsers that are registered, and the first real read error
+// (a key that is simply absent is not one).
+func (c checker) registrations() (string, []string, error) {
+	path := ""
+	found := []string{}
+	var readErr error
+	for _, k := range browserKeys {
+		p, err := c.reg.String("HKCU", k.Subkey, "")
+		switch {
+		case err == nil && p != "":
+			found = append(found, k.Browser)
+			if path == "" {
+				path = p
+			}
+		case err != nil && !errors.Is(err, errNoValue) && readErr == nil:
+			readErr = err
+		}
+	}
+	return path, found, readErr
+}
+
 func itemOK(name, detail string) checkItem {
 	return checkItem{Name: name, Status: "OK", Detail: detail}
 }
@@ -57,16 +85,16 @@ func (c checker) run() []checkItem {
 	var items []checkItem
 
 	// 1. Chrome finds the host through this per-user registry key.
-	const regName = "Registered with Chrome"
-	manifestPath, err := c.reg.String("HKCU", registrySubkey, "")
-	registered := err == nil && manifestPath != ""
+	const regName = "Registered with Chrome or Edge"
+	manifestPath, found, regErr := c.registrations()
+	registered := manifestPath != ""
 	switch {
 	case registered:
-		items = append(items, itemOK(regName, `HKCU\`+registrySubkey+" -> "+manifestPath))
-	case errors.Is(err, errNoValue) || err == nil:
-		items = append(items, itemFail(regName, `HKCU\`+registrySubkey+" has no default value", fixInstall))
+		items = append(items, itemOK(regName, strings.Join(found, ", ")+" -> "+manifestPath))
+	case regErr != nil:
+		items = append(items, itemFail(regName, regErr.Error(), fixInstall))
 	default:
-		items = append(items, itemFail(regName, err.Error(), fixInstall))
+		items = append(items, itemFail(regName, `HKCU\`+chromeSubkey+` and HKCU\`+edgeSubkey+" have no default value", fixInstall))
 	}
 
 	// 2. The manifest it points at.
@@ -102,12 +130,19 @@ func (c checker) run() []checkItem {
 		items = append(items, itemOK(pathName, manifest.Path))
 	}
 
-	// 4. The Web Store Leeway may talk to it.
-	const originName = "Allows Leeway from the Chrome Web Store"
+	// 4. The store builds of Leeway may talk to it. Chrome and Edge give the
+	// same extension different IDs, so both have to be allowed.
+	const originName = "Allows the store builds of Leeway"
+	missing := []string{}
+	for _, o := range storeOrigins {
+		if !contains(manifest.AllowedOrigins, o) {
+			missing = append(missing, o)
+		}
+	}
 	if !manifestOK {
 		items = append(items, itemSkip(originName, manName))
-	} else if !contains(manifest.AllowedOrigins, storeOrigin) {
-		items = append(items, itemFail(originName, "allowed_origins: "+strings.Join(manifest.AllowedOrigins, ", "), fixInstall))
+	} else if len(missing) > 0 {
+		items = append(items, itemFail(originName, "allowed_origins lacks "+strings.Join(missing, ", ")+" (has: "+strings.Join(manifest.AllowedOrigins, ", ")+")", fixInstall))
 	} else {
 		items = append(items, itemOK(originName, strings.Join(manifest.AllowedOrigins, ", ")))
 	}
@@ -241,7 +276,7 @@ func printChecks(w io.Writer, items []checkItem) bool {
 // askHello starts exe the way Chrome does (the caller origin as its argument)
 // and asks it "hello" over stdin/stdout. Local pipes only.
 func askHello(exe string) (response, error) {
-	cmd := exec.Command(exe, storeOrigin)
+	cmd := exec.Command(exe, chromeStoreOrigin)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return response{}, err

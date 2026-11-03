@@ -4,7 +4,7 @@ Claude · ChatGPT · Gemini의 사용량(5시간·주간·월간 한도. 기본�
 항상 위에 뜨는 오버레이로 보여주는 Chrome 확장. 선택 기능은 Windows용 Leeway helper가 맡는다.
 
 - 저장소: https://github.com/donasman/leeway · 사이트: https://donasman.github.io/leeway/ · 개인정보처리방침: https://donasman.github.io/leeway/privacy/
-- Chrome Web Store ID `dlifmhanolkjflblnofiifgkffhkpgga` (스토어판)
+- Chrome Web Store ID `dlifmhanolkjflblnofiifgkffhkpgga` · Microsoft Edge Add-ons ID `pacheepliaabphbgpabfdlkdpipceado` (두 스토어가 같은 확장에 다른 ID를 준다)
 - 이 문서는 2026-10-27 기준 실제 코드에서 작성했다. 코드 주석의 `CLAUDE.md §n`은 아래 절 번호를 가리킨다.
   절을 고치면 그 번호를 쓰는 주석도 함께 확인한다.
 
@@ -141,14 +141,18 @@ Gemini 값은 그 탭이 열려 있을 때만 갱신된다. 탭이 없으면 마
 - Chrome이 메시지마다 실행하는 Native Messaging 호스트(`com.leeway.helper`). 받은 값을 `%LOCALAPPDATA%\Leeway\profiles.json` 한 파일에 모은다.
   잠금 파일 + 임시 파일 rename으로 동시 쓰기를 막는다. 프로필 8개, 프로필당 16 KB, 메시지 64 KB, 7일 지나면 삭제.
 - 네트워크 요청을 하지 않는다. HKCU에 사용자 단위로 등록한다(관리자 권한 불필요). 실행 파일은 `%LOCALAPPDATA%\Leeway\helper\`로 복사된다.
-- 허용 확장 ID는 `helper/main.go`의 `defaultExtensionIDs`: 스토어 `dlifmhanolkjflblnofiifgkffhkpgga`, 개발용 key `nnknbbnoekgbalackpaekkemnjibicia`.
+  등록 키는 Chrome과 Edge 둘 다 쓴다(`helper/install.go`의 `browserKeys`). Edge는 자기 키가 없으면 Chromium·Chrome 키로 폴백하지만,
+  그 폴백에 기대지 않으려고 직접 쓴다.
+- 허용 확장 ID는 `helper/main.go`의 `defaultExtensionIDs`: Chrome 스토어 `dlifmhanolkjflblnofiifgkffhkpgga`,
+  Edge Add-ons `pacheepliaabphbgpabfdlkdpipceado`, 개발용 key `nnknbbnoekgbalackpaekkemnjibicia`.
+  **두 스토어가 같은 확장에 다른 ID를 준다.** Edge native-messaging 문서가 두 ID를 다 넣으라고 한다.
   키 없이 압축해제 로드한 확장은 경로 기반 ID라 `leeway-helper.exe install --extension-id <ID>`로 추가해야 한다.
 - 확장 쪽에서 받은 다른 프로필 값은 같은 사용자의 것이어도 **검증 안 된 입력**으로 다룬다(`fromShared`로 재검증, 화면에는 텍스트로만).
 - 연결 진단(팝업): Chrome의 `runtime.lastError` 문자열(Chromium `native_message_host.cc`·`message_service.cc`)을
   설치 안 됨·금지됨·정책 차단·실행 실패로 나누고, 상태마다 원인 한 줄과 다음 행동 한 줄을 보여준다(`peers.js` `helperState`).
   정상이면 helper 버전과 마지막 동기화 시각. 원문 오류 문자열은 저장하지 않는다.
 - 버전: 릴리스 빌드는 태그에서 `-X main.version`을 받는다(소스 빌드는 `dev`). `MIN_HELPER_VERSION`(`peers.js`)보다 낮으면 업데이트 안내, `dev`는 통과.
-- `leeway-helper.exe check`: 레지스트리·manifest·exe 경로·허용 ID·데이터 폴더·`profiles.json`·Chrome 정책·실제 실행(`hello`)을 항목별 OK/FAIL과 고치는 법으로 출력,
+- `leeway-helper.exe check`: 레지스트리(Chrome·Edge 중 하나라도 있으면 OK)·manifest·exe 경로·허용 ID(**두 스토어 origin이 다 있어야 OK**)·데이터 폴더·`profiles.json`·Chrome 정책·실제 실행(`hello`)을 항목별 OK/FAIL과 고치는 법으로 출력,
   하나라도 실패하면 종료 코드 1. 더블클릭하면 install 뒤 바로 실행. 레지스트리는 `registry` 인터페이스 뒤라 Windows 밖에서도 `go test`가 돈다.
 
 ---

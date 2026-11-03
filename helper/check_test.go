@@ -58,7 +58,7 @@ func goodInstall(t *testing.T) (checker, string) {
 	}
 	manifestPath := filepath.Join(dir, "helper", hostName+".json")
 	writeManifest(t, manifestPath, manifestFor(exe, defaultExtensionIDs))
-	reg := fakeRegistry{strings: map[string]string{`HKCU\` + registrySubkey + "|": manifestPath}, dwords: map[string]uint32{}}
+	reg := fakeRegistry{strings: map[string]string{`HKCU\` + chromeSubkey + "|": manifestPath}, dwords: map[string]uint32{}}
 	c := checker{reg: reg, dataDir: dir, installedExe: exe, launch: func(string) (response, error) {
 		return response{OK: true, Version: "dev"}, nil
 	}}
@@ -124,10 +124,10 @@ func TestCheckNotRegistered(t *testing.T) {
 	c, _ := goodInstall(t)
 	c.reg = fakeRegistry{}
 	expectOnly(t, c.run(), map[string]string{
-		"Registered with Chrome":                  "FAIL",
+		"Registered with Chrome or Edge":          "FAIL",
 		"Host manifest":                           "SKIP",
 		"Manifest points at the installed helper": "SKIP",
-		"Allows Leeway from the Chrome Web Store": "SKIP",
+		"Allows the store builds of Leeway":       "SKIP",
 		"Installed helper starts and answers":     "SKIP",
 	})
 }
@@ -136,7 +136,7 @@ func TestCheckManifestProblems(t *testing.T) {
 	dependents := map[string]string{
 		"Host manifest": "FAIL",
 		"Manifest points at the installed helper": "SKIP",
-		"Allows Leeway from the Chrome Web Store": "SKIP",
+		"Allows the store builds of Leeway":       "SKIP",
 		"Installed helper starts and answers":     "SKIP",
 	}
 	cases := map[string]func(t *testing.T, path, exe string){
@@ -186,7 +186,28 @@ func TestCheckManifestPath(t *testing.T) {
 func TestCheckStoreOriginMissing(t *testing.T) {
 	c, path := goodInstall(t)
 	writeManifest(t, path, manifestFor(c.installedExe, []string{"nnknbbnoekgbalackpaekkemnjibicia"}))
-	expectOnly(t, c.run(), map[string]string{"Allows Leeway from the Chrome Web Store": "FAIL"})
+	expectOnly(t, c.run(), map[string]string{"Allows the store builds of Leeway": "FAIL"})
+}
+
+// Edge gives the same extension a different ID, so a manifest that allows
+// only the Chrome build leaves the Edge build unable to connect.
+func TestCheckStoreOriginPartiallyMissing(t *testing.T) {
+	c, path := goodInstall(t)
+	writeManifest(t, path, manifestFor(c.installedExe, []string{"dlifmhanolkjflblnofiifgkffhkpgga"}))
+	expectOnly(t, c.run(), map[string]string{"Allows the store builds of Leeway": "FAIL"})
+}
+
+// Registration under Edge's own key alone is a working install.
+func TestCheckRegisteredWithEdgeOnly(t *testing.T) {
+	c, path := goodInstall(t)
+	c.reg = fakeRegistry{strings: map[string]string{`HKCU\` + edgeSubkey + "|": path}, dwords: map[string]uint32{}}
+	items := c.run()
+	expectOnly(t, items, map[string]string{})
+	for _, it := range items {
+		if it.Name == "Registered with Chrome or Edge" && !strings.HasPrefix(it.Detail, "Edge -> ") {
+			t.Errorf("detail = %q, want it to start with %q", it.Detail, "Edge -> ")
+		}
+	}
 }
 
 func TestCheckDataFolder(t *testing.T) {
@@ -289,7 +310,7 @@ func TestCheckOutputHasFixes(t *testing.T) {
 		t.Fatal("printChecks should report failure")
 	}
 	text := out.String()
-	for _, want := range []string{"FAIL  Registered with Chrome", "fix: " + fixInstall, "SKIP  Host manifest: needs: Registered with Chrome", "1 check(s) failed."} {
+	for _, want := range []string{"FAIL  Registered with Chrome or Edge", "fix: " + fixInstall, "SKIP  Host manifest: needs: Registered with Chrome or Edge", "1 check(s) failed."} {
 		if !strings.Contains(text, want) {
 			t.Errorf("missing %q in:\n%s", want, text)
 		}

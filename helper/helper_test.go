@@ -174,6 +174,36 @@ func TestOversizedMessageRefused(t *testing.T) {
 	}
 }
 
+// Both stores' builds must be allowed by default: the same extension gets a
+// different ID in the Chrome Web Store and in Microsoft Edge Add-ons.
+func TestDefaultExtensionIDsCoverBothStores(t *testing.T) {
+	want := []string{"dlifmhanolkjflblnofiifgkffhkpgga", "pacheepliaabphbgpabfdlkdpipceado"}
+	for _, id := range want {
+		found := false
+		for _, have := range defaultExtensionIDs {
+			if have == id {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("defaultExtensionIDs lacks %s", id)
+		}
+	}
+	m := manifestFor(`C:\x\leeway-helper.exe`, defaultExtensionIDs)
+	for _, id := range want {
+		origin := "chrome-extension://" + id + "/"
+		found := false
+		for _, have := range m.AllowedOrigins {
+			if have == origin {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("allowed_origins lacks %s; got %v", origin, m.AllowedOrigins)
+		}
+	}
+}
+
 func TestManifestOrigins(t *testing.T) {
 	m := manifestFor(`C:\x\leeway-helper.exe`, []string{"nnknbbnoekgbalackpaekkemnjibicia", "nnknbbnoekgbalackpaekkemnjibicia", "bad"})
 	if len(m.AllowedOrigins) != 1 || m.AllowedOrigins[0] != "chrome-extension://nnknbbnoekgbalackpaekkemnjibicia/" {
