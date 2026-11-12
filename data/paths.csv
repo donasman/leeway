@@ -139,3 +139,5 @@ snapshot_date,path,title,count,uniques
 2026-11-11,/donasman/leeway/blob/metrics/data/traffic.csv,/blob/metrics/data/traffic.csv,1,1
 2026-11-11,/donasman/leeway/issues,/issues,1,1
 2026-11-11,/donasman/leeway/pull/1,/pull/1,1,1
+2026-11-12,/donasman/leeway,Overview,3,2
+2026-11-12,/donasman/leeway/issues,/issues,1,1
